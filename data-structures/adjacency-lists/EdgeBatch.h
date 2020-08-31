@@ -7,7 +7,7 @@
 
 
 class EdgeBatch {
-
+    virtual void pure() = 0;
 };
 
 

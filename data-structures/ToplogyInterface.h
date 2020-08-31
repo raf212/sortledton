@@ -8,6 +8,8 @@
 
 class TopologyInterface {
 public:
+    virtual size_t vertex_count() = 0;
+
     virtual vertex_id_t insert_vertex() = 0;
     virtual void delete_vertex() = 0;
 

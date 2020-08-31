@@ -11,8 +11,10 @@
 
 using namespace std;
 
-class AdjacencyLists : TopologyInterface {
+class AdjacencyLists : public TopologyInterface {
 public:
+    size_t vertex_count() override { return adjacency_index.size(); }
+
     vertex_id_t insert_vertex() override;
     void delete_vertex() override;
 
