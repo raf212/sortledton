@@ -7,6 +7,8 @@
 
 #include <vector>
 #include <memory>
+
+#include "adjacency-lists/AdjacencyList.h"
 #include "ToplogyInterface.h"
 
 using namespace std;
@@ -24,10 +26,10 @@ public:
     BatchedEdgeIterator& neighbourhood(vertex_id_t src) override;
     void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) override;
 
-    void bulkload(const SortedCSRDataSource& src) override;
+    void bulkload(SortedCSRDataSource& src) override;
 
 protected:
-    virtual unique_ptr<AdjacencyList> construct_adjacency_list(vector<dst_t>& src) = 0;
+    virtual unique_ptr<AdjacencyList> construct_adjacency_list(const vector<dst_t>::iterator begin, const vector<dst_t>::iterator end) = 0;
 
 private:
     vector<unique_ptr<AdjacencyList>> adjacency_index;

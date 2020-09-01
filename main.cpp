@@ -1,8 +1,13 @@
 #include <iostream>
+#include <experiments/Driver.h>
 #include "experiments/Configuration.h"
 
 int main(int argc, char** argv) {
-  Configuration::get_config().initialize(argc, argv);
+  Config config { };
+  config.initialize(argc, argv);
+
+  Driver driver(config);
+  driver.run();
 
 
 

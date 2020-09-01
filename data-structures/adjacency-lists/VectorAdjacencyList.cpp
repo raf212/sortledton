@@ -4,7 +4,7 @@
 
 #include "VectorAdjacencyList.h"
 
-VectorAdjacencyList::VectorBatchedEdgeIterator& VectorAdjacencyList::iterator() {
+VectorBatchedEdgeIterator& VectorAdjacencyList::iterator() {
   iter.batch.start = neighbourhood.data();
   iter.batch.size = neighbourhood.size();
 
@@ -31,7 +31,7 @@ void VectorAdjacencyList::delete_edge(dst_t edge) {
 
 void VectorAdjacencyList::intersect(AdjacencyList &other, vector<dst_t>& out) {
   if (typeid(other) == typeid(this)) {
-    VectorAdjacencyList &a = dynamic_cast<VectorAdjacencyList>(other);
+    VectorAdjacencyList &a = dynamic_cast<VectorAdjacencyList&>(other);
     VectorAdjacencyList &b = *this;
     if (b.neighbourhood.size() < a.neighbourhood.size()) {
       swap(a, b);

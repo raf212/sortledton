@@ -5,8 +5,12 @@
 #ifndef LIVE_GRAPH_TWO_ADJACENCYLIST_H
 #define LIVE_GRAPH_TWO_ADJACENCYLIST_H
 
+#include <vector>
+
 #include "../../data_types.h"
 #include "BatchedEdgeIterator.h"
+
+using namespace std;
 
 class AdjacencyList {
 public:

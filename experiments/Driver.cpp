@@ -35,7 +35,7 @@ void Driver::run() {
   }
 }
 
-void Driver::run_data_structure(const SortedCSRDataSource &base, const EdgeList &inserts, const EdgeList &deletes,
+void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes,
                                 DataStructures ds) {
   TopologyInterface* data_structure;
   switch (ds) {
@@ -122,15 +122,15 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
   cout << "BFS run in average in " << average << endl;
 }
 
-void Driver::load_base_dataset(shared_ptr<TopologyInterface> ds, const SortedCSRDataSource &base) {
+void Driver::load_base_dataset(shared_ptr<TopologyInterface> ds, SortedCSRDataSource &base) {
   ds->bulkload(base);
 }
 
-void Driver::run_insert_experiment(shared_ptr<TopologyInterface> ds, const EdgeList &el) {
+void Driver::run_insert_experiment(shared_ptr<TopologyInterface> ds, EdgeList &el) {
   throw NotImplemented();
 }
 
-void Driver::run_delete_experiment(shared_ptr<TopologyInterface> ds, const EdgeList &el) {
+void Driver::run_delete_experiment(shared_ptr<TopologyInterface> ds, EdgeList &el) {
   throw NotImplemented();
 }
 
@@ -148,6 +148,12 @@ EdgeList Driver::read_insert_dataset() {
 
 EdgeList Driver::read_delete_dataset() {
   throw NotImplemented();
+}
+
+SortedCSRDataSource Driver::read_base_dataset() {
+  SortedCSRDataSource out;
+  out.read_from_binary_file(config.base.path);
+  return out;
 }
 
 

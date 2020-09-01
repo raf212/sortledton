@@ -5,7 +5,7 @@
 #include <algorithm>
 #include "CSR.h"
 
-void CSR::bulkload(const SortedCSRDataSource &src) {
+void CSR::bulkload(SortedCSRDataSource &src) {
   adjacency_index = src.adjacency_index;
   adjacency_lists = src.adjacency_lists;
 

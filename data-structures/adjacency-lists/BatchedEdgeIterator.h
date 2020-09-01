@@ -5,8 +5,6 @@
 #ifndef LIVE_GRAPH_TWO_BATCHEDEDGEITERATOR_H
 #define LIVE_GRAPH_TWO_BATCHEDEDGEITERATOR_H
 
-
-#include <data-structures/adjacency-lists/AdjacencyList.h>
 #include "EdgeBatch.h"
 
 class BatchedEdgeIterator {

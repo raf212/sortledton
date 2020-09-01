@@ -2,10 +2,11 @@
 // Created by per on 31.08.20.
 //
 
-#include <getopt.h>
 #include "Configuration.h"
 
-void Configuration::initialize(int argc, char **argv) {
+#include <getopt.h>
+
+void Config::initialize(int argc, char **argv) {
   int c;
   int digit_optind = 0;
 
@@ -28,22 +29,22 @@ void Configuration::initialize(int argc, char **argv) {
 
     switch (c) {
       case 'e':
-        singleton.experiments = parse_experiments(optarg);
+        experiments = parse_experiments(optarg);
         break;
       case 's':
-        singleton.data_structures = parse_data_structures(optarg);
+        data_structures = parse_data_structures(optarg);
         break;
       case 'b':
-        singleton.base = Dataset(optarg, CSR_SRC);
+        base = Dataset(optarg, CSR_SRC);
         break;
       case 'i':
-        singleton.insertions = Dataset(optarg, EDGE_LIST);
+        insertions = Dataset(optarg, EDGE_LIST);
         break;
       case 'd':
-        singleton.deletions = Dataset(optarg, EDGE_LIST);
+        deletions = Dataset(optarg, EDGE_LIST);
         break;
       case 'r':
-        singleton.repetitions = stoi(optarg);
+        repetitions = stoi(optarg);
         break;
       case '?':
         printf("No help provided read src.\n");
@@ -58,7 +59,7 @@ void Configuration::initialize(int argc, char **argv) {
   }
 }
 
-vector <string> Configuration::parse_comma_separated_list(string list) {
+vector <string> Config::parse_comma_separated_list(string list) {
   char delim = ',';
   std::size_t current, previous = 0;
   vector<string> cont;
@@ -72,7 +73,7 @@ vector <string> Configuration::parse_comma_separated_list(string list) {
   return cont;
 }
 
-unordered_set<DataStructures> Configuration::parse_data_structures(string arg) {
+unordered_set<DataStructures> Config::parse_data_structures(string arg) {
   unordered_set<DataStructures> ret;
   auto ds = parse_comma_separated_list(arg);
 
@@ -89,7 +90,7 @@ unordered_set<DataStructures> Configuration::parse_data_structures(string arg) {
   return ret;
 }
 
-unordered_set<Experiments> Configuration::parse_experiments(string arg) {
+unordered_set<Experiments> Config::parse_experiments(string arg) {
   unordered_set<Experiments> ret;
   auto es = parse_comma_separated_list(arg);
 

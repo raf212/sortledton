@@ -10,7 +10,7 @@
 
 class VectorAdjacencyLists : public AdjacencyLists {
 protected:
-    unique_ptr<AdjacencyList> construct_adjacency_list(vector<dst_t>& src) override;
+    unique_ptr<AdjacencyList> construct_adjacency_list(const vector<dst_t>::iterator begin, const vector<dst_t>::iterator end) override;
 };
 
 

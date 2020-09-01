@@ -6,12 +6,13 @@
 #include <utils/NotImplemented.h>
 #include "AdjacencyLists.h"
 
-void AdjacencyLists::bulkload(const SortedCSRDataSource& src) {
+void AdjacencyLists::bulkload(SortedCSRDataSource& src) {
   adjacency_index.reserve(src.adjacency_index.size());
 
-  for (size_t i = 0; i < src.adjacency_index.size(); i++) {
-    auto src_neighbourhood = src.adjacency_lists[src.adjacency_index[i]];
-    adjacency_index[i] = construct_adjacency_list(src_neighbourhood);
+  for (size_t i = 0; i < src.adjacency_index.size() - 1; i++) {
+    auto begin = src.adjacency_lists.begin() + src.adjacency_index[i];
+    auto end = src.adjacency_lists.begin() + src.adjacency_index[i+1];
+    adjacency_index[i] = construct_adjacency_list(begin, end);
   }
 }
 
