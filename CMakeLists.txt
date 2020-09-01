@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.10)
 project(live_graph_two)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -19,7 +19,8 @@ set(SRC
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset_converter/DatasetConverter.cpp
-        data-src/dataset_converter/Options.cpp)
+        data-src/dataset_converter/Options.cpp
+        utils/utils.cpp)
 
 
 add_executable(live_graph_two main.cpp ${SRC})

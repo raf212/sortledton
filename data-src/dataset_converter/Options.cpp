@@ -3,13 +3,11 @@
 //
 
 #include "Options.h"
-#include "utils.h"
 
 #include <getopt.h>
 #include <iostream>
-#include <utils/utils.h>
 
-size_t Options::temporal_value_position = 0;
+#include "utils/utils.h"
 
 Options parseOptions(int argc, char **argv) {
   Options o;
@@ -44,7 +42,6 @@ Options parseOptions(int argc, char **argv) {
         break;
       case 't':
         o.input_format = TEMPORAL_EDGELIST_TEXT;
-        o.temporal = true;
         o.temporal_value_position = stoi(optarg);
         break;
       case '?':
@@ -85,7 +82,12 @@ void Options::validate() {
     exit(BAD_CONF);
   }
 
-  if (temporal) {
+  if(!file_exists(output_path)) {
+    cout << "Output path does not exist." << endl;
+    exit(BAD_CONF);
+  }
+
+  if (input_format == TEMPORAL_EDGELIST_TEXT) {
     if (temporal_value_position == 0 || temporal_value_position == 1 || temporal_value_position == numeric_limits<std::size_t>::max()) {
       printf("Invalid temporal value position.");
       exit(BAD_CONF);

@@ -20,32 +20,46 @@ DatasetConverter::DatasetConverter(int argc, char **argv) {
 }
 
 void DatasetConverter::run() {
+  cout << "Parsing text file. Densify: " << o.densify << " Temporal value: " << o.temporal_value_position << endl;
   vector<temporal_edge_t> edge_list = parse_text_file(o);
 
   size_t deletion_set_size = o.deletion_percentage * edge_list.size();
   size_t insertion_set_size = o.insert_percentage * edge_list.size();
 
+  cout << "Creating " << insertion_set_size << " updates and " << deletion_set_size << " deletions." << endl;
   if (o.input_format == EDGELIST_TEXT) {
+    cout << "Running as non temporal file" << endl;
     shuffle(edge_list.begin(), edge_list.end(), std::mt19937(std::random_device()()));
 
+    cout << "Writing insertions to " << o.output_path + o.insertion_file_name << endl;
     write_insertion_set(edge_list.end() - insertion_set_size, edge_list.end());
+
+    cout << "Writing deletions to " << o.output_path + o.deletion_file_name << endl;
     write_deletion_set(edge_list.begin(), edge_list.begin() + deletion_set_size);
 
+    cout << "Creating CSR." << endl;
     SortedCSRDataSource csr = convert_to_sorted_csr(edge_list.begin(), edge_list.end() - insertion_set_size);
 
+    cout << "Writing CSR to " << o.output_path + o.base_file_name << endl;
     write_base_dataset(csr);
 
   } else if (o.input_format == TEMPORAL_EDGELIST_TEXT) {
-    sort(edge_list.begin(), edge_list.end(), [](temporal_edge_t a, temporal_edge_t b) -> { return a.creation_timestamp < b.creation_timestamp; });
+    cout << "Running as a temporal file." << endl;
+    sort(edge_list.begin(), edge_list.end(), [](temporal_edge_t a, temporal_edge_t b) { return a.creation_timestamp < b.creation_timestamp; });
 
+    cout << "Writing insertions to " << o.output_path + o.insertion_file_name << endl;
     auto insertions_begin = edge_list.end() - insertion_set_size;
     write_insertion_set(insertions_begin, edge_list.end());
 
     shuffle(edge_list.begin(), insertions_begin, std::mt19937(std::random_device()()));
+
+    cout << "Writing deletions to " << o.output_path + o.deletion_file_name << endl;
     write_deletion_set(edge_list.begin(), edge_list.begin() + deletion_set_size);
 
+    cout << "Creating CSR." << endl;
     SortedCSRDataSource csr = convert_to_sorted_csr(edge_list.begin(), insertions_begin);
 
+    cout << "Writing CSR to " << o.output_path + o.base_file_name << endl;
     write_base_dataset(csr);
   }
 }
@@ -137,7 +151,6 @@ temporal_edge_t parse_temporal_edge(const string &line, const char seperator, si
     edge = parse_edge(line, seperator);
   }
 
-
   if (temporal_value_position != numeric_limits<size_t>::max()) {
     size_t tempIndex = -1;
     for (int i = 0; i < temporal_value_position; i++) {
@@ -207,7 +220,7 @@ void DatasetConverter::write_deletion_set(vector<temporal_edge_t>::iterator begi
 
 SortedCSRDataSource DatasetConverter::convert_to_sorted_csr(vector<temporal_edge_t>::iterator begin,
                                                             vector<temporal_edge_t>::iterator end) {
-  sort(begin, end, [] (temporal_edge_t a, temporal_edge_t b) -> { return a.src == b.src ?  a.dst < b.dst : a.src < b.src; });
+  sort(begin, end, [] (temporal_edge_t a, temporal_edge_t b) { return a.src == b.src ?  a.dst < b.dst : a.src < b.src; });
 
   SortedCSRDataSource out;
   out.adjacency_index.push_back(0);
@@ -221,6 +234,7 @@ SortedCSRDataSource DatasetConverter::convert_to_sorted_csr(vector<temporal_edge
       current_src = pos->src;
     }
     out.adjacency_lists.push_back(pos->dst);
+    pos++;
   }
 
   return out;

@@ -21,9 +21,9 @@ public:
     static const int BAD_CONF = 2;
     static const int BAD_FORMAT = 3;
 
-    const string base_file_name = "base.csr";
-    const string insertion_file_name = "insertions.edgeList";
-    const string deletion_file_name = "deletions.edgeList";
+    string base_file_name;
+    string insertion_file_name;
+    string deletion_file_name;
 
     InputType input_format = EDGELIST_TEXT;
     size_t temporal_value_position = numeric_limits<size_t>::max();
@@ -37,6 +37,12 @@ public:
     string output_path = "";
 
     void validate();
+
+    Options() {
+      base_file_name = "base.csr";
+      insertion_file_name = "insertions.edgeList";
+      deletion_file_name = "deletions.edgeList";
+    }
 };
 
 
