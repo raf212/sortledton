@@ -1,0 +1,46 @@
+//
+// Created by per on 21.07.20.
+//
+
+#ifndef GRAPH_CONVERTER_OPTIONS_H
+#define GRAPH_CONVERTER_OPTIONS_H
+
+#include <string>
+#include <limits>
+
+using namespace std;
+
+enum InputType {
+    EDGELIST_TEXT,
+    TEMPORAL_EDGELIST_TEXT,
+};
+
+
+class Options {
+public:
+    static const int BAD_CONF = 2;
+    static const int BAD_FORMAT = 3;
+
+    const string base_file_name = "base.csr";
+    const string insertion_file_name = "insertions.edgeList";
+    const string deletion_file_name = "deletions.edgeList";
+
+    InputType input_format = EDGELIST_TEXT;
+    size_t temporal_value_position = numeric_limits<size_t>::max();
+
+    float insert_percentage = 0.0;
+    float deletion_percentage = 0.0;
+
+    bool densify = false;
+
+    string input_path = "";
+    string output_path = "";
+
+    void validate();
+};
+
+
+Options parseOptions(int argc, char **argv);
+
+
+#endif //GRAPH_CONVERTER_OPTIONS_H
