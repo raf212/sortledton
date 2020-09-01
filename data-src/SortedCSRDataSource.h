@@ -6,6 +6,7 @@
 #define LIVE_GRAPH_TWO_SORTEDCSRDATASOURCE_H
 
 #include <cstddef>
+#include <string>
 #include <vector>
 #include "DataSource.h"
 #include "../data_types.h"
@@ -14,8 +15,21 @@ using namespace std;
 
 class SortedCSRDataSource : DataSource {
 public:
+    void read_from_binary_file(const string& path);
+
     vector<size_t> adjacency_index;
     vector<dst_t> adjacency_lists;
+
+
+private:
+    struct FileHeader {
+        size_t vertex_count;
+        size_t edge_count;
+    };
+    struct FileBody {
+        size_t* offsets; // Array of offsets of length vertex_count + 1
+        dst_t* adjacency_lists; // Array of all adjacency information of length edge_count.
+    };
 };
 
 
