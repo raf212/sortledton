@@ -13,13 +13,13 @@ void CSR::bulkload(SortedCSRDataSource &src) {
   dst_t* base_address = adjacency_lists.data();
   for (size_t i = 0; i < src.adjacency_index.size() - 1; i++) {
     VectorBatchedEdgeIterator iter;
-    size_t size = adjacency_lists[i + 1] - adjacency_lists[i];
-    iter.batch = ContiguousEdgeBatch(base_address + adjacency_lists[i], size);
-    iterators[i] = iter;
+    size_t size = adjacency_index[i + 1] - adjacency_index[i];
+    iter.batch = ContiguousEdgeBatch(base_address + adjacency_index[i], size);
+    iterators.push_back(iter);
   }
 }
 
-BatchedEdgeIterator &CSR::neighbourhood(vertex_id_t src) {
+VectorBatchedEdgeIterator& CSR::neighbourhood(vertex_id_t src) {
   return iterators[src];
 }
 
