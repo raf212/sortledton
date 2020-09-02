@@ -7,8 +7,6 @@
 #include "IOException.h"
 
 void SortedCSRDataSource::read_from_binary_file(const string &path) {
-  char* buffer = nullptr;
-
   ifstream f {path, ifstream::in | ifstream::binary};
 
   FileHeader header;
@@ -25,11 +23,18 @@ void SortedCSRDataSource::read_from_binary_file(const string &path) {
 
   FileBody body{ adjacency_index.data(),  adjacency_lists.data()};
 
-  f.read((char*) body.offsets, adjacency_index.size() * sizeof(vertex_id_t));
-  f.read((char*) body.adjacency_lists, adjacency_lists.size() * sizeof(dst_t));
+  f.read((char*) body.offsets, (header.vertex_count + 1) * sizeof(size_t));
+  f.read((char*) body.adjacency_lists, header.edge_count * sizeof(dst_t));
+
+  if (!f.good()) {
+    throw IOException("Could not read body of CSR file.");
+  }
+
+  char eof_test;
+  f.read(&eof_test, 1);
 
   if (!f.eof()) {
-    throw IOException("Could not read body of CSR file.");
+    throw IOException("File had additional content.");
   }
 
   f.close();

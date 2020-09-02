@@ -20,6 +20,8 @@ set(SRC
 set(DATASET_CONVERTER_SRC
         data-src/dataset_converter/DatasetConverter.cpp
         data-src/dataset_converter/Options.cpp
+        data-src/SortedCSRDataSource.cpp
+        data-src/DataSource.cpp
         utils/utils.cpp)
 
 

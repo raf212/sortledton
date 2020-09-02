@@ -247,15 +247,17 @@ void DatasetConverter::write_base_dataset(SortedCSRDataSource csr) {
   header.vertex_count = csr.adjacency_index.size() - 1;
   header.edge_count = csr.adjacency_lists.size();
 
-  SortedCSRDataSource::FileBody body;
-  body.offsets = csr.adjacency_index.data();
-  body.adjacency_lists = csr.adjacency_lists.data();
-
   f.write((char*) &header, sizeof(header));
-  f.write((char*) &body.offsets, sizeof(size_t) * sizeof(header.vertex_count + 1));
-  f.write((char*) &body.adjacency_lists, sizeof(dst_t) * sizeof(header.edge_count));
+  f.write((char*) &csr.adjacency_index[0], sizeof(size_t) * (header.vertex_count + 1));
+  f.write((char*) &csr.adjacency_lists[0], sizeof(dst_t) * (header.edge_count));
 
   f.close();
+
+  SortedCSRDataSource rr;
+  const string s = o.output_path + o.base_file_name;
+  rr.read_from_binary_file(s);
+
+  cout << "End" << endl;
 }
 
 
