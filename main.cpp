@@ -9,8 +9,6 @@ int main(int argc, char** argv) {
   Driver driver(config);
   driver.run();
 
-
-
-  std::cout << "Hello, World!" << std::endl;
+  cout << "Done" << endl;
   return 0;
 }

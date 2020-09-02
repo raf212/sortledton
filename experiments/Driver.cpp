@@ -72,7 +72,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
 }
 
 void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
-  vertex_id_t start_vertex = 0;
+  vertex_id_t start_vertex = 50;
 
   cout << "Running BFS experiment ";
   cout.flush();
@@ -82,11 +82,10 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
     // BFS
     auto start = chrono::steady_clock::now();
     ulong maxDistance = numeric_limits<ulong>::max();
-    vector<ulong> distances {ds->vertex_count(), maxDistance};
+    vector<ulong> distances (ds->vertex_count(), numeric_limits<ulong>::max());
     queue<vertex_id_t> work;
     work.push(start_vertex);
 
-    ulong distance = 1;
     while (!work.empty()) {
       vertex_id_t v = work.front();
       work.pop();
@@ -99,17 +98,14 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
         dst_t* n = batch.start;
         while (n < end) {
           if (distances[*n] == maxDistance) {
-            distances[*n] = distance;
+            distances[*n] = distances[v] + 1;
+            work.push(*n);
           }
-          work.push(*n);
           n++;
         }
       }
-      distance++;
     }
 
-
-    // TODO implement BFS
     auto end = chrono::steady_clock::now();
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
     run_times.push_back(microseconds);
@@ -118,8 +114,8 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
     cout.flush();
   }
 
-  double average = ((double) sum(run_times)) / (double) run_times.size();
-  cout << "BFS run in average in " << average << endl;
+  double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
+  cout << endl << "BFS run in average in " << average << " milliseconds " << endl;
 }
 
 void Driver::load_base_dataset(shared_ptr<TopologyInterface> ds, SortedCSRDataSource &base) {
