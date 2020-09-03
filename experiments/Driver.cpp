@@ -31,7 +31,7 @@ void Driver::run() {
 
   reporter.set_dataset(config.base);
 
-  for (const auto& ds : config.data_structures) {
+  for (const auto &ds : config.data_structures) {
     cout << "Running data structure: " << ds << endl;
     run_data_structure(base, inserts, deletes, ds);
   }
@@ -41,7 +41,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
                                 DataStructures ds) {
   reporter.set_data_structure(ds);
 
-  TopologyInterface* data_structure;
+  TopologyInterface *data_structure;
   switch (ds) {
     case CSR_DS: {
       data_structure = new CSR();
@@ -86,7 +86,7 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
     // BFS
     auto start = chrono::steady_clock::now();
     ulong maxDistance = numeric_limits<ulong>::max();
-    vector<ulong> distances (ds->vertex_count(), numeric_limits<ulong>::max());
+    vector<ulong> distances(ds->vertex_count(), numeric_limits<ulong>::max());
     queue<vertex_id_t> work;
     work.push(start_vertex);
 
@@ -109,6 +109,21 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
         }
       }
     }
+//    shared_ptr<CSR> csr = dynamic_pointer_cast<CSR>(ds);
+//    while (!work.empty()) {
+//      vertex_id_t v = work.front();
+//      work.pop();
+//
+//      auto n = &(csr->adjacency_lists[csr->adjacency_index[v]]);
+//      auto end = &(csr->adjacency_lists[csr->adjacency_index[v + 1]]);
+//      while (n < end) {
+//        if (distances[*n] == maxDistance) {
+//          distances[*n] = distances[v] + 1;
+//          work.push(*n);
+//        }
+//        n++;
+//      }
+//    }
 
     auto end = chrono::steady_clock::now();
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
