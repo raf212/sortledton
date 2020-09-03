@@ -126,6 +126,6 @@ const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING {
         {
                 TRIANGLE_COUNTING, "triangle"},
         {
-                NEIGHBOUR_2, "2neighbour"}
+                NEIGHBOUR_2, "2-neighbour"}
 };
 
