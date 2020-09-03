@@ -28,7 +28,7 @@ public:
 
     void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) override;
 
-    void bulkload(SortedCSRDataSource &src) override;
+    void bulkload(const SortedCSRDataSource &src) override;
 
 private:
     vector<size_t> adjacency_index;

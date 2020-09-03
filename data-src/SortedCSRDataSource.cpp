@@ -2,6 +2,7 @@
 // Created by per on 31.08.20.
 //
 
+#include <iostream>
 #include <fstream>
 #include "SortedCSRDataSource.h"
 #include "IOException.h"

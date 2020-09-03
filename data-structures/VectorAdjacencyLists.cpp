@@ -7,7 +7,8 @@
 #include <data-structures/adjacency-lists/VectorAdjacencyList.h>
 #include "VectorAdjacencyLists.h"
 
-unique_ptr<AdjacencyList> VectorAdjacencyLists::construct_adjacency_list(const vector<dst_t>::iterator begin, const vector<dst_t>::iterator end) {
+unique_ptr<AdjacencyList> VectorAdjacencyLists::construct_adjacency_list(vector<dst_t>::const_iterator begin,
+        vector<dst_t>::const_iterator end) {
   vector<dst_t> shuffled_src (begin, end);
   shuffle(shuffled_src.begin(), shuffled_src.end(), std::mt19937(std::random_device()()));
 
