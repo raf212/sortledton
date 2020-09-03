@@ -18,12 +18,12 @@ set(SRC
         experiments/Reporter.cpp experiments/Reporter.h)
 
 set(DATASET_CONVERTER_SRC
-        data-src/dataset_converter/DatasetConverter.cpp
-        data-src/dataset_converter/Options.cpp
+        data-src/dataset-converter/DatasetConverter.cpp
+        data-src/dataset-converter/Options.cpp
         data-src/SortedCSRDataSource.cpp
         data-src/DataSource.cpp
         utils/utils.cpp)
 
 
 add_executable(live_graph_two main.cpp ${SRC})
-add_executable(dataset_converter data-src/dataset_converter/main.cpp ${DATASET_CONVERTER_SRC})
+add_executable(dataset_converter data-src/dataset-converter/main.cpp ${DATASET_CONVERTER_SRC})
