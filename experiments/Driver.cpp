@@ -151,8 +151,6 @@ void Driver::run_delete_experiment(shared_ptr<TopologyInterface> ds, EdgeList &e
 }
 
 void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) {
-  vertex_id_t start_vertex = 50;
-
   cout << "Running triangle experiment ";
   cout.flush();
 
@@ -187,11 +185,53 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
 
   double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
   cout << endl << "Triangle counting run in average in " << average << " milliseconds " << endl;
-
 }
 
-void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds) {
-  throw NotImplemented();
+void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
+        const vector<vertex_id_t>& starting_vertices) {
+  cout << "Running 2 neighbourhood experiment ";
+  cout.flush();
+
+  vector<size_t> run_times;
+  for (int rep = 0; rep < config.repetitions; rep++) {
+    auto start = chrono::steady_clock::now();
+
+    // Does count neighbours more than once.
+    for (const auto& s : starting_vertices) {
+      size_t count = 0;
+
+      auto& neighbours = ds->neighbourhood(s);
+      while (neighbours.has_next()) {
+        // TODO make static cast to save time
+        auto& batch = dynamic_cast<ContiguousEdgeBatch&>(neighbours.next());
+
+        for (const auto& n : batch) {
+          auto& neigbour_neighbours = ds->neighbourhood(n);
+          count++;
+
+          while (neigbour_neighbours.has_next()) {
+            auto& batch2 = dynamic_cast<ContiguousEdgeBatch&>(neigbour_neighbours.next());
+
+            for (const auto& nn : batch2) {
+              count++;
+            }
+          }
+        }
+      }
+    }
+    auto end = chrono::steady_clock::now();
+
+    size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
+    run_times.push_back(microseconds);
+    reporter.add_repetition(NEIGHBOUR_2, microseconds);
+
+    cout << ".";
+    cout.flush();
+  }
+
+  double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
+  cout << endl << "2 neighbourhood counting run in average in " << average << " milliseconds " << endl;
+
 }
 
 EdgeList Driver::read_insert_dataset() {
@@ -207,6 +247,8 @@ SortedCSRDataSource Driver::read_base_dataset() {
   out.read_from_binary_file(config.base.path);
   return out;
 }
+
+vector<vertex_id_t>
 
 
 
