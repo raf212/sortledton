@@ -64,6 +64,8 @@ void DatasetConverter::run() {
     cout << "Writing CSR to " << o.output_path + o.base_file_name << endl;
     write_base_dataset(csr);
   }
+
+  cout << "End" << endl << endl;
 }
 
 bool isComment(const string &line) {
@@ -283,8 +285,6 @@ void DatasetConverter::write_base_dataset(SortedCSRDataSource csr) {
   SortedCSRDataSource rr;
   const string s = o.output_path + o.base_file_name;
   rr.read_from_binary_file(s);
-
-  cout << "End" << endl;
 }
 
 
