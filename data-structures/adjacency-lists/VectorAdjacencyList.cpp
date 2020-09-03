@@ -30,7 +30,9 @@ void VectorAdjacencyList::delete_edge(dst_t edge) {
 }
 
 void VectorAdjacencyList::intersect(AdjacencyList &other, vector<dst_t>& out) {
-  if (typeid(other) == typeid(this)) {
+  out.clear();
+
+  if (typeid(other) == typeid(*this)) {
     VectorAdjacencyList &a = dynamic_cast<VectorAdjacencyList&>(other);
     VectorAdjacencyList &b = *this;
     if (b.neighbourhood.size() < a.neighbourhood.size()) {

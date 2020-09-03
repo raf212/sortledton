@@ -16,6 +16,9 @@ public:
     size_t size;
 
     ContiguousEdgeBatch(dst_t* start, size_t size) : start(start), size(size) {};
+
+    dst_t* begin() { return start; }
+    dst_t* end() { return start + size; }
 private:
     void pure() override {};
 };

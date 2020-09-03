@@ -94,12 +94,12 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
       vertex_id_t v = work.front();
       work.pop();
 
-      BatchedEdgeIterator& iter = ds->neighbourhood(v);
+      BatchedEdgeIterator &iter = ds->neighbourhood(v);
       while (iter.has_next()) {
-        auto& batch = dynamic_cast<ContiguousEdgeBatch&>(iter.next());
+        auto &batch = dynamic_cast<ContiguousEdgeBatch &>(iter.next());
 
-        dst_t* end = batch.start + batch.size;
-        dst_t* n = batch.start;
+        dst_t *end = batch.start + batch.size;
+        dst_t *n = batch.start;
         while (n < end) {
           if (distances[*n] == maxDistance) {
             distances[*n] = distances[v] + 1;
@@ -151,7 +151,43 @@ void Driver::run_delete_experiment(shared_ptr<TopologyInterface> ds, EdgeList &e
 }
 
 void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) {
-  throw NotImplemented();
+  vertex_id_t start_vertex = 50;
+
+  cout << "Running triangle experiment ";
+  cout.flush();
+
+  vector<size_t> run_times;
+  for (int rep = 0; rep < config.repetitions; rep++) {
+    auto start = chrono::steady_clock::now();
+
+    size_t triangles = 0;
+    vector<dst_t > out;
+
+    for (int a = 0; a < ds->vertex_count(); a++) {
+      auto &a_neighbours = ds->neighbourhood(a);
+
+      while (a_neighbours.has_next()) {
+        auto &a_n_batch = dynamic_cast<ContiguousEdgeBatch &>(a_neighbours.next());
+
+        for (auto b : a_n_batch) {
+          ds->intersect_neighbourhood(a, b, out);
+          triangles += out.size();
+        }
+      }
+    }
+    auto end = chrono::steady_clock::now();
+
+    size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
+    run_times.push_back(microseconds);
+    reporter.add_repetition(TRIANGLE_COUNTING, microseconds);
+
+    cout << ".";
+    cout.flush();
+  }
+
+  double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
+  cout << endl << "Triangle counting run in average in " << average << " milliseconds " << endl;
+
 }
 
 void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds) {

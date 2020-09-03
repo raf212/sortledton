@@ -24,6 +24,8 @@ VectorBatchedEdgeIterator& CSR::neighbourhood(vertex_id_t src) {
 }
 
 void CSR::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
+  out.clear();
+
   auto a_batch = iterators[a].batch;
   auto b_batch = iterators[b].batch;
 
@@ -38,6 +40,9 @@ void CSR::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &o
   dst_t* b_end = b_batch.start + b_batch.size;
   while (n < a_end) {
     m = upper_bound(m, b_end, *n);
+    if (m == b_end) {
+      break;
+    }
     if (*n == *m) {
       out.push_back(*n);
     }
