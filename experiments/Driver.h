@@ -35,7 +35,7 @@ private:
 
     void run_bfs_experiment(shared_ptr<TopologyInterface> ds);
     void run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds);
-    void run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds);
+    void run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds, const vector<vertex_id_t>& sources);
 
 
 };

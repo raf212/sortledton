@@ -5,10 +5,12 @@
 #include <memory>
 #include <iostream>
 #include <chrono>
+#include <random>
 
 #include <data-structures/CSR.h>
 #include <data-structures/VectorAdjacencyLists.h>
 #include <queue>
+#include <functional>
 #include "Driver.h"
 
 void Driver::run() {
@@ -35,6 +37,23 @@ void Driver::run() {
     cout << "Running data structure: " << ds << endl;
     run_data_structure(base, inserts, deletes, ds);
   }
+}
+
+vector<vertex_id_t> select_2_neighbourhood_src(const SortedCSRDataSource& src, int count) {
+  vector<vertex_id_t> out;
+
+  auto vertex_count = src.vertex_count();
+
+  mt19937 engine (43);
+  uniform_int_distribution<vertex_id_t> distribution(0, vertex_count - 1);
+
+  auto ran = bind(distribution, engine);
+
+  for (int i = 0; i < count; i++) {
+    out.push_back(ran());
+  }
+
+  return out;
 }
 
 void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes,
@@ -65,7 +84,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     run_triangle_counting_experiment(wrapped_ds);
   }
   if (config.experiments.find(NEIGHBOUR_2) != config.experiments.end()) {
-    run_neighbourhood_2_experiment(wrapped_ds);
+    run_neighbourhood_2_experiment(wrapped_ds, select_2_neighbourhood_src(base, 100));
   }
   if (config.experiments.find(INSERT) != config.experiments.end()) {
     run_insert_experiment(wrapped_ds, inserts);
@@ -188,7 +207,7 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
 }
 
 void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
-        const vector<vertex_id_t>& starting_vertices) {
+        const vector<vertex_id_t>& sources) {
   cout << "Running 2 neighbourhood experiment ";
   cout.flush();
 
@@ -197,7 +216,7 @@ void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
     auto start = chrono::steady_clock::now();
 
     // Does count neighbours more than once.
-    for (const auto& s : starting_vertices) {
+    for (const auto& s : sources) {
       size_t count = 0;
 
       auto& neighbours = ds->neighbourhood(s);
@@ -247,8 +266,3 @@ SortedCSRDataSource Driver::read_base_dataset() {
   out.read_from_binary_file(config.base.path);
   return out;
 }
-
-vector<vertex_id_t>
-
-
-
