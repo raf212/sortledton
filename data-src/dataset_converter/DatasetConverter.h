@@ -38,14 +38,15 @@ private:
     Options o;
 
     char detect_seperator(const string& path);
-    vector<temporal_edge_t> parse_text_file(Options o);
+    vector<temporal_edge_t> parse_text_file(Options o, size_t &vertex_count);
 
     void write_insertion_set(vector<temporal_edge_t>::iterator begin, vector<temporal_edge_t>::iterator end);
 
-    void write_deletion_set(vector<temporal_edge_t>::iterator begin, vector<temporal_edge_t>::iterator end);
-
     SortedCSRDataSource convert_to_sorted_csr(vector<temporal_edge_t>::iterator begin,
-                                              vector<temporal_edge_t>::iterator end);
+                                              vector<temporal_edge_t>::iterator end,
+                                              size_t vertex_count);
+
+    void write_deletion_set(vector<temporal_edge_t>::iterator begin, vector<temporal_edge_t>::iterator end);
 
     void write_base_dataset(SortedCSRDataSource csr);
 };

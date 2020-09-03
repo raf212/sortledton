@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <limits>
 #include <algorithm>
+#include <unordered_set>
 
 #include "DatasetConverter.h"
 #include <data_types.h>
@@ -21,7 +22,8 @@ DatasetConverter::DatasetConverter(int argc, char **argv) {
 
 void DatasetConverter::run() {
   cout << "Parsing text file. Densify: " << o.densify << " Temporal value: " << o.temporal_value_position << endl;
-  vector<temporal_edge_t> edge_list = parse_text_file(o);
+  size_t vertex_count;
+  vector<temporal_edge_t> edge_list = parse_text_file(o, vertex_count);
 
   size_t deletion_set_size = o.deletion_percentage * edge_list.size();
   size_t insertion_set_size = o.insert_percentage * edge_list.size();
@@ -38,7 +40,7 @@ void DatasetConverter::run() {
     write_deletion_set(edge_list.begin(), edge_list.begin() + deletion_set_size);
 
     cout << "Creating CSR." << endl;
-    SortedCSRDataSource csr = convert_to_sorted_csr(edge_list.begin(), edge_list.end() - insertion_set_size);
+    SortedCSRDataSource csr = convert_to_sorted_csr(edge_list.begin(), edge_list.end() - insertion_set_size, vertex_count);
 
     cout << "Writing CSR to " << o.output_path + o.base_file_name << endl;
     write_base_dataset(csr);
@@ -57,7 +59,7 @@ void DatasetConverter::run() {
     write_deletion_set(edge_list.begin(), edge_list.begin() + deletion_set_size);
 
     cout << "Creating CSR." << endl;
-    SortedCSRDataSource csr = convert_to_sorted_csr(edge_list.begin(), insertions_begin);
+    SortedCSRDataSource csr = convert_to_sorted_csr(edge_list.begin(), insertions_begin, vertex_count);
 
     cout << "Writing CSR to " << o.output_path + o.base_file_name << endl;
     write_base_dataset(csr);
@@ -100,7 +102,7 @@ char DatasetConverter::detect_seperator(const string & input) {
 }
 
 
-temporal_edge_t parse_edge(const string &line, const char seperator) {
+temporal_edge_t parse_edge(const string &line, const char seperator, unordered_set<size_t> &vertex_set) {
   auto first_seperator_index = line.find(seperator);
   auto second_seperator_index = line.find(seperator, first_seperator_index + 1);
 
@@ -109,6 +111,9 @@ temporal_edge_t parse_edge(const string &line, const char seperator) {
 
   vertex_id_t src = stoi(src_string);
   dst_t dst = stoi(dst_string);
+
+  vertex_set.insert(src);
+  vertex_set.insert(dst);
   return temporal_edge_t { src, dst, 0 };
 }
 
@@ -143,12 +148,14 @@ temporal_edge_t parse_edge_densifying(const string &line, const char seperator, 
   return temporal_edge_t { src, dst, 0};
 }
 
-temporal_edge_t parse_temporal_edge(const string &line, const char seperator, size_t temporal_value_position, bool densify, unordered_map<string, size_t>& densifyer, size_t& next_vertex_id) {
+temporal_edge_t parse_temporal_edge(const string &line, const char seperator, size_t temporal_value_position,
+        bool densify, unordered_map<string, size_t>& densifyer, size_t& next_vertex_id,
+        unordered_set<size_t> &vertex_set) {
   temporal_edge_t edge {};
   if (densify) {
     edge = parse_edge_densifying(line, seperator, densifyer, next_vertex_id);
   } else{
-    edge = parse_edge(line, seperator);
+    edge = parse_edge(line, seperator, vertex_set);
   }
 
   if (temporal_value_position != numeric_limits<size_t>::max()) {
@@ -163,7 +170,7 @@ temporal_edge_t parse_temporal_edge(const string &line, const char seperator, si
   return edge;
 }
 
-vector<temporal_edge_t> DatasetConverter::parse_text_file(Options o) {
+vector<temporal_edge_t> DatasetConverter::parse_text_file(Options o, size_t &vertex_count) {
   cout << "Parsing file " << o.input_path << " with densify " << o.densify << endl;
 
   vector<temporal_edge_t> out;
@@ -174,6 +181,7 @@ vector<temporal_edge_t> DatasetConverter::parse_text_file(Options o) {
 
   // Map for densifying
   unordered_map<string, size_t> translation;
+  unordered_set<size_t> vertex_set;
   size_t next_vertex_id = 0;
 
   string line;
@@ -182,14 +190,18 @@ vector<temporal_edge_t> DatasetConverter::parse_text_file(Options o) {
       continue;
     }
 
-    temporal_edge_t e = parse_temporal_edge(line, seperator, o.temporal_value_position, o.densify, translation, next_vertex_id);
+    temporal_edge_t e = parse_temporal_edge(line, seperator, o.temporal_value_position, o.densify,
+            translation, next_vertex_id, vertex_set);
     out.push_back(e);
   }
 
+  if (o.densify) {
+    vertex_count = next_vertex_id - 1;
+  } else {
+    vertex_count = vertex_set.size();
+  }
+
   in.close();
-  return out;
-
-
   return out;
 }
 
@@ -219,22 +231,37 @@ void DatasetConverter::write_deletion_set(vector<temporal_edge_t>::iterator begi
 }
 
 SortedCSRDataSource DatasetConverter::convert_to_sorted_csr(vector<temporal_edge_t>::iterator begin,
-                                                            vector<temporal_edge_t>::iterator end) {
+                                                            vector<temporal_edge_t>::iterator end,
+                                                            size_t vertex_count) {
   sort(begin, end, [] (temporal_edge_t a, temporal_edge_t b) { return a.src == b.src ?  a.dst < b.dst : a.src < b.src; });
 
   SortedCSRDataSource out;
-  out.adjacency_index.push_back(0);
+  out.adjacency_index.resize(vertex_count);
+  out.adjacency_index[0] = 0;
   out.adjacency_lists.reserve(end - begin);
 
-  vertex_id_t current_src = begin->src;
+  vertex_id_t current_src = 0;
+
+  while (current_src <= begin->src) {
+    out.adjacency_index[current_src] = 0;
+    current_src++;
+  }
+
   auto pos = begin;
   while (pos < end) {
     if (current_src != pos->src) {
-      out.adjacency_index.push_back(pos - begin - 1);
-      current_src = pos->src;
+      while (current_src < pos->src) {
+        out.adjacency_index[current_src + 1] = (pos - begin);
+        current_src++;
+      }
     }
     out.adjacency_lists.push_back(pos->dst);
     pos++;
+  }
+
+  while (current_src < vertex_count) {
+    out.adjacency_index[current_src + 1] = (pos - begin);
+    current_src++;
   }
 
   return out;
