@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <utils/utils.h>
 #include <vector>
+#include <experimental/filesystem>
 
 #include <utils/utils.h>
 
@@ -22,6 +23,7 @@ public:
 private:
     string w;
 };
+
 
 enum SourceType {
     CSR_SRC,
@@ -55,12 +57,22 @@ public:
       if (expected_type == EDGE_LIST && !endsWith(path, "el")) {
         throw ConfigurationError("Expected dataset " + path + " to be a CSR.");
       }
+
+      if (expected_type == CSR_SRC) {
+        name = get_filename(path);
+      } else {
+        name = "insert or delete dataset";
+      }
     };
     string path;
+    string name;
 };
 
 class Config {
 public:
+    const static unordered_map<DataStructures, string> DATA_STRUCTURE_MAPPING;
+    const static unordered_map<Experiments, string> EXPERIMENT_MAPPING;
+
     unordered_set<DataStructures> data_structures;
     unordered_set<Experiments> experiments;
 
@@ -80,6 +92,5 @@ private:
     unordered_set<Experiments> parse_experiments(string arg);
 
 };
-
 
 #endif //LIVE_GRAPH_TWO_CONFIGURATION_H

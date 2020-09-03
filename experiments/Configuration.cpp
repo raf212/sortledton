@@ -6,6 +6,8 @@
 
 #include <getopt.h>
 
+#include "utils/utils.h"
+
 void Config::initialize(int argc, char **argv) {
   int c;
   int digit_optind = 0;
@@ -77,13 +79,13 @@ unordered_set<DataStructures> Config::parse_data_structures(string arg) {
   unordered_set<DataStructures> ret;
   auto ds = parse_comma_separated_list(arg);
 
+  auto ds_map = reverse_map(DATA_STRUCTURE_MAPPING);
   for (const auto& d : ds) {
-    if (d == "csr") {
-      ret.insert(CSR_DS);
-    } else if (d == "vector_al") {
-      ret.insert(VECTOR_ADJACENCY_LIST);
-    } else {
+    auto mapping = ds_map.find(d);
+    if (mapping == ds_map.end()) {
       throw ConfigurationError("Unknown data structure " + d);
+    } else {
+      ret.insert(mapping->second);
     }
   }
 
@@ -94,21 +96,36 @@ unordered_set<Experiments> Config::parse_experiments(string arg) {
   unordered_set<Experiments> ret;
   auto es = parse_comma_separated_list(arg);
 
+  auto map = reverse_map(EXPERIMENT_MAPPING);
   for (const auto& e : es) {
-    if (e == "insert") {
-      ret.insert(INSERT);
-    } else if (e == "delete") {
-      ret.insert(DELETE);
-    } else if (e == "bfs") {
-      ret.insert(BFS);
-    } else if (e == "triangle_counting") {
-      ret.insert(TRIANGLE_COUNTING);
-    } else if (e == "2-neighbour"){
-      ret.insert(NEIGHBOUR_2);
-    } else {
+    auto mapping = map.find(e);
+    if (mapping == map.end()) {
       throw ConfigurationError("Unknown experiment " + e);
+    } else {
+      ret.insert(mapping->second);
     }
   }
 
   return ret;
 }
+
+const unordered_map<DataStructures, string> Config::DATA_STRUCTURE_MAPPING {
+        {
+                CSR_DS, "csr"},
+        {
+                VECTOR_ADJACENCY_LIST, "vectorAL"}
+};
+
+const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING {
+        {
+                INSERT, "insert"},
+        {
+                DELETE, "delete"},
+        {
+                BFS, "bfs"},
+        {
+                TRIANGLE_COUNTING, "triangle"},
+        {
+                NEIGHBOUR_2, "2neighbour"}
+};
+

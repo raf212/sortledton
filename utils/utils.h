@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 using namespace std;
 
@@ -21,5 +22,19 @@ n sum(const vector<n>& v) {
   }
   return s;
 };
+
+
+template<typename k, typename v>
+unordered_map<v, k> reverse_map(unordered_map<k, v> mapping) {
+  unordered_map<v, k> out;
+  for (const auto& kv : mapping) {
+    out.insert({kv.second, kv.first});
+  }
+  return out;
+}
+
+string get_filename(string path);
+
+string get_home_dir();
 
 #endif //LIVE_GRAPH_TWO_UTILS_H

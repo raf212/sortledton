@@ -29,6 +29,8 @@ void Driver::run() {
     inserts = read_delete_dataset();
   }
 
+  reporter.set_dataset(config.base);
+
   for (const auto& ds : config.data_structures) {
     cout << "Running data structure: " << ds << endl;
     run_data_structure(base, inserts, deletes, ds);
@@ -37,6 +39,8 @@ void Driver::run() {
 
 void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes,
                                 DataStructures ds) {
+  reporter.set_data_structure(ds);
+
   TopologyInterface* data_structure;
   switch (ds) {
     case CSR_DS: {
@@ -109,6 +113,7 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
     auto end = chrono::steady_clock::now();
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
     run_times.push_back(microseconds);
+    reporter.add_repetition(BFS, microseconds);
 
     cout << ".";
     cout.flush();

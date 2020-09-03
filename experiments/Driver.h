@@ -9,16 +9,18 @@
 
 #include <data-structures/ToplogyInterface.h>
 #include <data-src/EdgeList.h>
+#include "Reporter.h"
 #include "Configuration.h"
 
 class Driver {
 public:
-    Driver(Config config) : config(config) { };
+    Driver(Config config) : config(config), reporter() { };
 
     void run();
 
 private:
     Config config;
+    Reporter reporter;
     SortedCSRDataSource read_base_dataset();
     EdgeList read_insert_dataset();
     EdgeList read_delete_dataset();

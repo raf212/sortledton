@@ -5,9 +5,9 @@
 #include <sys/stat.h>
 #include "utils.h"
 
-bool file_exists (const string& name) {
+bool file_exists(const string &name) {
   struct stat buffer;
-  return (stat (name.c_str(), &buffer) == 0);
+  return (stat(name.c_str(), &buffer) == 0);
 }
 
 /**
@@ -16,10 +16,25 @@ bool file_exists (const string& name) {
  * @param ending
  * @return
  */
-bool endsWith (string const &fullString, string const &ending) {
+bool endsWith(string const &fullString, string const &ending) {
   if (fullString.length() >= ending.length()) {
-    return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+    return (0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending));
   } else {
     return false;
   }
+}
+
+string get_filename(string path) {
+  char sep = '/';
+
+  auto pos = path.find_last_of(sep);
+  if (pos == string::npos) {
+    return path;
+  } else {
+    return path.substr(pos + 1, path.size());
+  }
+}
+
+string get_home_dir() {
+  return string(getenv("HOME"));
 }

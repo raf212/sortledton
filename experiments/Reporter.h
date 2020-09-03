@@ -1,0 +1,91 @@
+//
+// Created by per on 02.09.20.
+//
+
+#ifndef LIVE_GRAPH_TWO_REPORTER_H
+#define LIVE_GRAPH_TWO_REPORTER_H
+
+#include <fstream>
+#include <ctime>
+#include <unordered_map>
+#include <fstream>
+#include <iostream>
+
+#include "Configuration.h"
+
+/**
+ * Reports experimental results to a CSR file.
+ *
+ * Each line in the file contains, the ID of the execution, timestamp of the execution
+ * start, experiment name, data structure name and dataset name.
+ *
+ * All times are given as unix timestamp or in microseconds.
+ *
+ * The file is called graph-two-results.csv and is located in the home directory of the executing
+ * user.
+ */
+class Reporter {
+public:
+    Reporter() {
+      const string FILE_PATH = get_home_dir() + "/graph-two-results.csv";
+
+      if (!file_exists(FILE_PATH)) {
+        cout << "Starting new reporting file at " + FILE_PATH << endl;
+        file.open(FILE_PATH, fstream::in | fstream::out | fstream::app);
+
+        if (!file.good()) {
+          throw ConfigurationError("Could not create configuration file: " + FILE_PATH);
+        }
+
+        write_standard_header();
+      } else {
+        cout << "Reporting to file at " + FILE_PATH << endl;
+        file.open(FILE_PATH, fstream::in | fstream::out | fstream::app);
+      }
+
+      execution_id = get_highest_execution_id() + 1;
+      start_time = time(nullptr);
+
+      header = get_header();
+    }
+
+    ~Reporter() {
+      file.close();
+    }
+
+    void add_repetition(Experiments experiment,
+            unordered_map<string, ulong> metrics);
+
+    void add_repetition(Experiments experiment,
+                        ulong runtime);
+
+    void set_dataset(Dataset dataset);
+    void set_data_structure(DataStructures ds);
+
+private:
+    const vector<string> standard_header {"execution_id", "timestamp", "dataset",
+                                          "experiment", "data_structure",
+                                          "runtime", "storage"};
+    const char separator = ';';
+
+    fstream file;
+
+    vector<string> header;
+
+    ulong execution_id;
+
+    time_t start_time;
+
+    Dataset dataset;
+    DataStructures data_structure;
+
+    ulong get_highest_execution_id();
+
+    vector<string> get_header();
+
+    void write_standard_header();
+
+};
+
+
+#endif //LIVE_GRAPH_TWO_REPORTER_H
