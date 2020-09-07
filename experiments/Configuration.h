@@ -59,7 +59,7 @@ public:
       }
 
       if (expected_type == CSR_SRC) {
-        name = get_filename(path);
+        name = path;
       } else {
         name = "insert or delete dataset";
       }

@@ -16,7 +16,7 @@ using namespace std;
 class SortedCSRDataSource : DataSource {
 public:
     void read_from_binary_file(const string& path);
-    size_t vertex_count() const { adjacency_index.size() - 1; }
+    size_t vertex_count() const { return adjacency_index.size() - 1; }
 
     vector<size_t> adjacency_index;
     vector<dst_t> adjacency_lists;

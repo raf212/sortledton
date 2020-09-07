@@ -9,7 +9,7 @@
 #include <utils/NotImplemented.h>
 #include "Reporter.h"
 
-void Reporter::add_repetition(Experiments experiment,
+void Reporter::add_repetition(Experiments experiment, int repetition,
                               unordered_map<string, ulong> metrics) {
   assert(!dataset.name.empty() && "Dataset name not set.");
 
@@ -18,10 +18,12 @@ void Reporter::add_repetition(Experiments experiment,
 
   stringstream line;
   line << execution_id << separator;
-  line << start_time << separator;
+  line << time(nullptr) << separator;
+  line << repetition << separator;
   line << dataset.name << separator;
   line << s_experiment << separator;
   line << s_data_structure << separator;
+
 
   for (const auto& m : metrics) {
     if (find(header.begin(), header.end(), m.first) == header.end()) {
@@ -30,7 +32,7 @@ void Reporter::add_repetition(Experiments experiment,
   }
 
   for (int i = 0; i < header.size(); i++) {
-    if (i < 4) {  // do not write anything for the first 4 headers.
+    if (i < 6) {  // do not write anything for the first 5 headers.
       continue;
     }
     auto h = header[i];
@@ -110,7 +112,7 @@ void Reporter::set_data_structure(DataStructures ds) {
   this->data_structure = ds;
 }
 
-void Reporter::add_repetition(Experiments experiment, ulong runtime) {
+void Reporter::add_repetition(Experiments experiment, int repetition, ulong runtime) {
   unordered_map<string, ulong> metrics {{"runtime", runtime}};
-  add_repetition(experiment, metrics);
+  add_repetition(experiment, repetition, metrics);
 }

@@ -26,7 +26,8 @@ private:
     EdgeList read_delete_dataset();
 
     void run_data_structure(SortedCSRDataSource& base, EdgeList& inserts, EdgeList& deletes,
-                            DataStructures ds);
+                            DataStructures ds,
+                            vector<vertex_id_t>& neighbour_2_sources);
 
     void load_base_dataset(shared_ptr<TopologyInterface> ds, SortedCSRDataSource& base);
 

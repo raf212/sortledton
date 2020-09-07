@@ -44,7 +44,6 @@ public:
       }
 
       execution_id = get_highest_execution_id() + 1;
-      start_time = time(nullptr);
 
       header = get_header();
     }
@@ -53,17 +52,17 @@ public:
       file.close();
     }
 
-    void add_repetition(Experiments experiment,
+    void add_repetition(Experiments experiment, int repetition,
             unordered_map<string, ulong> metrics);
 
-    void add_repetition(Experiments experiment,
+    void add_repetition(Experiments experiment, int repetition,
                         ulong runtime);
 
     void set_dataset(Dataset dataset);
     void set_data_structure(DataStructures ds);
 
 private:
-    const vector<string> standard_header {"execution_id", "timestamp", "dataset",
+    const vector<string> standard_header {"execution_id", "timestamp", "repetition", "dataset",
                                           "experiment", "data_structure",
                                           "runtime", "storage"};
     const char separator = ';';
@@ -73,8 +72,6 @@ private:
     vector<string> header;
 
     ulong execution_id;
-
-    time_t start_time;
 
     Dataset dataset;
     DataStructures data_structure;

@@ -13,6 +13,24 @@
 #include <functional>
 #include "Driver.h"
 
+vector<vertex_id_t> select_2_neighbourhood_src(const SortedCSRDataSource& src, int count) {
+  vector<vertex_id_t> out;
+
+  auto vertex_count = src.vertex_count();
+
+  mt19937 engine (43);
+  uniform_int_distribution<vertex_id_t> distribution(0, vertex_count - 1);
+
+  auto ran = bind(distribution, engine);
+
+  for (int i = 0; i < count; i++) {
+    out.push_back(ran());
+  }
+
+  return out;
+}
+
+
 void Driver::run() {
   cout << "Starting to run experiments." << endl;
 
@@ -31,33 +49,21 @@ void Driver::run() {
     inserts = read_delete_dataset();
   }
 
+  vector<vertex_id_t> neighbour_2_sources;
+  if (config.experiments.find(NEIGHBOUR_2) == config.experiments.end()) {
+    neighbour_2_sources = select_2_neighbourhood_src(base, 10000);
+  }
+
   reporter.set_dataset(config.base);
 
   for (const auto &ds : config.data_structures) {
     cout << "Running data structure: " << ds << endl;
-    run_data_structure(base, inserts, deletes, ds);
+    run_data_structure(base, inserts, deletes, ds, neighbour_2_sources);
   }
-}
-
-vector<vertex_id_t> select_2_neighbourhood_src(const SortedCSRDataSource& src, int count) {
-  vector<vertex_id_t> out;
-
-  auto vertex_count = src.vertex_count();
-
-  mt19937 engine (43);
-  uniform_int_distribution<vertex_id_t> distribution(0, vertex_count - 1);
-
-  auto ran = bind(distribution, engine);
-
-  for (int i = 0; i < count; i++) {
-    out.push_back(ran());
-  }
-
-  return out;
 }
 
 void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes,
-                                DataStructures ds) {
+                                DataStructures ds, vector<vertex_id_t>& neighbourhood_2_sources) {
   reporter.set_data_structure(ds);
 
   TopologyInterface *data_structure;
@@ -84,7 +90,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     run_triangle_counting_experiment(wrapped_ds);
   }
   if (config.experiments.find(NEIGHBOUR_2) != config.experiments.end()) {
-    run_neighbourhood_2_experiment(wrapped_ds, select_2_neighbourhood_src(base, 100));
+    run_neighbourhood_2_experiment(wrapped_ds, neighbourhood_2_sources);
   }
   if (config.experiments.find(INSERT) != config.experiments.end()) {
     run_insert_experiment(wrapped_ds, inserts);
@@ -147,7 +153,7 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
     auto end = chrono::steady_clock::now();
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
     run_times.push_back(microseconds);
-    reporter.add_repetition(BFS, microseconds);
+    reporter.add_repetition(BFS, rep, microseconds);
 
     cout << ".";
     cout.flush();
@@ -196,7 +202,7 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
 
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
     run_times.push_back(microseconds);
-    reporter.add_repetition(TRIANGLE_COUNTING, microseconds);
+    reporter.add_repetition(TRIANGLE_COUNTING, rep, microseconds);
 
     cout << ".";
     cout.flush();
@@ -221,6 +227,7 @@ void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
 
       auto& neighbours = ds->neighbourhood(s);
       while (neighbours.has_next()) {
+
         // TODO make static cast to save time
         auto& batch = dynamic_cast<ContiguousEdgeBatch&>(neighbours.next());
 
@@ -242,7 +249,7 @@ void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
 
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
     run_times.push_back(microseconds);
-    reporter.add_repetition(NEIGHBOUR_2, microseconds);
+    reporter.add_repetition(NEIGHBOUR_2, rep, microseconds);
 
     cout << ".";
     cout.flush();
