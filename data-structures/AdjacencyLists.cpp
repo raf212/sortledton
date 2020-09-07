@@ -36,7 +36,7 @@ void AdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vecto
   adjacency_index[a]->intersect(*adjacency_index[b], out);
 }
 
-BatchedEdgeIterator &AdjacencyLists::neighbourhood(vertex_id_t src) {
-  return adjacency_index[src]->iterator();
+void AdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) {
+  adjacency_index[src]->initialize_iterator(iter);
 }
 

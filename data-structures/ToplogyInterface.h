@@ -16,7 +16,7 @@ public:
     virtual void insert_edge(edge_t edge) = 0;
     virtual void delete_edge(edge_t edge) = 0;
 
-    virtual BatchedEdgeIterator& neighbourhood(vertex_id_t src) = 0;
+    virtual void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) = 0;
     virtual void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) = 0;
 
     virtual void bulkload(const SortedCSRDataSource& src) = 0;

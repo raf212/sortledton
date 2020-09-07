@@ -23,7 +23,7 @@ public:
     void insert_edge(edge_t edge) override;
     void delete_edge(edge_t edge) override;
 
-    BatchedEdgeIterator& neighbourhood(vertex_id_t src) override;
+    void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) override;
     void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) override;
 
     void bulkload(const SortedCSRDataSource& src) override;

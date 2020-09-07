@@ -50,8 +50,8 @@ void Driver::run() {
   }
 
   vector<vertex_id_t> neighbour_2_sources;
-  if (config.experiments.find(NEIGHBOUR_2) == config.experiments.end()) {
-    neighbour_2_sources = select_2_neighbourhood_src(base, 200000);
+  if (config.experiments.find(NEIGHBOUR_2) != config.experiments.end()) {
+    neighbour_2_sources = select_2_neighbourhood_src(base, 1000);
   }
 
   reporter.set_dataset(config.base);
@@ -101,10 +101,12 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
 }
 
 void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
-  vertex_id_t start_vertex = 50;
+  vertex_id_t start_vertex = 2;
 
   cout << "Running BFS experiment ";
   cout.flush();
+
+  size_t vertices_traversed = 0;
 
   vector<size_t> run_times;
   for (int rep = 0; rep < config.repetitions; rep++) {
@@ -115,13 +117,17 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
     queue<vertex_id_t> work;
     work.push(start_vertex);
 
+
+    VectorBatchedEdgeIterator iter;
     while (!work.empty()) {
       vertex_id_t v = work.front();
       work.pop();
 
-      BatchedEdgeIterator &iter = ds->neighbourhood(v);
+      vertices_traversed++;
+
+      ds->neighbourhood(v, iter);
       while (iter.has_next()) {
-        auto &batch = dynamic_cast<ContiguousEdgeBatch &>(iter.next());
+        auto &batch = iter.next();
 
         dst_t *end = batch.start + batch.size;
         dst_t *n = batch.start;
@@ -138,6 +144,8 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
 //    while (!work.empty()) {
 //      vertex_id_t v = work.front();
 //      work.pop();
+//
+//      vertices_traversed++;
 //
 //      auto n = &(csr->adjacency_lists[csr->adjacency_index[v]]);
 //      auto end = &(csr->adjacency_lists[csr->adjacency_index[v + 1]]);
@@ -159,6 +167,7 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
     cout.flush();
   }
 
+  cout << "Traversed vertices " << vertices_traversed << endl;
   double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
   cout << endl << "BFS run in average in " << average << " milliseconds " << endl;
 }
@@ -186,11 +195,12 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
     size_t triangles = 0;
     vector<dst_t > out;
 
+    VectorBatchedEdgeIterator a_neighbours;
     for (int a = 0; a < ds->vertex_count(); a++) {
-      auto &a_neighbours = ds->neighbourhood(a);
+      ds->neighbourhood(a, a_neighbours);
 
       while (a_neighbours.has_next()) {
-        auto &a_n_batch = dynamic_cast<ContiguousEdgeBatch &>(a_neighbours.next());
+        auto &a_n_batch = a_neighbours.next();
 
         for (auto b : a_n_batch) {
           ds->intersect_neighbourhood(a, b, out);
@@ -218,25 +228,24 @@ void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
   cout.flush();
 
   vector<size_t> run_times;
+  size_t count = 0;
+
   for (int rep = 0; rep < config.repetitions; rep++) {
     auto start = chrono::steady_clock::now();
 
     // Does count neighbours more than once.
+    VectorBatchedEdgeIterator neighbours;
+    VectorBatchedEdgeIterator neighbour_neighbours;
     for (const auto& s : sources) {
-      size_t count = 0;
-
-      auto& neighbours = ds->neighbourhood(s);
+      ds->neighbourhood(s, neighbours);
       while (neighbours.has_next()) {
-
-        // TODO make static cast to save time
-        auto& batch = dynamic_cast<ContiguousEdgeBatch&>(neighbours.next());
-
+        auto& batch = neighbours.next();
         for (const auto& n : batch) {
-          auto& neigbour_neighbours = ds->neighbourhood(n);
+          ds->neighbourhood(n, neighbour_neighbours);
           count++;
 
-          while (neigbour_neighbours.has_next()) {
-            auto& batch2 = dynamic_cast<ContiguousEdgeBatch&>(neigbour_neighbours.next());
+          while (neighbour_neighbours.has_next()) {
+            auto& batch2 = neighbour_neighbours.next();
 
             for (const auto& nn : batch2) {
               count++;
@@ -255,6 +264,7 @@ void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
     cout.flush();
   }
 
+  cout << "Traversed " << count << endl;
   double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
   cout << endl << "2 neighbourhood counting run in average in " << average << " milliseconds " << endl;
 

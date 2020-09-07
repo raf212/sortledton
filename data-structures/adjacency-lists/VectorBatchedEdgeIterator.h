@@ -12,11 +12,10 @@ class VectorBatchedEdgeIterator: public BatchedEdgeIterator {
 public:
     VectorBatchedEdgeIterator() : batch(nullptr, 0) {};
 
-    bool has_next() override { bool ret = hn; hn = false; return ret;  }
-    ContiguousEdgeBatch& next() override { return batch; }
+    bool has_next() override { return hn;  }
+    ContiguousEdgeBatch& next() override { hn = false; return batch; }
 
     ContiguousEdgeBatch batch;
-private:
     bool hn = true;
 };
 

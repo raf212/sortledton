@@ -20,8 +20,7 @@ public:
     explicit VectorAdjacencyList(vector<dst_t> src) : neighbourhood(src) {};
 
 
-    VectorBatchedEdgeIterator& iterator() override;
-    // TODO make other const
+    void initialize_iterator(BatchedEdgeIterator& iterator) override;
     void intersect(AdjacencyList& other, vector<dst_t>& out) override;
 
     void insert_edge(dst_t edge) override;
@@ -31,7 +30,6 @@ public:
 
 private:
     vector<dst_t> neighbourhood;
-    VectorBatchedEdgeIterator iter;
 };
 
 

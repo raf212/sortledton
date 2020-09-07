@@ -24,17 +24,14 @@ public:
     void delete_edge(edge_t edge) override { throw NotImplemented(); };
 
     // TODO make BatchedEdgeIterator a out parameter, to avoid needing to provide it per adjacency list
-    VectorBatchedEdgeIterator& neighbourhood(vertex_id_t src) override;
+    void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) override;
 
     void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) override;
 
     void bulkload(const SortedCSRDataSource &src) override;
 
-private:
     vector<size_t> adjacency_index;
     vector<dst_t> adjacency_lists;
-    vector<VectorBatchedEdgeIterator> iterators;
-
 };
 
 

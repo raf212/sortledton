@@ -17,7 +17,7 @@ public:
     virtual void insert_edge(dst_t edge) = 0;
     virtual void delete_edge(dst_t edge) = 0;
 
-    virtual BatchedEdgeIterator& iterator() = 0;
+    virtual void initialize_iterator(BatchedEdgeIterator& iterator) = 0;
     virtual void intersect(AdjacencyList& other, vector<dst_t>& out) = 0;
 };
 
