@@ -31,8 +31,7 @@ def filter_out_warmup(data):
     if input("Use cold runs? ") == "y":
         return data[data["repetition"] == 0]
     else:
-        return data[((data["repetition"] > 2) & (data["experiment"] != "2-neighbours"))
-                    | ((data["repetition"] == 0) & (data["experiment"] == "2-neighbours"))]
+        return data[data["repetition"] > 2]
 
 
 def get_last_executions(data):
