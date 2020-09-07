@@ -28,12 +28,22 @@ def get_report_file(remote_user, remote_url, remote_path, local_path):
 
 # Drops the first three repetition as warmup.
 def filter_out_warmup(data):
-    return data[data["repetition"] > 2]
+    if input("Use cold runs? ") == "y":
+        return data[data["repetition"] == 0]
+    else:
+        return data[((data["repetition"] > 2) & (data["experiment"] != "2-neighbours"))
+                    | ((data["repetition"] == 0) & (data["experiment"] == "2-neighbours"))]
 
 
-def get_last_execution(data):
-    max_execution_id = data["execution_id"].max()
-    return data[data["execution_id"] == max_execution_id]
+def get_last_executions(data):
+    executions = int(input("Until execution? (-1 for all, -2 for last)"))
+    if executions == -1:
+        return data
+    elif executions == -2:
+        max_execution_id = data["execution_id"].max()
+        return data[data["execution_id"] == max_execution_id]
+    else:
+        return data[data["execution_id"] >= executions]
 
 
 def rewrite_dataset(data):
@@ -44,7 +54,7 @@ def rewrite_dataset(data):
 def generate_report():
   data = pd.read_csv(LOCAL_PATH, delimiter=";")
   data = filter_out_warmup(data)
-  data = get_last_execution(data)
+  data = get_last_executions(data)
   data = rewrite_dataset(data)
 
   pivot = data.pivot_table(index=["experiment", "dataset"],

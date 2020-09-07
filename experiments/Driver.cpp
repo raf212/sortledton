@@ -51,7 +51,7 @@ void Driver::run() {
 
   vector<vertex_id_t> neighbour_2_sources;
   if (config.experiments.find(NEIGHBOUR_2) == config.experiments.end()) {
-    neighbour_2_sources = select_2_neighbourhood_src(base, 10000);
+    neighbour_2_sources = select_2_neighbourhood_src(base, 200000);
   }
 
   reporter.set_dataset(config.base);
@@ -83,14 +83,14 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   cout << "Loading base dataset." << endl;
   load_base_dataset(wrapped_ds, base);
 
+  if (config.experiments.find(NEIGHBOUR_2) != config.experiments.end()) {
+    run_neighbourhood_2_experiment(wrapped_ds, neighbourhood_2_sources);
+  }
   if (config.experiments.find(BFS) != config.experiments.end()) {
     run_bfs_experiment(wrapped_ds);
   }
   if (config.experiments.find(TRIANGLE_COUNTING) != config.experiments.end()) {
     run_triangle_counting_experiment(wrapped_ds);
-  }
-  if (config.experiments.find(NEIGHBOUR_2) != config.experiments.end()) {
-    run_neighbourhood_2_experiment(wrapped_ds, neighbourhood_2_sources);
   }
   if (config.experiments.find(INSERT) != config.experiments.end()) {
     run_insert_experiment(wrapped_ds, inserts);
