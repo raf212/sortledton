@@ -12,9 +12,7 @@ void CSR::bulkload(const SortedCSRDataSource &src) {
 
 void CSR::neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) {
   auto& vbi = static_cast<VectorBatchedEdgeIterator&>(iter);
-  vbi.hn = true;
-  vbi.batch.start = &adjacency_lists[0] + adjacency_index[src];
-  vbi.batch.size = adjacency_index[src + 1] - adjacency_index[src];
+  vbi.initialize(&adjacency_lists[0] + adjacency_index[src], adjacency_index[src + 1] - adjacency_index[src]);
 }
 
 void CSR::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {

@@ -7,9 +7,7 @@
 void VectorAdjacencyList::initialize_iterator(BatchedEdgeIterator& iterator) {
   auto& iter = static_cast<VectorBatchedEdgeIterator&>(iterator);
 
-  iter.batch.start = neighbourhood.data();
-  iter.batch.size = neighbourhood.size();
-  iter.hn = true;
+  iter.initialize(&neighbourhood[0], neighbourhood.size());
 }
 
 void VectorAdjacencyList::insert_edge(dst_t edge) {

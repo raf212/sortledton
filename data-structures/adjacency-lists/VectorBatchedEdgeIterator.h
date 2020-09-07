@@ -15,6 +15,13 @@ public:
     bool has_next() override { return hn;  }
     ContiguousEdgeBatch& next() override { hn = false; return batch; }
 
+    void initialize(dst_t* start, size_t size) {
+      hn = true;
+      batch.start = start;
+      batch.size = size;
+    }
+
+private:
     ContiguousEdgeBatch batch;
     bool hn = true;
 };
