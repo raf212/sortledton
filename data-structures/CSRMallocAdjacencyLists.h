@@ -14,7 +14,7 @@
  */
 class CSRMallocAdjacencyLists : public TopologyInterface {
 public:
-    explicit CSRMallocAdjacencyLists(size_t malloc_limit) : malloc_limit(malloc_limit) {}
+    explicit CSRMallocAdjacencyLists(size_t malloc_limit, bool unordered) : malloc_limit(malloc_limit), unordered(unordered) {}
     ~CSRMallocAdjacencyLists() override;
 
     size_t vertex_count() override { return adjacency_index.size(); };
@@ -36,8 +36,11 @@ public:
 private:
     size_t malloc_limit;
     vector<dst_t *> adjacency_index;
+    vector<size_t> sizes;
 
     dst_t* csr;
+
+    bool unordered = true;
 };
 
 

@@ -17,6 +17,7 @@ void MallocAdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIterator &i
 }
 
 void MallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
+  cout << "Unoredered " << unordered << endl;
   adjacency_index.reserve(src.adjacency_index.size() - 1);
 
   for (size_t i = 0; i < src.adjacency_index.size() - 1; i++) {
@@ -24,7 +25,9 @@ void MallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
     auto end = src.adjacency_lists.begin() + src.adjacency_index[i + 1];
 
     vector<dst_t> shuffled_src(begin, end);
-    shuffle(shuffled_src.begin(), shuffled_src.end(), std::mt19937(std::random_device()()));
+    if (unordered) {
+      shuffle(shuffled_src.begin(), shuffled_src.end(), std::mt19937(std::random_device()()));
+    }
 
     dst_t *adjacency_list = (dst_t *) malloc((shuffled_src.size() + 1) * sizeof(dst_t));
 

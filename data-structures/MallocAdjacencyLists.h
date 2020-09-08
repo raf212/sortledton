@@ -11,7 +11,7 @@
 
 class MallocAdjacencyLists : public TopologyInterface {
 public:
-    MallocAdjacencyLists() = default;
+    explicit MallocAdjacencyLists(bool unordered) : unordered(unordered) {};
     ~MallocAdjacencyLists() override;
 
     size_t vertex_count() override { return adjacency_index.size(); };
@@ -32,6 +32,7 @@ public:
 
 private:
     vector<dst_t *> adjacency_index;
+    bool unordered;
 };
 
 

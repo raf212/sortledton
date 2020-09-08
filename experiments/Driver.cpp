@@ -75,19 +75,30 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       break;
     }
     case VECTOR_ADJACENCY_LIST: {
-      data_structure = new VectorAdjacencyLists();
+      bool unordered = true;
+      if (!ds_parameters.empty()) {
+        unordered = stoi(ds_parameters[0]);
+      }
+      data_structure = new VectorAdjacencyLists(unordered);
       break;
     }
     case MALLOC_ADJACENCY_LIST: {
-      data_structure = new MallocAdjacencyLists();
+      bool unordered = true;
+      if (!ds_parameters.empty()) {
+        unordered = stoi(ds_parameters[0]);
+      }
+      data_structure = new MallocAdjacencyLists(unordered);
       break;
     }
-    case CSR_MALLOC_ADJACENCY_LISTS: {
+    case CSR_MALLOC_ADJACENCY_LIST: {
+      bool unordered = true;
       size_t malloc_limit = 0;
       if (!ds_parameters.empty()) {
         malloc_limit = stoi(ds_parameters[0]);
+        unordered = stoi(ds_parameters[1]);
       }
-      data_structure = new CSRMallocAdjacencyLists(malloc_limit);
+      data_structure = new CSRMallocAdjacencyLists(malloc_limit, unordered);
+      break;
     }
     default: {
       throw ConfigurationError("Forgot to implement data structure: " + ds);
