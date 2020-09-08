@@ -10,6 +10,8 @@
 #include "ToplogyInterface.h"
 
 class CSRMallocAdjacencyLists : public TopologyInterface {
+    explicit CSRMallocAdjacencyLists(size_t malloc_limit) : malloc_limit(malloc_limit) {}
+
     size_t vertex_count() override { return adjacency_index.size(); };
 
     vertex_id_t insert_vertex() override { throw NotImplemented(); };
@@ -27,6 +29,7 @@ class CSRMallocAdjacencyLists : public TopologyInterface {
     void bulkload(const SortedCSRDataSource &src) override;
 
 private:
+    size_t malloc_limit;
     vector<dst_t *> adjacency_index;
 };
 

@@ -75,17 +75,28 @@ vector <string> Config::parse_comma_separated_list(string list) {
   return cont;
 }
 
-unordered_set<DataStructures> Config::parse_data_structures(string arg) {
-  unordered_set<DataStructures> ret;
+unordered_map<DataStructures, vector<string>> Config::parse_data_structures(string arg) {
+  unordered_map<DataStructures, vector<string>> ret;
   auto ds = parse_comma_separated_list(arg);
 
   auto ds_map = reverse_map(DATA_STRUCTURE_MAPPING);
   for (const auto& d : ds) {
-    auto mapping = ds_map.find(d);
+    auto data_structure_name = d;
+
+    vector<string> parameters;
+    auto parameters_start = d.find('(');
+
+
+    if (parameters_start != string::npos) {
+        data_structure_name = d.substr(0, parameters_start);
+        parameters = parse_comma_separated_list(d.substr(parameters_start, d.find(')') - parameters_start));
+    }
+
+    auto mapping = ds_map.find(data_structure_name);
     if (mapping == ds_map.end()) {
       throw ConfigurationError("Unknown data structure " + d);
     } else {
-      ret.insert(mapping->second);
+      ret.insert({mapping->second, parameters});
     }
   }
 

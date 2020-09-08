@@ -59,7 +59,7 @@ public:
                         ulong runtime);
 
     void set_dataset(Dataset dataset);
-    void set_data_structure(DataStructures ds);
+    void set_data_structure(DataStructures ds, const vector<string>& parameters);
 
 private:
     const vector<string> standard_header {"execution_id", "timestamp", "repetition", "dataset",
@@ -82,6 +82,7 @@ private:
 
     void write_standard_header();
 
+    vector<string> data_structure_parameters;
 };
 
 

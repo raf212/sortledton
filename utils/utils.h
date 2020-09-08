@@ -14,6 +14,8 @@ using namespace std;
 bool file_exists (const string& name);
 bool endsWith(const string& fullString, const string& ending);
 
+string string_join(const string& join, const vector<string>& list);
+
 template<typename n>
 n sum(const vector<n>& v) {
   n s = 0;

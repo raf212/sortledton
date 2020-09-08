@@ -4,6 +4,7 @@
 
 #include <sys/stat.h>
 #include "utils.h"
+#include <sstream>
 
 bool file_exists(const string &name) {
   struct stat buffer;
@@ -37,4 +38,16 @@ string get_filename(string path) {
 
 string get_home_dir() {
   return string(getenv("HOME"));
+}
+
+string string_join(const string &join, const vector<string> &list) {
+  stringstream ss;
+
+  for (int i = 0; i < list.size(); i++) {
+    if (i != 0) {
+      ss << join;
+    }
+    ss << list[i];
+  }
+  return ss.str();
 }

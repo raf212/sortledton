@@ -15,6 +15,7 @@ void Reporter::add_repetition(Experiments experiment, int repetition,
 
   string s_experiment = Config::EXPERIMENT_MAPPING.find(experiment)->second;
   string s_data_structure = Config::DATA_STRUCTURE_MAPPING.find(data_structure)->second;
+  s_data_structure += "(" + string_join(",", data_structure_parameters) + ")";
 
   stringstream line;
   line << execution_id << separator;
@@ -108,8 +109,9 @@ void Reporter::set_dataset(Dataset dataset) {
   this->dataset = dataset;
 }
 
-void Reporter::set_data_structure(DataStructures ds) {
+void Reporter::set_data_structure(DataStructures ds, const vector<string>& parameters) {
   this->data_structure = ds;
+  this->data_structure_parameters = parameters;
 }
 
 void Reporter::add_repetition(Experiments experiment, int repetition, ulong runtime) {

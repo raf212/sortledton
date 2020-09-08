@@ -59,14 +59,14 @@ void Driver::run() {
   reporter.set_dataset(config.base);
 
   for (const auto &ds : config.data_structures) {
-    cout << "Running data structure: " << ds << endl;
-    run_data_structure(base, inserts, deletes, ds, neighbour_2_sources);
+    cout << "Running data structure: " << ds.first << endl;
+    run_data_structure(base, inserts, deletes, ds.first, ds.second, neighbour_2_sources);
   }
 }
 
 void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes,
-                                DataStructures ds, vector<vertex_id_t>& neighbourhood_2_sources) {
-  reporter.set_data_structure(ds);
+                                DataStructures ds, const vector<string>& ds_parameters, vector<vertex_id_t>& neighbourhood_2_sources) {
+  reporter.set_data_structure(ds, ds_parameters);
 
   TopologyInterface *data_structure;
   switch (ds) {
@@ -83,7 +83,11 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       break;
     }
     case CSR_MALLOC_ADJACENCY_LISTS: {
-      data_structure = new CSRMallocAdjacencyLists();
+      size_t malloc_limit = 0;
+      if (!ds_parameters.empty()) {
+        malloc_limit = stoi(ds_parameters[0]);
+      }
+//      data_structure = new CSRMallocAdjacencyLists(malloc_limit);
     }
     default: {
       throw ConfigurationError("Forgot to implement data structure: " + ds);
