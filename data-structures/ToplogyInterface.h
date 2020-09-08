@@ -8,6 +8,9 @@
 
 class TopologyInterface {
 public:
+//    TopologyInterface();
+    virtual ~TopologyInterface();
+
     virtual size_t vertex_count() = 0;
 
     virtual vertex_id_t insert_vertex() = 0;

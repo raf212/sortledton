@@ -110,22 +110,16 @@ unordered_set<Experiments> Config::parse_experiments(string arg) {
 }
 
 const unordered_map<DataStructures, string> Config::DATA_STRUCTURE_MAPPING {
-        {
-                CSR_DS, "csr"},
-        {
-                VECTOR_ADJACENCY_LIST, "vectorAL"}
+        {CSR_DS, "csr"},
+        {VECTOR_ADJACENCY_LIST, "vectorAL"},
+        {MALLOC_ADJACENCY_LIST, "mallocAL"}
 };
 
 const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING {
-        {
-                INSERT, "insert"},
-        {
-                DELETE, "delete"},
-        {
-                BFS, "bfs"},
-        {
-                TRIANGLE_COUNTING, "triangle"},
-        {
-                NEIGHBOUR_2, "2-neighbour"}
+        {INSERT, "insert"},
+        {DELETE, "delete"},
+        {BFS, "bfs"},
+        {TRIANGLE_COUNTING, "triangle"},
+        {NEIGHBOUR_2, "2-neighbour"}
 };
 

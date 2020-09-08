@@ -9,13 +9,26 @@ include_directories(data-structures)
 # TODO make glob
 set(SRC
         data-structures/ToplogyInterface.cpp
+        data-structures/ToplogyInterface.h
         data-structures/CSR.cpp
         data-structures/adjacency-lists/EdgeBatch.cpp
         data-structures/adjacency-lists/BatchedEdgeIterator.cpp
         data-structures/adjacency-lists/AdjacencyList.cpp
         data-structures/adjacency-lists/ContiguousEdgeBatch.cpp
-        data-src/EdgeList.cpp data-src/EdgeList.h data-src/SortedCSRDataSource.cpp data-src/SortedCSRDataSource.h data-src/DataSource.cpp data-src/DataSource.h data-structures/AdjacencyLists.cpp data-structures/AdjacencyLists.h data-structures/VectorAdjacencyLists.cpp data-structures/VectorAdjacencyLists.h data-structures/adjacency-lists/VectorAdjacencyList.cpp data-structures/adjacency-lists/VectorAdjacencyList.h utils/NotImplemented.cpp utils/NotImplemented.h data-structures/adjacency-lists/VectorBatchedEdgeIterator.cpp data-structures/adjacency-lists/VectorBatchedEdgeIterator.h experiments/Driver.cpp experiments/Driver.h experiments/Configuration.cpp experiments/Configuration.h utils/utils.cpp utils/utils.h data-src/IOException.cpp data-src/IOException.h
-        experiments/Reporter.cpp experiments/Reporter.h)
+        data-src/EdgeList.cpp data-src/EdgeList.h
+        data-src/SortedCSRDataSource.cpp
+        data-src/SortedCSRDataSource.h
+        data-src/DataSource.cpp data-src/DataSource.h
+        data-structures/AdjacencyLists.cpp
+        data-structures/AdjacencyLists.h
+        data-structures/VectorAdjacencyLists.cpp
+        data-structures/VectorAdjacencyLists.h
+        data-structures/adjacency-lists/VectorAdjacencyList.cpp
+        data-structures/adjacency-lists/VectorAdjacencyList.h
+        utils/NotImplemented.cpp utils/NotImplemented.h data-structures/adjacency-lists/VectorBatchedEdgeIterator.cpp data-structures/adjacency-lists/VectorBatchedEdgeIterator.h experiments/Driver.cpp experiments/Driver.h experiments/Configuration.cpp experiments/Configuration.h utils/utils.cpp utils/utils.h data-src/IOException.cpp data-src/IOException.h
+        experiments/Reporter.cpp experiments/Reporter.h
+        data-structures/MallocAdjacencyLists.cpp
+        data-structures/MallocAdjacencyLists.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp

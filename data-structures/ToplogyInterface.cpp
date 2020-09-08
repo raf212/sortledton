@@ -3,3 +3,8 @@
 //
 
 #include "ToplogyInterface.h"
+#include <iostream>
+
+TopologyInterface::~TopologyInterface() {
+  cout << "destroyed" << endl;
+}
