@@ -87,7 +87,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       if (!ds_parameters.empty()) {
         malloc_limit = stoi(ds_parameters[0]);
       }
-//      data_structure = new CSRMallocAdjacencyLists(malloc_limit);
+      data_structure = new CSRMallocAdjacencyLists(malloc_limit);
     }
     default: {
       throw ConfigurationError("Forgot to implement data structure: " + ds);

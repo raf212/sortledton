@@ -9,8 +9,13 @@
 #include <utils/NotImplemented.h>
 #include "ToplogyInterface.h"
 
+/**
+ * A data structure that uses malloc for all adjacency lists larger than malloc_limit and CSR for smaller ones.
+ */
 class CSRMallocAdjacencyLists : public TopologyInterface {
+public:
     explicit CSRMallocAdjacencyLists(size_t malloc_limit) : malloc_limit(malloc_limit) {}
+    ~CSRMallocAdjacencyLists() override;
 
     size_t vertex_count() override { return adjacency_index.size(); };
 
@@ -31,6 +36,8 @@ class CSRMallocAdjacencyLists : public TopologyInterface {
 private:
     size_t malloc_limit;
     vector<dst_t *> adjacency_index;
+
+    dst_t* csr;
 };
 
 
