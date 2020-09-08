@@ -61,8 +61,8 @@ void Config::initialize(int argc, char **argv) {
   }
 }
 
-vector <string> Config::parse_comma_separated_list(string list) {
-  char delim = ',';
+vector <string> Config::string_split(char seperator, string list) {
+  char delim = seperator;
   std::size_t current, previous = 0;
   vector<string> cont;
   current = list.find(delim);
@@ -77,7 +77,7 @@ vector <string> Config::parse_comma_separated_list(string list) {
 
 unordered_map<DataStructures, vector<string>> Config::parse_data_structures(string arg) {
   unordered_map<DataStructures, vector<string>> ret;
-  auto ds = parse_comma_separated_list(arg);
+  auto ds = string_split(',', arg);
 
   auto ds_map = reverse_map(DATA_STRUCTURE_MAPPING);
   for (const auto& d : ds) {
@@ -89,7 +89,7 @@ unordered_map<DataStructures, vector<string>> Config::parse_data_structures(stri
 
     if (parameters_start != string::npos) {
         data_structure_name = d.substr(0, parameters_start);
-        parameters = parse_comma_separated_list(d.substr(parameters_start, d.find(')') - parameters_start));
+        parameters = string_split('\'', d.substr(parameters_start + 1, d.find(')') - (parameters_start + 1)));
     }
 
     auto mapping = ds_map.find(data_structure_name);
@@ -105,7 +105,7 @@ unordered_map<DataStructures, vector<string>> Config::parse_data_structures(stri
 
 unordered_set<Experiments> Config::parse_experiments(string arg) {
   unordered_set<Experiments> ret;
-  auto es = parse_comma_separated_list(arg);
+  auto es = string_split(',', arg);
 
   auto map = reverse_map(EXPERIMENT_MAPPING);
   for (const auto& e : es) {
@@ -124,7 +124,7 @@ const unordered_map<DataStructures, string> Config::DATA_STRUCTURE_MAPPING {
         {CSR_DS, "csr"},
         {VECTOR_ADJACENCY_LIST, "vectorAL"},
         {MALLOC_ADJACENCY_LIST, "mallocAL"},
-        {MALLOC_ADJACENCY_LIST, "csrMallocAL"}
+        {CSR_MALLOC_ADJACENCY_LIST, "csrMallocAL"}
 };
 
 const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING {

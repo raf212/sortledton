@@ -34,7 +34,7 @@ enum DataStructures {
     CSR_DS,
     VECTOR_ADJACENCY_LIST,
     MALLOC_ADJACENCY_LIST,
-    CSR_MALLOC_ADJACENCY_LISTS
+    CSR_MALLOC_ADJACENCY_LIST
 };
 
 enum Experiments {
@@ -87,7 +87,7 @@ public:
     void initialize(int argc, char **argv);
 
 private:
-    vector<string> parse_comma_separated_list(string list);
+    vector<string> string_split(char seperator, string list);
 
     unordered_map<DataStructures, vector<string>> parse_data_structures(string arg);
 
