@@ -112,7 +112,8 @@ unordered_set<Experiments> Config::parse_experiments(string arg) {
 const unordered_map<DataStructures, string> Config::DATA_STRUCTURE_MAPPING {
         {CSR_DS, "csr"},
         {VECTOR_ADJACENCY_LIST, "vectorAL"},
-        {MALLOC_ADJACENCY_LIST, "mallocAL"}
+        {MALLOC_ADJACENCY_LIST, "mallocAL"},
+        {MALLOC_ADJACENCY_LIST, "csrMallocAL"}
 };
 
 const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING {

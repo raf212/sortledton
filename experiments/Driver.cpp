@@ -10,6 +10,7 @@
 #include <data-structures/CSR.h>
 #include <data-structures/VectorAdjacencyLists.h>
 #include <data-structures/MallocAdjacencyLists.h>
+#include <data-structures/CSRMallocAdjacencyLists.h>
 #include <queue>
 #include <functional>
 #include "Driver.h"
@@ -80,6 +81,9 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     case MALLOC_ADJACENCY_LIST: {
       data_structure = new MallocAdjacencyLists();
       break;
+    }
+    case CSR_MALLOC_ADJACENCY_LISTS: {
+      data_structure = new CSRMallocAdjacencyLists();
     }
     default: {
       throw ConfigurationError("Forgot to implement data structure: " + ds);

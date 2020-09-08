@@ -33,7 +33,8 @@ enum SourceType {
 enum DataStructures {
     CSR_DS,
     VECTOR_ADJACENCY_LIST,
-    MALLOC_ADJACENCY_LIST
+    MALLOC_ADJACENCY_LIST,
+    CSR_MALLOC_ADJACENCY_LISTS
 };
 
 enum Experiments {
