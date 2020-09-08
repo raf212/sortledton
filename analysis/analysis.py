@@ -61,9 +61,9 @@ def generate_report():
                            values=["runtime", "storage"], aggfunc=np.mean)
 
   for ds in pivot.columns.levels[1]:
-      if ds == "csr":
+      if ds == "csr()":
           continue
-      pivot["ratios", ds] = pivot["runtime", ds] / pivot["runtime", "csr"]
+      pivot["ratios", ds] = pivot["runtime", ds] / pivot["runtime", "csr()"]
 
   print(pivot)
   return pivot
