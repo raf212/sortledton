@@ -56,6 +56,8 @@ def generate_report():
   data = get_last_executions(data)
   data = rewrite_dataset(data)
 
+  data["data_structure"] = data["data_structure"].map(lambda s: s.replace("csrMalloc", "csr"))
+
   pivot = data.pivot_table(index=["experiment", "dataset"],
                            columns=["data_structure"],
                            values=["runtime", "storage"], aggfunc=np.mean)
@@ -64,6 +66,8 @@ def generate_report():
       if ds == "csr()":
           continue
       pivot["ratios", ds] = pivot["runtime", ds] / pivot["runtime", "csr()"]
+  pivot = pivot.drop(columns="runtime")
+
 
   print(pivot)
   return pivot
