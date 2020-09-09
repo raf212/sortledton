@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include "utils.h"
 #include <sstream>
+#include <algorithm>
 
 bool file_exists(const string &name) {
   struct stat buffer;
@@ -50,4 +51,32 @@ string string_join(const string &join, const vector<string> &list) {
     ss << list[i];
   }
   return ss.str();
+}
+
+void intersect_edge_block(dst_t *start_a, dst_t *end_a, dst_t *start_b, dst_t *end_b, vector<dst_t> &out) {
+  out.clear();
+
+  auto a_size = end_a - start_a;
+  auto b_size = end_b - start_b;
+
+  if (b_size < a_size) {
+    swap(start_a, start_b);
+    swap(end_a, end_b);
+    swap(a_size, b_size);
+  }
+
+  auto n = start_a;
+  auto m = start_b;
+  while (n < end_a) {
+    m = upper_bound(m, end_b, *n);
+    if (m == end_b) {
+      break;
+    }
+    if (*n == *m) {
+      out.push_back(*n);
+    }
+    while (*n < *m && n < end_a) {
+      n++;
+    }
+  }
 }

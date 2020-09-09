@@ -7,6 +7,7 @@
 #include <memory>
 #include <iostream>
 #include <cstring>
+#include <utils/utils.h>
 #include "MallocAdjacencyLists.h"
 
 #include "adjacency-lists/VectorBatchedEdgeIterator.h"
@@ -17,7 +18,6 @@ void MallocAdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIterator &i
 }
 
 void MallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
-  cout << "Unoredered " << unordered << endl;
   adjacency_index.reserve(src.adjacency_index.size() - 1);
 
   for (size_t i = 0; i < src.adjacency_index.size() - 1; i++) {
@@ -42,4 +42,17 @@ MallocAdjacencyLists::~MallocAdjacencyLists() {
   for (dst_t *al : adjacency_index) {
     free(al);
   }
+}
+
+void MallocAdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
+  if (unordered) {
+    throw NotImplemented("Intersection of unordered list is not implemented.");
+  }
+  auto a_start = adjacency_index[a] + 1;
+  auto b_start = adjacency_index[b] + 1;
+
+  auto a_end = a_start + (size_t) *a_start;
+  auto b_end = b_start + (size_t) *b_start;
+
+  intersect_edge_block(a_start, a_end, b_start, b_end, out);
 }

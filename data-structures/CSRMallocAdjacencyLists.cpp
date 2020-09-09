@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cstring>
 #include <data-structures/adjacency-lists/VectorBatchedEdgeIterator.h>
+#include <utils/utils.h>
 #include "CSRMallocAdjacencyLists.h"
 
 void CSRMallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
@@ -60,4 +61,17 @@ CSRMallocAdjacencyLists::~CSRMallocAdjacencyLists() {
 void CSRMallocAdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) {
   auto& i = static_cast<VectorBatchedEdgeIterator&>(iter);
   i.initialize(adjacency_index[2 * src], (size_t) adjacency_index[2 * src + 1]);
+}
+
+void CSRMallocAdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
+  if (unordered) {
+    throw NotImplemented("Intersection of unordered list is not implemented.");
+  }
+  auto a_start = adjacency_index[2 * a];
+  auto b_start = adjacency_index[2 * b];
+
+  auto a_end = a_start + (size_t) adjacency_index[2* a + 1];
+  auto b_end = b_start + (size_t) adjacency_index[2* b + 1];
+
+  intersect_edge_block(a_start, a_end, b_start, b_end, out);
 }
