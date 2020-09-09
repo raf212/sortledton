@@ -3,6 +3,7 @@
 //
 
 #include <sys/stat.h>
+#include <iostream>
 #include "utils.h"
 #include <sstream>
 #include <algorithm>
@@ -59,11 +60,11 @@ void intersect_edge_block(dst_t *start_a, dst_t *end_a, dst_t *start_b, dst_t *e
   auto a_size = end_a - start_a;
   auto b_size = end_b - start_b;
 
-  if (b_size < a_size) {
-    swap(start_a, start_b);
-    swap(end_a, end_b);
-    swap(a_size, b_size);
-  }
+//  if (b_size < a_size) {
+//    swap(start_a, start_b);
+//    swap(end_a, end_b);
+//    swap(a_size, b_size);
+//  }
 
   auto n = start_a;
   auto m = start_b;

@@ -17,7 +17,7 @@ public:
     explicit CSRMallocAdjacencyLists(size_t malloc_limit, bool unordered) : malloc_limit(malloc_limit), unordered(unordered) {}
     ~CSRMallocAdjacencyLists() override;
 
-    size_t vertex_count() override { return adjacency_index.size(); };
+    size_t vertex_count() override { return adjacency_index.size() / 2; };
 
     vertex_id_t insert_vertex() override { throw NotImplemented(); };
 

@@ -51,8 +51,8 @@ void MallocAdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t b,
   auto a_start = adjacency_index[a] + 1;
   auto b_start = adjacency_index[b] + 1;
 
-  auto a_end = a_start + (size_t) *a_start;
-  auto b_end = b_start + (size_t) *b_start;
+  auto a_end = a_start + (size_t) *adjacency_index[a];
+  auto b_end = b_start + (size_t) *adjacency_index[b];
 
   intersect_edge_block(a_start, a_end, b_start, b_end, out);
 }

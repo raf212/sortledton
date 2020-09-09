@@ -216,10 +216,11 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
   cout.flush();
 
   vector<size_t> run_times;
+  size_t triangles;
   for (int rep = 0; rep < config.repetitions; rep++) {
     auto start = chrono::steady_clock::now();
 
-    size_t triangles = 0;
+    triangles = 0;
     vector<dst_t > out;
 
     VectorBatchedEdgeIterator a_neighbours;
@@ -231,6 +232,7 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
 
         for (auto b : a_n_batch) {
           ds->intersect_neighbourhood(a, b, out);
+//          cout << out.size() << endl;
           triangles += out.size();
         }
       }
@@ -245,8 +247,10 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
     cout.flush();
   }
 
+
   double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
   cout << endl << "Triangle counting run in average in " << average << " milliseconds " << endl;
+  cout << "Counted " << triangles << " triangles." << endl;
 }
 
 void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,

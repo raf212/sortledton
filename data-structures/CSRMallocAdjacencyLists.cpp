@@ -11,10 +11,9 @@
 #include "CSRMallocAdjacencyLists.h"
 
 void CSRMallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
-  cout << "Unoredered " << unordered << endl;
   size_t csr_size = 0;
 
-  for (int i = 0; i < src.adjacency_index.size(); i++) {
+  for (int i = 0; i < src.adjacency_index.size() - 1; i++) {
     auto size = src.adjacency_index[i + 1] - src.adjacency_index[i];
     if (size < malloc_limit) {
       csr_size += size;
@@ -35,6 +34,11 @@ void CSRMallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
 
     if (shuffled_src.size() < malloc_limit) {
       memcpy((void *) (csr_position), (void *) shuffled_src.data(), shuffled_src.size() * sizeof(dst_t));
+      for (int i = 0; i < shuffled_src.size(); i++) {
+        if (*(csr_position + i) == 524543) {
+          cout << "oh oh" << endl;
+        }
+      }
 
       adjacency_index.push_back(csr_position);
       adjacency_index.push_back((dst_t*) shuffled_src.size());
@@ -45,6 +49,11 @@ void CSRMallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
 
       memcpy((void *) &adjacency_list[0], (void *) shuffled_src.data(), shuffled_src.size() * sizeof(dst_t));
 
+      for (int i = 0; i < shuffled_src.size(); i++) {
+        if (*(adjacency_list + i) == 524543) {
+          cout << "oh oh" << endl;
+        }
+      }
       adjacency_index.push_back(adjacency_list);
       adjacency_index.push_back((dst_t*) shuffled_src.size());
     }
@@ -70,8 +79,8 @@ void CSRMallocAdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t
   auto a_start = adjacency_index[2 * a];
   auto b_start = adjacency_index[2 * b];
 
-  auto a_end = a_start + (size_t) adjacency_index[2* a + 1];
-  auto b_end = b_start + (size_t) adjacency_index[2* b + 1];
+  auto a_end = a_start + (size_t) adjacency_index[2 * a + 1];
+  auto b_end = b_start + (size_t) adjacency_index[2 * b + 1];
 
   intersect_edge_block(a_start, a_end, b_start, b_end, out);
 }

@@ -28,7 +28,8 @@ set(SRC
         utils/NotImplemented.cpp utils/NotImplemented.h data-structures/adjacency-lists/VectorBatchedEdgeIterator.cpp data-structures/adjacency-lists/VectorBatchedEdgeIterator.h experiments/Driver.cpp experiments/Driver.h experiments/Configuration.cpp experiments/Configuration.h utils/utils.cpp utils/utils.h data-src/IOException.cpp data-src/IOException.h
         experiments/Reporter.cpp experiments/Reporter.h
         data-structures/MallocAdjacencyLists.cpp
-        data-structures/MallocAdjacencyLists.h data-structures/CSRMallocAdjacencyLists.cpp data-structures/CSRMallocAdjacencyLists.h)
+        data-structures/MallocAdjacencyLists.h
+        data-structures/CSRMallocAdjacencyLists.cpp data-structures/CSRMallocAdjacencyLists.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp
