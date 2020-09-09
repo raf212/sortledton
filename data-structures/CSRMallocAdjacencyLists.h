@@ -36,7 +36,7 @@ public:
 private:
     size_t malloc_limit;
     vector<dst_t *> adjacency_index;
-    vector<size_t> sizes;
+    vector<dst_t *> free_list;
 
     dst_t* csr;
 

@@ -34,11 +34,6 @@ void CSRMallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
 
     if (shuffled_src.size() < malloc_limit) {
       memcpy((void *) (csr_position), (void *) shuffled_src.data(), shuffled_src.size() * sizeof(dst_t));
-      for (int i = 0; i < shuffled_src.size(); i++) {
-        if (*(csr_position + i) == 524543) {
-          cout << "oh oh" << endl;
-        }
-      }
 
       adjacency_index.push_back(csr_position);
       adjacency_index.push_back((dst_t*) shuffled_src.size());
@@ -49,21 +44,19 @@ void CSRMallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
 
       memcpy((void *) &adjacency_list[0], (void *) shuffled_src.data(), shuffled_src.size() * sizeof(dst_t));
 
-      for (int i = 0; i < shuffled_src.size(); i++) {
-        if (*(adjacency_list + i) == 524543) {
-          cout << "oh oh" << endl;
-        }
-      }
       adjacency_index.push_back(adjacency_list);
       adjacency_index.push_back((dst_t*) shuffled_src.size());
+
+      free_list.push_back(adjacency_list);
+      free_list.push_back((dst_t*) malloc(64 * 5));  // See comment on MallocAdjacency list.
     }
   }
 }
 
 CSRMallocAdjacencyLists::~CSRMallocAdjacencyLists() {
-//  for (const auto& al : adjacency_index) {
-//    free(al);  // Dangerous some of these have not been allocated by malloc, let's see what happens.
-//  }
+  for (const auto& al : free_list) {
+    free(al);
+  }
   free(csr);
 }
 

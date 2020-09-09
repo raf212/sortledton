@@ -35,6 +35,9 @@ void MallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
     memcpy((void *) &adjacency_list[1], (void *) shuffled_src.data(), shuffled_src.size() * sizeof(dst_t));
 
     adjacency_index.push_back(adjacency_list);
+
+    // malloc seems to return contiguous addresses. Let's seperate them.
+    seperators.push_back((dst_t*) malloc(5 * 64));  // Seperate each malloced region by five cachelines.
   }
 }
 

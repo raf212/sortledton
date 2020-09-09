@@ -32,6 +32,7 @@ public:
 
 private:
     vector<dst_t *> adjacency_index;
+    vector<dst_t *> seperators;  // Unused but malloced memory location to seperate adjacency lists
     bool unordered;
 };
 
