@@ -9,6 +9,8 @@
 
 #include <data-structures/ToplogyInterface.h>
 #include <data-src/EdgeList.h>
+#include "data-structures/adjacency-lists/BlockedBatchedEdgeIterator.h"
+#include "data-structures/adjacency-lists/VectorBatchedEdgeIterator.h"
 #include "Reporter.h"
 #include "Configuration.h"
 
@@ -38,6 +40,11 @@ private:
     void run_bfs_experiment(shared_ptr<TopologyInterface> ds);
     void run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds);
     void run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds, const vector<vertex_id_t>& sources);
+
+    ContigiousBlockIterator& getIter(TopologyInterface& ds);
+
+    vector<VectorBatchedEdgeIterator> vectorIterators;
+    vector<BlockedBatchedEdgeIterator> blockIterators;
 
 
 };

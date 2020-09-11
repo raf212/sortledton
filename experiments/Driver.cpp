@@ -13,6 +13,7 @@
 #include <data-structures/CSRMallocAdjacencyLists.h>
 #include <queue>
 #include <functional>
+#include <data-structures/BlockedLinkedListAdjacencyLists.h>
 #include "Driver.h"
 
 vector<vertex_id_t> select_2_neighbourhood_src(const SortedCSRDataSource& src, int count) {
@@ -100,6 +101,17 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       data_structure = new CSRMallocAdjacencyLists(malloc_limit, unordered);
       break;
     }
+    case BLOCKED_LINKED_LIST_AL: {
+      bool unordered = false;
+      size_t block_size = 128;
+      if (!ds_parameters.empty()) {
+        block_size = stoi(ds_parameters[0]);
+        unordered = stoi(ds_parameters[1]);
+      }
+      data_structure = new BlockedLinkedListAdjacencyLists(block_size, unordered,
+              base.adjacency_lists.size() + inserts.edges.size() + 100, base.vertex_count());
+      break;
+    }
     default: {
       throw ConfigurationError("Forgot to implement data structure: " + ds);
     }
@@ -144,8 +156,7 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
     queue<vertex_id_t> work;
     work.push(start_vertex);
 
-
-    VectorBatchedEdgeIterator iter;
+    ContigiousBlockIterator& iter = getIter(*ds);
     while (!work.empty()) {
       vertex_id_t v = work.front();
       work.pop();
@@ -153,6 +164,7 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
       vertices_traversed++;
 
       ds->neighbourhood(v, iter);
+//      VectorBatchedEdgeIterator& a = dynamic_cast<VectorBatchedEdgeIterator&>(iter);
       while (iter.has_next()) {
         auto &batch = iter.next();
 
@@ -261,29 +273,34 @@ void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
   vector<size_t> run_times;
   size_t count = 0;
 
+  // Does count neighbours more than once.
+  ContigiousBlockIterator& neighbour_neighbours = getIter(*ds);
+  ContigiousBlockIterator& neighbours = getIter(*ds);
+  ContigiousBlockIterator& neighbours_3 = getIter(*ds);
   for (int rep = 0; rep < config.repetitions; rep++) {
     auto start = chrono::steady_clock::now();
 
-    // Does count neighbours more than once.
-    VectorBatchedEdgeIterator neighbours;
-    VectorBatchedEdgeIterator neighbour_neighbours;
     for (const auto& s : sources) {
       ds->neighbourhood(s, neighbours);
       while (neighbours.has_next()) {
         auto& batch = neighbours.next();
         for (const auto& n : batch) {
-          ds->neighbourhood(n, neighbour_neighbours);
+          ds->neighbourhood(n, neighbours_3);
           count++;
 
-          while (neighbour_neighbours.has_next()) {
-            auto& batch2 = neighbour_neighbours.next();
+          while (neighbours_3.has_next()) {
+            auto& batch2 = neighbours_3.next();
 
             for (const auto& nn : batch2) {
+//              cout << s << " " << n << " " << nn << endl;
               count++;
             }
           }
         }
       }
+//      if (count > 10000) {
+//        break;
+//      }
     }
     auto end = chrono::steady_clock::now();
 
@@ -313,4 +330,14 @@ SortedCSRDataSource Driver::read_base_dataset() {
   SortedCSRDataSource out;
   out.read_from_binary_file(config.base.path);
   return out;
+}
+
+ContigiousBlockIterator &Driver::getIter(TopologyInterface& ds) {
+  if (typeid(ds) == typeid(BlockedLinkedListAdjacencyLists)) {
+    blockIterators.emplace_back(BlockedBatchedEdgeIterator());
+    return blockIterators[blockIterators.size() - 1];
+  } else {
+    vectorIterators.emplace_back(VectorBatchedEdgeIterator());
+    return vectorIterators[vectorIterators.size() - 1];
+  }
 }

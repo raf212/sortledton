@@ -7,8 +7,9 @@
 
 #include "BatchedEdgeIterator.h"
 #include "ContiguousEdgeBatch.h"
+#include "ContigiousBlockIterator.h"
 
-class VectorBatchedEdgeIterator: public BatchedEdgeIterator {
+class VectorBatchedEdgeIterator: public ContigiousBlockIterator {
 public:
     VectorBatchedEdgeIterator() : batch(nullptr, 0) {};
 

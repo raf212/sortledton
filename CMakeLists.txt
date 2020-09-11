@@ -29,7 +29,18 @@ set(SRC
         experiments/Reporter.cpp experiments/Reporter.h
         data-structures/MallocAdjacencyLists.cpp
         data-structures/MallocAdjacencyLists.h
-        data-structures/CSRMallocAdjacencyLists.cpp data-structures/CSRMallocAdjacencyLists.h)
+        data-structures/CSRMallocAdjacencyLists.cpp
+        data-structures/CSRMallocAdjacencyLists.h
+        data-structures/BlockedLinkedListAdjacencyLists.cpp
+        data-structures/BlockedLinkedListAdjacencyLists.h
+        data-structures/memory_pools/BlockMemoryPool.cpp
+        data-structures/memory_pools/BlockMemoryPool.h
+        data-structures/memory_pools/OutOfMemoryError.cpp
+        data-structures/memory_pools/OutOfMemoryError.h
+        data-structures/adjacency-lists/BlockedBatchedEdgeIterator.cpp
+        data-structures/adjacency-lists/BlockedBatchedEdgeIterator.h
+        data-structures/adjacency-lists/ContigiousBlockIterator.cpp
+        data-structures/adjacency-lists/ContigiousBlockIterator.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp
