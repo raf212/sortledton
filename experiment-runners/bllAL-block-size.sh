@@ -16,4 +16,18 @@ do
   $exe $experiments $dataset_bitcoin $repetitions --data_structures "bllAL(128'0)"
   $exe $experiments $dataset_bitcoin $repetitions --data_structures "bllAL(248'0)"
   $exe $experiments $dataset_bitcoin $repetitions --data_structures "bllAL(512'0)"
+  
+  $exe $experiments $dataset_higgs $repetitions --data_structures "mallocAL(0)"
+  $exe $experiments $dataset_higgs $repetitions --data_structures "bllAL(32'0)"
+  $exe $experiments $dataset_higgs $repetitions --data_structures "bllAL(64'0)"
+  $exe $experiments $dataset_higgs $repetitions --data_structures "bllAL(128'0)"
+  $exe $experiments $dataset_higgs $repetitions --data_structures "bllAL(248'0)"
+  $exe $experiments $dataset_higgs $repetitions --data_structures "bllAL(512'0)"
+  
+  $exe $experiments $dataset_yahoo $repetitions --data_structures "mallocAL(0)"
+  $exe $experiments $dataset_yahoo $repetitions --data_structures "bllAL(32'0)"
+  $exe $experiments $dataset_yahoo $repetitions --data_structures "bllAL(64'0)"
+  $exe $experiments $dataset_yahoo $repetitions --data_structures "bllAL(128'0)"
+  $exe $experiments $dataset_yahoo $repetitions --data_structures "bllAL(248'0)"
+  $exe $experiments $dataset_yahoo $repetitions --data_structures "bllAL(512'0)"
 done

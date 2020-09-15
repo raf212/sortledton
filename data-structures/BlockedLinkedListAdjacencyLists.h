@@ -29,7 +29,7 @@ public:
     block_size(block_size), unordered(unordered),
     pool(max_edges / block_size + 1,
             block_size * sizeof(dst_t) + sizeof(BlockHeader),
-            500, false) {
+            500, true) {
     };
 
     size_t vertex_count() override { return adjacency_index.size(); };
