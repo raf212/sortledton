@@ -89,3 +89,7 @@ dkms.conf
 
 cmake-build-debug
 
+analysis/__pycache__/
+analysis/figures/
+cmake-build-debug-scyper15/
+cmake-build-release-scyper15/
