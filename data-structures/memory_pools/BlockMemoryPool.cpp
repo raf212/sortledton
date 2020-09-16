@@ -49,7 +49,7 @@ BlockMemoryPool &BlockMemoryPool::operator=(BlockMemoryPool &&other) noexcept {
 
 BlockMemoryPool::BlockMemoryPool(size_t size, size_t block_size, size_t grow_rate, bool shuffle_free_list)
  : grow_rate(grow_rate), block_size(block_size), shuffle_free_list(shuffle_free_list) {
-  add_pool(size * block_size);
+  add_pool(size);
 }
 
 void BlockMemoryPool::add_pool(size_t additional_blocks) {

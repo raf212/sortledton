@@ -35,6 +35,7 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
 
     while (start < end) {
       BlockHeader* block = (BlockHeader*) pool.get_block();
+      block->next = nullptr;
 
       if (first_block == nullptr) {
         first_block = block;
@@ -49,6 +50,13 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
       memcpy((void*) block_data, start, block->size * sizeof(dst_t));
 
       start += block_size;
+    }
+
+    auto all_size = 0;
+    auto i = first_block;
+    while (i != nullptr) {
+      all_size += i->size;
+      i = i->next;
     }
 
     return first_block;
