@@ -17,9 +17,9 @@ void BlockedLinkedListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
     auto end = &src.adjacency_lists[0] + src.adjacency_index[i + 1];
 
     vector<dst_t> shuffled_src(start, end);
-//    if (unordered) {
-//      shuffle(start, end, std::mt19937(std::random_device()()));
-//    }  TODO make this compile
+    if (unordered) {
+      shuffle(shuffled_src.begin(), shuffled_src.end(), std::mt19937(std::random_device()()));
+    }
 
     BlockHeader *head_block = write_to_blocks(shuffled_src.data(), shuffled_src.data() + shuffled_src.size());
 
