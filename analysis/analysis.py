@@ -57,7 +57,7 @@ def rewrite_dataset(data):
 def generate_report():
   data = pd.read_csv(LOCAL_PATH, delimiter=";")
   # data = filter_out_warmup(data)
-  # data = get_last_executions(data)
+  data = get_last_executions(data)
   data = rewrite_dataset(data)
 
   data["data_structure"] = data["data_structure"].map(lambda s: s.replace("csrMalloc", "csr"))

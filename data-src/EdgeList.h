@@ -16,6 +16,9 @@ class EdgeList : DataSource {
 public:
     void read_from_binary_file(const string& path);
 
+    vector<edge_t>::iterator begin() { return edges.begin(); };
+    vector<edge_t>::iterator end() { return edges.end(); };
+
     vector<edge_t> edges;
 };
 

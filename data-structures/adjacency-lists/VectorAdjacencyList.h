@@ -17,16 +17,16 @@ using namespace std;
 
 class VectorAdjacencyList : public AdjacencyList {
 public:
-    explicit VectorAdjacencyList(vector<dst_t> src) : neighbourhood(src) {};
-
+    explicit VectorAdjacencyList(vector<dst_t> src) : neighbourhood(src) {
+      // Reserve 10% empty space for insert experiment.
+//      neighbourhood.reserve(neighbourhood.size() + neighbourhood.size() * 0.1);
+    };
 
     void initialize_iterator(BatchedEdgeIterator& iterator) override;
     void intersect(AdjacencyList& other, vector<dst_t>& out) override;
 
     void insert_edge(dst_t edge) override;
     void delete_edge(dst_t edge) override;
-
-
 
 private:
     vector<dst_t> neighbourhood;

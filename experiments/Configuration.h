@@ -57,8 +57,8 @@ public:
       if (expected_type == CSR_SRC && !endsWith(path, "csr")) {
         throw ConfigurationError("Expected dataset " + path + " to be a CSR.");
       }
-      if (expected_type == EDGE_LIST && !endsWith(path, "el")) {
-        throw ConfigurationError("Expected dataset " + path + " to be a CSR.");
+      if (expected_type == EDGE_LIST && !endsWith(path, "edgeList")) {
+        throw ConfigurationError("Expected dataset " + path + " to be a edge list.");
       }
 
       if (expected_type == CSR_SRC) {

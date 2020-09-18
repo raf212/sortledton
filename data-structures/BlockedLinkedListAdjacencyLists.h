@@ -8,15 +8,25 @@
 
 #include <utils/NotImplemented.h>
 #include <data-structures/memory_pools/BlockMemoryPool.h>
+#include <experiments/Configuration.h>
+#include <iostream>
 #include "ToplogyInterface.h"
 
 #define GET_DATA(blockHeader_p) (dst_t*) (((char*) blockHeader_p) + sizeof(BlockHeader))
 
 struct BlockHeader {
     size_t size;
+    dst_t min;
+    dst_t max;
     BlockHeader* next;
 };
 
+/**
+ * Optimization ideas:
+ *   * use a second small block size for low degree vertices
+ *   * while inserting move edges to both sides
+ *   *
+ */
 class BlockedLinkedListAdjacencyLists : public TopologyInterface {
 public:
     /**
@@ -30,6 +40,9 @@ public:
     pool(max_edges / block_size + 1,
             block_size * sizeof(dst_t) + sizeof(BlockHeader),
             500, true) {
+      if (block_size % 2 != 0) {
+        throw ConfigurationError("We rely on the block to be an even number.");
+      }
     };
 
     size_t vertex_count() override { return adjacency_index.size(); };
@@ -38,7 +51,7 @@ public:
 
     void delete_vertex() override { throw NotImplemented(); };
 
-    void insert_edge(edge_t edge) override { throw NotImplemented(); };
+    void insert_edge(edge_t edge) override;
 
     void delete_edge(edge_t edge) override { throw NotImplemented(); };
 
@@ -52,8 +65,10 @@ public:
 
 private:
     vector<BlockHeader *> adjacency_index;
+
     bool unordered;
     size_t block_size;
+    const float bulk_load_fill_rate = 0.9;
 
     BlockMemoryPool pool;
 

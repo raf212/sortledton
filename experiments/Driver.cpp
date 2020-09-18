@@ -16,12 +16,12 @@
 #include <data-structures/BlockedLinkedListAdjacencyLists.h>
 #include "Driver.h"
 
-vector<vertex_id_t> select_2_neighbourhood_src(const SortedCSRDataSource& src, int count) {
+vector<vertex_id_t> select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
   vector<vertex_id_t> out;
 
   auto vertex_count = src.vertex_count();
 
-  mt19937 engine (43);
+  mt19937 engine(43);
   uniform_int_distribution<vertex_id_t> distribution(0, vertex_count - 1);
 
   auto ran = bind(distribution, engine);
@@ -42,13 +42,13 @@ void Driver::run() {
 
   EdgeList inserts;
   if (config.experiments.find(INSERT) != config.experiments.end()) {
-    cout << "Reading insert dataset " << config.base.path << endl;
+    cout << "Reading insert dataset " << config.insertions.path << endl;
     inserts = read_insert_dataset();
   }
 
   EdgeList deletes;
   if (config.experiments.find(DELETE) != config.experiments.end()) {
-    cout << "Reading delete dataset " << config.base.path << endl;
+    cout << "Reading delete dataset " << config.deletions.path << endl;
     inserts = read_delete_dataset();
   }
 
@@ -66,7 +66,8 @@ void Driver::run() {
 }
 
 void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes,
-                                DataStructures ds, const vector<string>& ds_parameters, vector<vertex_id_t>& neighbourhood_2_sources) {
+                                DataStructures ds, const vector<string> &ds_parameters,
+                                vector<vertex_id_t> &neighbourhood_2_sources) {
   reporter.set_data_structure(ds, ds_parameters);
 
   TopologyInterface *data_structure;
@@ -109,7 +110,8 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         unordered = stoi(ds_parameters[1]);
       }
       data_structure = new BlockedLinkedListAdjacencyLists(block_size, unordered,
-              base.adjacency_lists.size() + inserts.edges.size() + 100, base.vertex_count());
+                                                           base.adjacency_lists.size() + inserts.edges.size() + 100,
+                                                           base.vertex_count());
       break;
     }
     default: {
@@ -156,7 +158,7 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
     queue<vertex_id_t> work;
     work.push(start_vertex);
 
-    ContigiousBlockIterator& iter = getIter(*ds);
+    ContigiousBlockIterator &iter = getIter(*ds);
     while (!work.empty()) {
       vertex_id_t v = work.front();
       work.pop();
@@ -216,7 +218,31 @@ void Driver::load_base_dataset(shared_ptr<TopologyInterface> ds, SortedCSRDataSo
 }
 
 void Driver::run_insert_experiment(shared_ptr<TopologyInterface> ds, EdgeList &el) {
-  throw NotImplemented();
+  cout << "Running insert experiment " << endl;
+
+  vector<size_t> run_times;
+
+  auto start = chrono::steady_clock::now();
+
+  try {
+    for (const auto &edge : el) {
+      ds->insert_edge(edge);
+    }
+    auto end = chrono::steady_clock::now();
+
+    size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
+    run_times.push_back(microseconds);
+    reporter.add_repetition(INSERT, 0, microseconds);
+
+    double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
+    cout << "Inserting took: " << average << " milliseconds " << endl;
+
+    run_bfs_experiment(ds);
+  } catch (const NotImplemented& e) {
+    cout << "Insertion not supported by ds: " << typeid(ds).name() << endl;
+  }
+
+
 }
 
 void Driver::run_delete_experiment(shared_ptr<TopologyInterface> ds, EdgeList &el) {
@@ -233,7 +259,7 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
     auto start = chrono::steady_clock::now();
 
     triangles = 0;
-    vector<dst_t > out;
+    vector<dst_t> out;
 
     VectorBatchedEdgeIterator a_neighbours;
     for (int a = 0; a < ds->vertex_count(); a++) {
@@ -266,7 +292,7 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
 }
 
 void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
-        const vector<vertex_id_t>& sources) {
+                                            const vector<vertex_id_t> &sources) {
   cout << "Running 2 neighbourhood experiment ";
   cout.flush();
 
@@ -274,24 +300,24 @@ void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
   size_t count = 0;
 
   // Does count neighbours more than once.
-  ContigiousBlockIterator& neighbour_neighbours = getIter(*ds);
-  ContigiousBlockIterator& neighbours = getIter(*ds);
-  ContigiousBlockIterator& neighbours_3 = getIter(*ds);
+  ContigiousBlockIterator &neighbour_neighbours = getIter(*ds);
+  ContigiousBlockIterator &neighbours = getIter(*ds);
+  ContigiousBlockIterator &neighbours_3 = getIter(*ds);
   for (int rep = 0; rep < config.repetitions; rep++) {
     auto start = chrono::steady_clock::now();
 
-    for (const auto& s : sources) {
+    for (const auto &s : sources) {
       ds->neighbourhood(s, neighbours);
       while (neighbours.has_next()) {
-        auto& batch = neighbours.next();
-        for (const auto& n : batch) {
+        auto &batch = neighbours.next();
+        for (const auto &n : batch) {
           ds->neighbourhood(n, neighbours_3);
           count++;
 
           while (neighbours_3.has_next()) {
-            auto& batch2 = neighbours_3.next();
+            auto &batch2 = neighbours_3.next();
 
-            for (const auto& nn : batch2) {
+            for (const auto &nn : batch2) {
 //              cout << s << " " << n << " " << nn << endl;
               count++;
             }
@@ -319,7 +345,9 @@ void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
 }
 
 EdgeList Driver::read_insert_dataset() {
-  throw NotImplemented();
+  EdgeList edge_list;
+  edge_list.read_from_binary_file(config.insertions.path);
+  return edge_list;
 }
 
 EdgeList Driver::read_delete_dataset() {
@@ -332,12 +360,12 @@ SortedCSRDataSource Driver::read_base_dataset() {
   return out;
 }
 
-ContigiousBlockIterator &Driver::getIter(TopologyInterface& ds) {
+ContigiousBlockIterator &Driver::getIter(TopologyInterface &ds) {
   if (typeid(ds) == typeid(BlockedLinkedListAdjacencyLists)) {
-    blockIterators.emplace_back(BlockedBatchedEdgeIterator());
+    blockIterators.push_back(BlockedBatchedEdgeIterator());
     return blockIterators[blockIterators.size() - 1];
   } else {
-    vectorIterators.emplace_back(VectorBatchedEdgeIterator());
+    vectorIterators.push_back(VectorBatchedEdgeIterator());
     return vectorIterators[vectorIterators.size() - 1];
   }
 }

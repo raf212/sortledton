@@ -24,11 +24,11 @@ def rewrite_dataset(data):
 
 label_names = {
     "(csr(), r)": "CSR",
-    "(csrAL(0,0), r)": "size in index",
+    "(csrAL(0,0), r)": "degree in index",
     "(csrAL(32,0), r)": "csr < 32",
     "(csrAL(64,0), r)": "csr < 64",
     "(csrAL(128,0), r)": "csr < 128",
-    "(mallocAL(0), r)": "malloc",
+    "(mallocAL(0), r)": "eliminate second pointer",
     "(vectorAL(1), r)": "vector",
     "(vectorAL(0), r)": "vector sorted"
 }
@@ -88,6 +88,8 @@ def generate_report():
             subplot.set_title(title)
             subplot.set_xlabel("data structure")
             subplot.set_ylabel("runtime [ms]")
+
+            subplot.set_ylim((0.0, subplot.get_ylim()[1]))
 
             x_tick_labels = subplot.get_xticklabels()
             x_tick_labels = list(map(rename_label, x_tick_labels))
