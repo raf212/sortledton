@@ -9,6 +9,7 @@
 #include <utils/utils.h>
 #include <vector>
 #include <experimental/filesystem>
+#include <boost/algorithm/string.hpp>
 
 #include <utils/utils.h>
 
@@ -70,10 +71,18 @@ public:
     };
     string path;
     string name;
+
+    string get_name() {
+      vector<string> strs;
+      boost::split(strs,name,boost::is_any_of("/"));
+      return strs[strs.size() - 2];
+    }
 };
 
 class Config {
 public:
+    const static string gold_standard_directory;
+
     const static unordered_map<DataStructures, string> DATA_STRUCTURE_MAPPING;
     const static unordered_map<Experiments, string> EXPERIMENT_MAPPING;
 

@@ -38,6 +38,8 @@ private:
     void run_delete_experiment(shared_ptr<TopologyInterface> ds, EdgeList& el);
 
     void run_bfs_experiment(shared_ptr<TopologyInterface> ds);
+    void check_bfs(vertex_id_t start_vertex, vector<ulong> distances);
+
     void run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds);
     void run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds, const vector<vertex_id_t>& sources);
 
@@ -45,6 +47,8 @@ private:
 
     vector<VectorBatchedEdgeIterator> vectorIterators;
     vector<BlockedBatchedEdgeIterator> blockIterators;
+
+
 
 
 };

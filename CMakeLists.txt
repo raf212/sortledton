@@ -3,6 +3,8 @@ project(live_graph_two)
 
 set(CMAKE_CXX_STANDARD 14)
 
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
+
 include_directories(.)
 include_directories(data-structures)
 

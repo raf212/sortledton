@@ -15,6 +15,7 @@
 #include <functional>
 #include <data-structures/BlockedLinkedListAdjacencyLists.h>
 #include <data-structures/BlockedSkipListAdjacencyLists.h>
+#include <cassert>
 #include "Driver.h"
 
 vector<vertex_id_t> select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
@@ -219,6 +220,10 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
 
     cout << ".";
     cout.flush();
+
+#ifdef DEBUG
+    check_bfs(start_vertex, distances);
+#endif
   }
 
   cout << "Traversed vertices " << vertices_traversed << endl;
@@ -254,8 +259,6 @@ void Driver::run_insert_experiment(shared_ptr<TopologyInterface> ds, EdgeList &e
   } catch (const NotImplemented &e) {
     cout << "Insertion not supported by ds: " << typeid(ds).name() << endl;
   }
-
-
 }
 
 void Driver::run_delete_experiment(shared_ptr<TopologyInterface> ds, EdgeList &el) {
@@ -382,3 +385,39 @@ ContigiousBlockIterator &Driver::getIter(TopologyInterface &ds) {
     return vectorIterators[vectorIterators.size() - 1];
   }
 }
+
+void Driver::check_bfs(vertex_id_t start_vertex, vector<ulong> distances) {
+  const string gold_standard_file =  config.gold_standard_directory + "/bfs_" + config.base.get_name() + "_" + to_string(start_vertex) + ".goldStandard";
+  if (!file_exists(gold_standard_file)) {
+    cout << "Writing new gold standard for: " << gold_standard_file << endl;
+    ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
+
+    if (!f.good()) {
+      assert(false);
+    }
+
+    auto size = distances.size();
+    f.write((char*) &size, sizeof(size));
+
+    for (auto d : distances) {
+      f.write((char*) &d, sizeof(d));
+    }
+    f.close();
+  } else {
+    ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
+
+    size_t size;
+    f.read((char*) &size, sizeof(size));
+
+    assert(size == distances.size());
+
+    ulong e;
+    for (auto d : distances) {
+      f.read((char*) &e, sizeof(d));
+      assert(d == e);
+    }
+
+    f.close();
+  }
+}
+

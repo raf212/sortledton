@@ -137,3 +137,4 @@ const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING {
         {NEIGHBOUR_2, "2-neighbour"}
 };
 
+const string Config::gold_standard_directory = "/space/fuchs/shared/graph_two_gold_standards";
