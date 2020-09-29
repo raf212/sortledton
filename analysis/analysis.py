@@ -89,6 +89,8 @@ def generate_report():
           subplot.set_xlabel("data structures")
           subplot.set_ylabel("runtime [microseconds]")
 
+          subplot.set_ylim((0.0, subplot.get_ylim()[1]))
+
           subplot.set_xticklabels(subplot.get_xticklabels(), rotation=90)
 
           plt.tight_layout()
