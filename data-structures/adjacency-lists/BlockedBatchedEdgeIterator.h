@@ -22,7 +22,7 @@ public:
 
     bool has_next() override { return current_block != nullptr; };
     ContiguousEdgeBatch& next() override {
-      batch.start = GET_DATA(current_block);
+      batch.start = current_block->data;
       batch.size = current_block->size;
 
       current_block = current_block->next;

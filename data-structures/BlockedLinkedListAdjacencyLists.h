@@ -12,12 +12,11 @@
 #include <iostream>
 #include "ToplogyInterface.h"
 
-#define GET_DATA(blockHeader_p) (dst_t*) (((char*) blockHeader_p) + sizeof(BlockHeader))
-
 struct BlockHeader {
     size_t size;
     dst_t min;
     dst_t max;
+    dst_t* data;
     BlockHeader* next;
 };
 
@@ -39,7 +38,7 @@ public:
     block_size(block_size), unordered(unordered),
     pool(max_edges / block_size + 1,
             block_size * sizeof(dst_t) + sizeof(BlockHeader),
-            500, true) {
+            500, false) {
       if (block_size % 2 != 0) {
         throw ConfigurationError("We rely on the block to be an even number.");
       }

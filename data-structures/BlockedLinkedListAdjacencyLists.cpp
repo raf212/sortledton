@@ -39,6 +39,7 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
 
     while (start < end) {
       BlockHeader *block = (BlockHeader *) pool.get_block();
+      block->data = (dst_t*) ((char*) block + sizeof(BlockHeader));
       block->next = nullptr;
 
       if (first_block == nullptr) {
@@ -50,7 +51,7 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
 
       block->size = block_fill < end - start ? block_fill : end - start;
 
-      dst_t *block_data = GET_DATA(block);
+      dst_t *block_data = block->data;
       memcpy((void *) block_data, (void *) start, block->size * sizeof(dst_t));
 
       if (!unordered) {
@@ -69,7 +70,7 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
     auto i = first_block;
 
     while (i != nullptr) {
-      dst_t* j = GET_DATA(i);
+      dst_t* j = i->data;
 
 //      dst_t min = -1;
 //      dst_t max = 0;
@@ -79,8 +80,8 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
 //        j++;
 //      }
 
-      assert(*GET_DATA(i) == i->min);
-      assert(*(GET_DATA(i) + i->size - 1) == i->max);
+      assert(*i->data == i->min);
+      assert(*(i->data + i->size - 1) == i->max);
 
       all_size += i->size;
       i = i->next;
@@ -104,7 +105,9 @@ void BlockedLinkedListAdjacencyLists::insert_edge(edge_t edge) {
   // Insert to empty list
   if (adjacency_list == nullptr) {
     BlockHeader* first_block = (BlockHeader*) pool.get_block();
-    *(GET_DATA(first_block)) = edge.dst;
+    first_block->data = (dst_t*) ((char*) first_block + sizeof(BlockHeader));
+
+    *first_block->data = edge.dst;
 
     first_block->size = 1;
     first_block->next = nullptr;
@@ -122,10 +125,11 @@ void BlockedLinkedListAdjacencyLists::insert_edge(edge_t edge) {
 
     // Handle a full block
     if (i->size == block_size) {
-      auto data = GET_DATA(i);
+      auto data = i->data;
       const auto split = block_size / 2;
 
       BlockHeader* new_block = (BlockHeader*) pool.get_block();
+      new_block->data = (dst_t*) ((char*) new_block + sizeof(BlockHeader));
 
       new_block->size = split;
       i->size = split;
@@ -138,15 +142,15 @@ void BlockedLinkedListAdjacencyLists::insert_edge(edge_t edge) {
       i->max = *(data + split - 1);
 
 
-      memcpy((void*) GET_DATA(new_block), (void*) (data + split), split * sizeof(dst_t));
+      memcpy((void*) new_block->data, (void*) (data + split), split * sizeof(dst_t));
 
       // Recursive call of max depth 1.
       insert_edge(edge);
 
     } else {
-      auto data = GET_DATA(i) + i->size - 1;
+      auto data = i->data + i->size - 1;
 
-      while (edge.dst < *data &&  GET_DATA(i) <= data) {
+      while (edge.dst < *data &&  i->data <= data) {
         *(data + 1) = *data;
         data--;
       }

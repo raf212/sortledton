@@ -125,7 +125,8 @@ const unordered_map<DataStructures, string> Config::DATA_STRUCTURE_MAPPING {
         {VECTOR_ADJACENCY_LIST, "vectorAL"},
         {MALLOC_ADJACENCY_LIST, "mallocAL"},
         {CSR_MALLOC_ADJACENCY_LIST, "csrMallocAL"},
-        {BLOCKED_LINKED_LIST_AL, "bllAL"}
+        {BLOCKED_LINKED_LIST_AL, "bllAL"},
+        {BLOCKED_SKIP_LIST_AL, "bslAL"}
 };
 
 const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING {

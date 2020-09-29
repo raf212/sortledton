@@ -14,6 +14,7 @@
 #include <queue>
 #include <functional>
 #include <data-structures/BlockedLinkedListAdjacencyLists.h>
+#include <data-structures/BlockedSkipListAdjacencyLists.h>
 #include "Driver.h"
 
 vector<vertex_id_t> select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
@@ -112,6 +113,18 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       data_structure = new BlockedLinkedListAdjacencyLists(block_size, unordered,
                                                            base.adjacency_lists.size() + inserts.edges.size() + 100,
                                                            base.vertex_count());
+      break;
+    }
+    case BLOCKED_SKIP_LIST_AL: {
+      bool unordered = false;
+      size_t block_size = 128;
+      if (!ds_parameters.empty()) {
+        block_size = stoi(ds_parameters[0]);
+        unordered = stoi(ds_parameters[1]);
+      }
+      data_structure = new BlockedSkipListAdjacencyLists(block_size, 6, unordered,
+                                                         base.adjacency_lists.size() + inserts.edges.size() + 100,
+                                                         base.vertex_count());
       break;
     }
     default: {
@@ -238,7 +251,7 @@ void Driver::run_insert_experiment(shared_ptr<TopologyInterface> ds, EdgeList &e
     cout << "Inserting took: " << average << " milliseconds " << endl;
 
     run_bfs_experiment(ds);
-  } catch (const NotImplemented& e) {
+  } catch (const NotImplemented &e) {
     cout << "Insertion not supported by ds: " << typeid(ds).name() << endl;
   }
 
@@ -361,7 +374,7 @@ SortedCSRDataSource Driver::read_base_dataset() {
 }
 
 ContigiousBlockIterator &Driver::getIter(TopologyInterface &ds) {
-  if (typeid(ds) == typeid(BlockedLinkedListAdjacencyLists)) {
+  if (typeid(ds) == typeid(BlockedLinkedListAdjacencyLists) || typeid(ds) == typeid(BlockedSkipListAdjacencyLists)) {
     blockIterators.push_back(BlockedBatchedEdgeIterator());
     return blockIterators[blockIterators.size() - 1];
   } else {

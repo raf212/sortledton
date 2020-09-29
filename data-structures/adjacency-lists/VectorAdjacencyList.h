@@ -19,7 +19,7 @@ class VectorAdjacencyList : public AdjacencyList {
 public:
     explicit VectorAdjacencyList(vector<dst_t> src) : neighbourhood(src) {
       // Reserve 10% empty space for insert experiment.
-//      neighbourhood.reserve(neighbourhood.size() + neighbourhood.size() * 0.1);
+      neighbourhood.reserve(neighbourhood.size() + neighbourhood.size() * 0.1);
     };
 
     void initialize_iterator(BatchedEdgeIterator& iterator) override;
