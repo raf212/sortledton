@@ -320,7 +320,6 @@ void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
   cout.flush();
 
   vector<size_t> run_times;
-  size_t count = 0;
 
   // Does count neighbours more than once.
   ContigiousBlockIterator &neighbour_neighbours = getIter(*ds);
@@ -329,7 +328,9 @@ void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
   for (int rep = 0; rep < config.repetitions; rep++) {
     auto start = chrono::steady_clock::now();
 
+    unordered_map<vertex_id_t, size_t> neighbour_counts;
     for (const auto &s : sources) {
+      size_t count = 0;
       ds->neighbourhood(s, neighbours);
       while (neighbours.has_next()) {
         auto &batch = neighbours.next();
@@ -350,6 +351,7 @@ void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
 //      if (count > 10000) {
 //        break;
 //      }
+      neighbour_counts.insert(make_pair(s, count));
     }
     auto end = chrono::steady_clock::now();
 
@@ -359,9 +361,12 @@ void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
 
     cout << ".";
     cout.flush();
+
+#ifdef DEBUG
+    check_neighbourhood_2(neighbour_counts);
+#endif
   }
 
-  cout << "Traversed " << count << endl;
   double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
   cout << endl << "2 neighbourhood counting run in average in " << average << " milliseconds " << endl;
 
@@ -493,5 +498,48 @@ void Driver::check_insert(shared_ptr<TopologyInterface> ds, EdgeList& el) {
   }
 
   run_bfs_experiment(ds, true);
+}
+
+void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts) {
+  const string gold_standard_file =  config.gold_standard_directory + "/neighbour2_" + config.base.get_name() + ".goldStandard";
+  if (!file_exists(gold_standard_file)) {
+    cout << "Writing new gold standard for: " << gold_standard_file << endl;
+    ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
+
+    if (!f.good()) {
+      assert(false);
+    }
+
+    size_t size = neighbour_counts.size();
+    f.write((char*) &size, sizeof(size));
+
+    for (auto nc : neighbour_counts) {
+      f.write((char*) &(nc.first), sizeof(vertex_id_t));
+      f.write((char*) &(nc.second), sizeof(size_t));
+    }
+    f.close();
+  } else {
+    ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
+
+    size_t size;
+    f.read((char*) &size, sizeof(size));
+
+    assert(size == neighbour_counts.size());
+
+    vertex_id_t v;
+    size_t c;
+    for (int i=0; i < size; i++) {
+      f.read((char*) &v, sizeof(v));
+      f.read((char*) &c, sizeof(c));
+
+      auto a = neighbour_counts.find(v);
+      assert(a != neighbour_counts.end() && a->second == c);
+    }
+
+
+    f.close();
+  }
+
+
 }
 

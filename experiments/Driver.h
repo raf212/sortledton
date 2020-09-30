@@ -36,6 +36,7 @@ private:
 
     void run_insert_experiment(shared_ptr<TopologyInterface> ds, EdgeList& el);
     void check_insert(shared_ptr<TopologyInterface> ds, EdgeList& el);
+
     void run_delete_experiment(shared_ptr<TopologyInterface> ds, EdgeList& el);
 
     /**
@@ -55,6 +56,7 @@ private:
 
     void run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds);
     void run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds, const vector<vertex_id_t>& sources);
+    void check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts);
 
     void validate_graph_structure(shared_ptr<TopologyInterface> ds, SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes);
 
