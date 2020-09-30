@@ -28,6 +28,8 @@ public:
 
     void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) override;
 
+    bool has_edge(edge_t edge) override;
+
     void bulkload(const SortedCSRDataSource &src) override;
 
     vector<size_t> adjacency_index;

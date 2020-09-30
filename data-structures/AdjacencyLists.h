@@ -26,6 +26,8 @@ public:
     void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) override;
     void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) override;
 
+    bool has_edge(edge_t e) override;
+
     void bulkload(const SortedCSRDataSource& src) override;
 
 protected:

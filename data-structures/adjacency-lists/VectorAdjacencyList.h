@@ -28,6 +28,8 @@ public:
     void insert_edge(dst_t edge) override;
     void delete_edge(dst_t edge) override;
 
+    bool has_neighbour(dst_t n) override;
+
 private:
     vector<dst_t> neighbourhood;
 };

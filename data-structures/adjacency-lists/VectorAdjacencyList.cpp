@@ -2,6 +2,7 @@
 // Created by per on 31.08.20.
 //
 
+#include <algorithm>
 #include "VectorAdjacencyList.h"
 
 void VectorAdjacencyList::initialize_iterator(BatchedEdgeIterator& iterator) {
@@ -48,4 +49,8 @@ void VectorAdjacencyList::intersect(AdjacencyList &other, vector<dst_t>& out) {
   } else {
     throw invalid_argument("Other needs to be of type VectorAdjacencyList");
   }
+}
+
+bool VectorAdjacencyList::has_neighbour(dst_t n) {
+  return find(neighbourhood.begin(), neighbourhood.end(), n) != neighbourhood.end();
 }

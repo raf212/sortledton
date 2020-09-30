@@ -60,6 +60,8 @@ public:
       throw NotImplemented();
     };
 
+    bool has_edge(edge_t e) override;
+
     void bulkload(const SortedCSRDataSource &src) override;
 
 private:

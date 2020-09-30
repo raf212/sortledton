@@ -142,7 +142,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     run_neighbourhood_2_experiment(wrapped_ds, neighbourhood_2_sources);
   }
   if (config.experiments.find(BFS) != config.experiments.end()) {
-    run_bfs_experiment(wrapped_ds);
+    run_bfs_experiment(wrapped_ds, false);
   }
   if (config.experiments.find(TRIANGLE_COUNTING) != config.experiments.end()) {
     run_triangle_counting_experiment(wrapped_ds);
@@ -154,12 +154,13 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     run_delete_experiment(wrapped_ds, deletes);
   }
 
-#ifdef DEBUG
-  validate_graph_structure(wrapped_ds, base, inserts, deletes);
-#endif
+  if (config.validate_datastructures) {
+    validate_graph_structure(wrapped_ds, base, inserts, deletes);
+  }
 }
 
-void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
+// TODO break apart for validation and experiment purposes
+void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds, bool validate_inserts) {
   vertex_id_t start_vertex = 2;
 
   cout << "Running BFS experiment ";
@@ -219,14 +220,16 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
 
     auto end = chrono::steady_clock::now();
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
-    run_times.push_back(microseconds);
-    reporter.add_repetition(BFS, rep, microseconds);
+    if (!validate_inserts) {
+      run_times.push_back(microseconds);
+      reporter.add_repetition(BFS, rep, microseconds);
+    }
 
     cout << ".";
     cout.flush();
 
 #ifdef DEBUG
-    check_bfs(start_vertex, distances);
+    check_bfs(start_vertex, distances, validate_inserts);
 #endif
   }
 
@@ -259,7 +262,7 @@ void Driver::run_insert_experiment(shared_ptr<TopologyInterface> ds, EdgeList &e
     double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
     cout << "Inserting took: " << average << " milliseconds " << endl;
 
-    run_bfs_experiment(ds);
+    check_insert(ds, el);
   } catch (const NotImplemented &e) {
     cout << "Insertion not supported by ds: " << typeid(ds).name() << endl;
   }
@@ -390,8 +393,12 @@ ContigiousBlockIterator &Driver::getIter(TopologyInterface &ds) {
   }
 }
 
-void Driver::check_bfs(vertex_id_t start_vertex, vector<ulong> distances) {
-  const string gold_standard_file =  config.gold_standard_directory + "/bfs_" + config.base.get_name() + "_" + to_string(start_vertex) + ".goldStandard";
+void Driver::check_bfs(vertex_id_t start_vertex, vector<ulong> distances, bool validate_inserts) {
+  string inserts = "base";
+  if (validate_inserts) {
+    inserts = "inserts";
+  }
+  const string gold_standard_file =  config.gold_standard_directory + "/bfs_" + config.base.get_name() + "_" + to_string(start_vertex) + "_" + inserts + ".goldStandard";
   if (!file_exists(gold_standard_file)) {
     cout << "Writing new gold standard for: " << gold_standard_file << endl;
     ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
@@ -437,16 +444,14 @@ void Driver::validate_graph_structure(shared_ptr<TopologyInterface> ds, SortedCS
   if (config.experiments.find(DELETE) != config.experiments.end()) {
     delete_map = deletes.to_map();
   }
-
   for (vertex_id_t v = 0; v < vertices; v++) {
+//    cout << "Vertex " << v << endl;
     unordered_set<dst_t> e_neighbours = base.get_neighbour_set(v);
 
     unordered_set<dst_t> e_deleted = get_values_from_multimap(delete_map, v);
     unordered_set<dst_t> e_inserted = get_values_from_multimap(insert_map, v);
 
     unordered_set<dst_t> a_neighbours = get_neighbours(ds, v);
-
-    assert(a_neighbours.size() == e_neighbours.size() + e_inserted.size() - e_deleted.size());
 
     for (auto n : a_neighbours) {
       if (e_neighbours.find(n) == e_neighbours.end()) {
@@ -455,8 +460,16 @@ void Driver::validate_graph_structure(shared_ptr<TopologyInterface> ds, SortedCS
         assert(e_deleted.find(n) == e_deleted.end());
       }
     }
+
+    for (auto n : e_neighbours) {
+      assert(a_neighbours.find(n) != a_neighbours.end() || e_deleted.find(n) != e_deleted.end());
+    }
+    for (auto n: e_inserted) {
+      assert(a_neighbours.find(n) != a_neighbours.end() || e_deleted.find(n) != e_deleted.end());
+    }
   }
 }
+
 
 unordered_set<dst_t> Driver::get_neighbours(shared_ptr<TopologyInterface> ds, vertex_id_t v) {
   unordered_set<dst_t> neighbours;
@@ -471,5 +484,14 @@ unordered_set<dst_t> Driver::get_neighbours(shared_ptr<TopologyInterface> ds, ve
     }
   }
   return neighbours;
+}
+
+void Driver::check_insert(shared_ptr<TopologyInterface> ds, EdgeList& el) {
+  cout << "checking inserts" << endl;
+  for (auto e : el.edges) {
+    assert(ds->has_edge(e));
+  }
+
+  run_bfs_experiment(ds, true);
 }
 

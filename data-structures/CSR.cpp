@@ -25,3 +25,9 @@ void CSR::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &o
 
   intersect_edge_block(start_a, end_a, start_b, end_b, out);
 }
+
+bool CSR::has_edge(edge_t edge) {
+  dst_t* last = &adjacency_lists[adjacency_index[edge.src + 1]];
+  dst_t* first = &adjacency_lists[adjacency_index[edge.src]];
+  return find(first, last, edge.dst) != last;
+}

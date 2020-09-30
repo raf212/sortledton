@@ -21,6 +21,7 @@ void Config::initialize(int argc, char **argv) {
             {"dataset_base", required_argument, 0, 'b'},
             {"dataset_insert", required_argument, 0, 'i'},
             {"dataset_delete", required_argument, 0, 'd'},
+            {"validate", required_argument, 0, 'v'},
             {"repetitions", required_argument, 0, 'r'}
     };
 
@@ -47,6 +48,9 @@ void Config::initialize(int argc, char **argv) {
         break;
       case 'r':
         repetitions = stoi(optarg);
+        break;
+      case 'v':
+        validate_datastructures = true;
         break;
       case '?':
         printf("No help provided read src.\n");

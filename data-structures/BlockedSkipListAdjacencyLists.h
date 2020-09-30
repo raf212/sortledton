@@ -38,6 +38,8 @@ public:
       throw NotImplemented();
     };
 
+    bool has_edge(edge_t edge) override;
+
     void bulkload(const SortedCSRDataSource &src) override;
 
 private:
@@ -61,17 +63,10 @@ private:
     };
 
     size_t get_height() {
-      std::mt19937 generator;
-
-
-
-      int number = level_distribution(level_generator);
-      return number;
-//      size_t a = level_distribution(level_generator) + 1;
-//      return a;
+      return level_distribution(level_generator) + 1;
     };
 
-    void find_block(SkipListHeader *pHeader, dst_t element, vector<SkipListHeader*> &blocks);
+    SkipListHeader* find_block(SkipListHeader *pHeader, dst_t element, vector<SkipListHeader*> &blocks);
 
     size_t skip_list_header_size() const {
       return levels * sizeof(SkipListHeader*) + sizeof(BlockHeader);

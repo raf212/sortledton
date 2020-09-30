@@ -163,3 +163,14 @@ void BlockedLinkedListAdjacencyLists::insert_edge(edge_t edge) {
     }
   }
 }
+
+bool BlockedLinkedListAdjacencyLists::has_edge(edge_t e) {
+  auto i = adjacency_index[e.src];
+
+  while (i->next != nullptr && i->max < e.dst) {
+    i = i->next;
+  }
+
+  auto last = i->data + i->size;
+  return find(i->data, last, e.dst) != last;
+}

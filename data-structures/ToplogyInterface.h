@@ -22,6 +22,8 @@ public:
     virtual void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) = 0;
     virtual void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) = 0;
 
+    virtual bool has_edge(edge_t edge) = 0;
+
     virtual void bulkload(const SortedCSRDataSource& src) = 0;
 };
 

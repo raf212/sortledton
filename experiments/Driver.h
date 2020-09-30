@@ -35,10 +35,23 @@ private:
     void load_base_dataset(shared_ptr<TopologyInterface> ds, SortedCSRDataSource& base);
 
     void run_insert_experiment(shared_ptr<TopologyInterface> ds, EdgeList& el);
+    void check_insert(shared_ptr<TopologyInterface> ds, EdgeList& el);
     void run_delete_experiment(shared_ptr<TopologyInterface> ds, EdgeList& el);
 
-    void run_bfs_experiment(shared_ptr<TopologyInterface> ds);
-    void check_bfs(vertex_id_t start_vertex, vector<ulong> distances);
+    /**
+     *
+     * @param ds
+     * @param validate_inserts set to true if called after insertion experiments to validate it, influences the gold standard set picked.
+     */
+    void run_bfs_experiment(shared_ptr<TopologyInterface> ds, bool validate_inserts);
+
+    /**
+     * Checks the BFS search result (distances of all vertices to the start vertex) against a gold standard result.
+     * @param start_vertex
+     * @param distances
+     * @param validate_inserts set to true if called after insertion experiments to validate it, influences the gold standard set picked.
+     */
+    void check_bfs(vertex_id_t start_vertex, vector<ulong> distances, bool validate_inserts);
 
     void run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds);
     void run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds, const vector<vertex_id_t>& sources);

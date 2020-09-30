@@ -95,6 +95,8 @@ public:
 
     uint repetitions;
 
+    bool validate_datastructures = false;
+
     void initialize(int argc, char **argv);
 
 private:

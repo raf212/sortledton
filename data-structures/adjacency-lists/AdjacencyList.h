@@ -19,6 +19,8 @@ public:
 
     virtual void initialize_iterator(BatchedEdgeIterator& iterator) = 0;
     virtual void intersect(AdjacencyList& other, vector<dst_t>& out) = 0;
+
+    virtual bool has_neighbour(dst_t n) = 0;
 };
 
 
