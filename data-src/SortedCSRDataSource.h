@@ -5,6 +5,7 @@
 #ifndef LIVE_GRAPH_TWO_SORTEDCSRDATASOURCE_H
 #define LIVE_GRAPH_TWO_SORTEDCSRDATASOURCE_H
 
+#include <unordered_set>
 #include <cstddef>
 #include <string>
 #include <vector>
@@ -29,6 +30,8 @@ public:
         size_t* offsets; // Array of offsets of length vertex_count + 1
         dst_t* adjacency_lists; // Array of all adjacency information of length edge_count.
     };
+
+    unordered_set<dst_t> get_neighbour_set(vertex_id_t v);
 };
 
 

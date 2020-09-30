@@ -5,6 +5,7 @@
 #ifndef LIVE_GRAPH_TWO_EDGELIST_H
 #define LIVE_GRAPH_TWO_EDGELIST_H
 
+#include <unordered_map>
 #include <vector>
 #include <string>
 #include "../data_types.h"
@@ -20,6 +21,8 @@ public:
     vector<edge_t>::iterator end() { return edges.end(); };
 
     vector<edge_t> edges;
+
+    unordered_multimap<vertex_id_t, dst_t> to_map();
 };
 
 #include "DataSource.h"

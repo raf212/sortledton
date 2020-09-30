@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <data_types.h>
 
 using namespace std;
@@ -41,5 +42,20 @@ string get_filename(string path);
 string get_home_dir();
 
 void intersect_edge_block(dst_t* start_a, dst_t* end_a, dst_t* start_b, dst_t* end_b, vector<dst_t>& out);
+
+template<typename K, typename V>
+unordered_set<V> get_values_from_multimap(unordered_multimap<K, V> map, K key) {
+  unordered_set<V> r;
+  r.reserve(map.count(key));
+
+  auto range = map.equal_range(key);
+
+  auto i = range.first;
+  while(i != range.second) {
+    r.insert(i->second);
+    i++;
+  }
+  return r;
+};
 
 #endif //LIVE_GRAPH_TWO_UTILS_H

@@ -18,3 +18,13 @@ void EdgeList::read_from_binary_file(const string &path) {
 
   f.close();
 }
+
+unordered_multimap<vertex_id_t, dst_t> EdgeList::to_map() {
+  unordered_multimap<vertex_id_t, dst_t> m;
+  m.reserve(edges.size());
+
+  for (auto e : edges) {
+    m.emplace(e.src, e.dst);
+  }
+  return m;
+}

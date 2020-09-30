@@ -153,6 +153,10 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   if (config.experiments.find(DELETE) != config.experiments.end()) {
     run_delete_experiment(wrapped_ds, deletes);
   }
+
+#ifdef DEBUG
+  validate_graph_structure(wrapped_ds, base, inserts, deletes);
+#endif
 }
 
 void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
@@ -419,5 +423,53 @@ void Driver::check_bfs(vertex_id_t start_vertex, vector<ulong> distances) {
 
     f.close();
   }
+}
+
+void Driver::validate_graph_structure(shared_ptr<TopologyInterface> ds, SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes) {
+  cout << "Validating data structure." << endl;
+  auto vertices = base.vertex_count();
+
+  unordered_multimap<vertex_id_t, dst_t> insert_map;
+  unordered_multimap<vertex_id_t, dst_t> delete_map;
+  if (config.experiments.find(INSERT) != config.experiments.end()) {
+    insert_map = inserts.to_map();
+  }
+  if (config.experiments.find(DELETE) != config.experiments.end()) {
+    delete_map = deletes.to_map();
+  }
+
+  for (vertex_id_t v = 0; v < vertices; v++) {
+    unordered_set<dst_t> e_neighbours = base.get_neighbour_set(v);
+
+    unordered_set<dst_t> e_deleted = get_values_from_multimap(delete_map, v);
+    unordered_set<dst_t> e_inserted = get_values_from_multimap(insert_map, v);
+
+    unordered_set<dst_t> a_neighbours = get_neighbours(ds, v);
+
+    assert(a_neighbours.size() == e_neighbours.size() + e_inserted.size() - e_deleted.size());
+
+    for (auto n : a_neighbours) {
+      if (e_neighbours.find(n) == e_neighbours.end()) {
+        assert(e_inserted.find(n) != e_inserted.end());
+      } else {
+        assert(e_deleted.find(n) == e_deleted.end());
+      }
+    }
+  }
+}
+
+unordered_set<dst_t> Driver::get_neighbours(shared_ptr<TopologyInterface> ds, vertex_id_t v) {
+  unordered_set<dst_t> neighbours;
+
+  auto& ns = getIter(*ds);
+  ds->neighbourhood(v, ns);
+  while (ns.has_next()) {
+    auto block = ns.next();
+
+    for (auto e : block) {
+      neighbours.insert(e);
+    }
+  }
+  return neighbours;
 }
 

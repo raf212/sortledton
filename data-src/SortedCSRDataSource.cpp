@@ -40,3 +40,15 @@ void SortedCSRDataSource::read_from_binary_file(const string &path) {
 
   f.close();
 }
+
+unordered_set<dst_t> SortedCSRDataSource::get_neighbour_set(vertex_id_t v) {
+  auto size = adjacency_index[v+1] - adjacency_index[v];
+  unordered_set<dst_t> ns;
+  ns.reserve(size);
+
+  for (auto i = adjacency_index[v]; i < adjacency_index[v + 1]; i++) {
+    ns.insert(adjacency_lists[i]);
+  }
+
+  return ns;
+}

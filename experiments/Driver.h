@@ -43,6 +43,10 @@ private:
     void run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds);
     void run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds, const vector<vertex_id_t>& sources);
 
+    void validate_graph_structure(shared_ptr<TopologyInterface> ds, SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes);
+
+    unordered_set<dst_t> get_neighbours(shared_ptr<TopologyInterface> ds, vertex_id_t v);
+
     ContigiousBlockIterator& getIter(TopologyInterface& ds);
 
     vector<VectorBatchedEdgeIterator> vectorIterators;
