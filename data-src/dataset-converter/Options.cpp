@@ -23,6 +23,7 @@ Options parseOptions(int argc, char **argv) {
             {"densify", no_argument, 0, 'e'},        // If the dataset has no dense id or none-numeric ids and needs to be translated into dense numeric ids.
             {"insert_percentage", required_argument, 0, 'i'}, // The percentage of edges to be choosen for insertion.
             {"delete_percentage", required_argument, 0, 'd'}, // The percentage of edges to be choosen for deletion.
+            {"make_undirected", required_argument, 0, 'u'}, // If set makes a directed graph undirected.
     };
 
     c = getopt_long(argc, argv,"",
@@ -43,6 +44,9 @@ Options parseOptions(int argc, char **argv) {
       case 't':
         o.input_format = TEMPORAL_EDGELIST_TEXT;
         o.temporal_value_position = stoi(optarg);
+        break;
+      case 'u':
+        o.make_undirected = true;
         break;
       case '?':
         printf("No help provided read src.\n");

@@ -42,6 +42,14 @@ private:
 
     void write_insertion_set(vector<temporal_edge_t>::iterator begin, vector<temporal_edge_t>::iterator end);
 
+    /**
+     *
+     * @param begin
+     * @param end
+     * @param filter Do not include these edges in the csr.
+     * @param vertex_count
+     * @return
+     */
     SortedCSRDataSource convert_to_sorted_csr(vector<temporal_edge_t>::iterator begin,
                                               vector<temporal_edge_t>::iterator end,
                                               size_t vertex_count);
@@ -49,6 +57,22 @@ private:
     void write_deletion_set(vector<temporal_edge_t>::iterator begin, vector<temporal_edge_t>::iterator end);
 
     void write_base_dataset(SortedCSRDataSource csr);
+
+    /**
+     * For an edge list returns the edge list with all edges in opposite direction as well. This graph can
+     * have many duplicate edges which need to be filtered later.
+     *
+     * @param edges
+     * @return
+     */
+    vector<temporal_edge_t> make_undirected(vector<temporal_edge_t>& edges);
+
+    /**
+     * Removes self edges and duplicate edges.
+     *
+     * @return
+     */
+    vector<temporal_edge_t> clean_data(vector<temporal_edge_t>& edges);
 };
 
 
