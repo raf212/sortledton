@@ -47,6 +47,7 @@ Options parseOptions(int argc, char **argv) {
         break;
       case 'u':
         o.make_undirected = true;
+        o.base_file_name = "undirected_" + o.base_file_name;
         break;
       case '?':
         printf("No help provided read src.\n");

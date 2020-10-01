@@ -37,6 +37,8 @@ void DatasetConverter::run() {
   if (o.make_undirected) {
     SortedCSRDataSource csr = convert_to_sorted_csr(edge_list.begin(), edge_list.end(), vertex_count);
     write_base_dataset(csr);
+
+    write_degree_information(csr);
   } else if (o.input_format == EDGELIST_TEXT) {
     cout << "Creating " << insertion_set_size << " updates and " << deletion_set_size << " deletions." << endl;
     cout << "Running as non temporal file" << endl;
@@ -50,6 +52,8 @@ void DatasetConverter::run() {
     SortedCSRDataSource csr = convert_to_sorted_csr(edge_list.begin(), edge_list.end() - insertion_set_size,
                                                     vertex_count);
     write_base_dataset(csr);
+
+    write_degree_information(csr);
   } else if (o.input_format == TEMPORAL_EDGELIST_TEXT) {
     cout << "Creating " << insertion_set_size << " updates and " << deletion_set_size << " deletions." << endl;
     cout << "Running as a temporal file." << endl;
@@ -67,6 +71,8 @@ void DatasetConverter::run() {
     SortedCSRDataSource csr = convert_to_sorted_csr(edge_list.begin(), insertions_begin, vertex_count);
 
     write_base_dataset(csr);
+
+    write_degree_information(csr);
   }
 
   cout << "End" << endl << endl;
@@ -328,6 +334,23 @@ vector<temporal_edge_t> DatasetConverter::clean_data(vector<temporal_edge_t> &ed
   }
 
   return clean;
+}
+
+void DatasetConverter::write_degree_information(SortedCSRDataSource &graph) {
+  string file_path = o.output_path + o.base_file_name + ".degrees";
+  cout << "Writing degree information to " << file_path;
+  ofstream o(file_path, ofstream::out | ofstream::binary);
+
+  auto vc = graph.vertex_count();
+  o.write((char*) vc, sizeof(vc));
+
+  for (vertex_id_t v = 0; v < graph.vertex_count(); v++) {
+    size_t d = graph.adjacency_index[v + 1] - graph.adjacency_index[v];
+    o.write((char*) &v, sizeof(v));
+    o.write((char*) &d, sizeof(d));
+  }
+
+  o.close();
 }
 
 
