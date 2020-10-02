@@ -20,6 +20,25 @@ DatasetConverter::DatasetConverter(int argc, char **argv) {
   o = parseOptions(argc, argv);
 }
 
+
+void show_max_degree(const vector<temporal_edge_t>& edge_list, size_t vertex_count) {
+  unordered_map<vertex_id_t, size_t> counter;
+  counter.reserve(vertex_count);
+
+  size_t m = 0;
+  for (auto e : edge_list) {
+    auto c = counter.find(e.src);
+    if (c != counter.end()) {
+      c->second++;
+      m = std::max(m, c->second);
+    } else {
+      counter.insert({e.src, 1});
+    }
+  }
+
+  cout << "Max degree: " << m << endl;
+}
+
 void DatasetConverter::run() {
   cout << "Parsing text file. Densify: " << o.densify << " Temporal value: " << o.temporal_value_position << endl;
   size_t vertex_count;
@@ -210,7 +229,7 @@ vector<temporal_edge_t> DatasetConverter::parse_text_file(Options o, size_t &ver
   }
 
   if (o.densify) {
-    vertex_count = next_vertex_id - 1;
+    vertex_count = next_vertex_id;
   } else {
     vertex_count = vertex_set.size();
   }
@@ -255,7 +274,7 @@ SortedCSRDataSource DatasetConverter::convert_to_sorted_csr(vector<temporal_edge
   sort(begin, end, [](temporal_edge_t a, temporal_edge_t b) { return a.src == b.src ? a.dst < b.dst : a.src < b.src; });
 
   SortedCSRDataSource out;
-  out.adjacency_index.resize(vertex_count);
+  out.adjacency_index.resize(vertex_count + 1);
   out.adjacency_index[0] = 0;
   out.adjacency_lists.reserve(end - begin);
 
@@ -291,7 +310,7 @@ void DatasetConverter::write_base_dataset(SortedCSRDataSource csr) {
   ofstream f{o.output_path + o.base_file_name, ofstream::out | ofstream::binary};
 
   SortedCSRDataSource::FileHeader header;
-  header.vertex_count = csr.adjacency_index.size() - 1;
+  header.vertex_count = csr.vertex_count();
   header.edge_count = csr.adjacency_lists.size();
 
   f.write((char *) &header, sizeof(header));
@@ -338,21 +357,21 @@ vector<temporal_edge_t> DatasetConverter::clean_data(vector<temporal_edge_t> &ed
 
 void DatasetConverter::write_degree_information(SortedCSRDataSource &graph) {
   string file_path = o.output_path + o.base_file_name + ".degrees";
-  cout << "Writing degree information to " << file_path;
+  cout << "Writing degree information to " << file_path << endl;
   ofstream o(file_path, ofstream::out | ofstream::binary);
 
-  auto vc = graph.vertex_count();
-  o.write((char*) vc, sizeof(vc));
+  size_t vc = graph.vertex_count();
+  o.write((char *) &vc, sizeof(vc));
 
+  size_t m = 0;
   for (vertex_id_t v = 0; v < graph.vertex_count(); v++) {
     size_t d = graph.adjacency_index[v + 1] - graph.adjacency_index[v];
-    o.write((char*) &v, sizeof(v));
-    o.write((char*) &d, sizeof(d));
+    o.write((char *) &v, sizeof(v));
+    o.write((char *) &d, sizeof(d));
+    m = max(m, d);
   }
+
+  cout << "max degree according to csr: " << m << endl;
 
   o.close();
 }
-
-
-
-
