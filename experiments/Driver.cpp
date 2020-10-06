@@ -292,9 +292,14 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
         auto &a_n_batch = a_neighbours.next();
 
         for (auto b : a_n_batch) {
-          ds->intersect_neighbourhood(a, b, out);
-//          cout << out.size() << endl;
-          triangles += out.size();
+          if (a < b) {
+            ds->intersect_neighbourhood(a, b, out);
+            for (auto c : out) {
+              if (b < c) {
+                triangles += out.size();
+              }
+            }
+          }
         }
       }
     }
@@ -306,6 +311,10 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
 
     cout << ".";
     cout.flush();
+
+#ifdef DEBUG
+    check_triangle_counting(triangles);
+#endif
   }
 
 
@@ -539,7 +548,29 @@ void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_
 
     f.close();
   }
+}
 
+void Driver::check_triangle_counting(size_t count) {
+  const string gold_standard_file =  config.gold_standard_directory + "/triangle_" + config.base.get_name() + ".goldStandard";
+  if (!file_exists(gold_standard_file)) {
+    cout << "Writing new gold standard for: " << gold_standard_file << endl;
+    ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
 
+    if (!f.good()) {
+      assert(false);
+    }
+
+    f.write((char*) &count, sizeof(count));
+    f.close();
+  } else {
+    ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
+
+    size_t e_count;
+    f.read((char*) &e_count, sizeof(e_count));
+
+    assert(e_count == count);
+
+    f.close();
+  }
 }
 

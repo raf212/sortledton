@@ -54,7 +54,10 @@ private:
      */
     void check_bfs(vertex_id_t start_vertex, vector<ulong> distances, bool validate_inserts);
 
+    // TODO remove shared pointer from everything to avoid shared counter overhead
     void run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds);
+    void check_triangle_counting(size_t count);
+
     void run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds, const vector<vertex_id_t>& sources);
     void check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts);
 

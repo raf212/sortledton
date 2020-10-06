@@ -77,6 +77,10 @@ public:
       boost::split(strs,name,boost::is_any_of("/"));
       return strs[strs.size() - 2];
     }
+
+    bool is_undirected() {
+      return endsWith(get_name(), "-u");
+    }
 };
 
 class Config {
