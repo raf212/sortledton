@@ -296,7 +296,7 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
             ds->intersect_neighbourhood(a, b, out);
             for (auto c : out) {
               if (b < c) {
-                triangles += out.size();
+                triangles += 1;
               }
             }
           }

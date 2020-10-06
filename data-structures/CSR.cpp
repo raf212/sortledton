@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <utils/utils.h>
+#include <iostream>
 #include "CSR.h"
 
 void CSR::bulkload(const SortedCSRDataSource &src) {
