@@ -8,8 +8,6 @@ def read_degree_information(file_path):
     SIZE_T = "N"
     VERTEX_ID_T = "I"
 
-    print("size_t size:", struct.calcsize(SIZE_T))
-    print("vertex_id size:", struct.calcsize(VERTEX_ID_T))
     degrees = []
 
     with open(file_path, "rb") as f:
@@ -39,6 +37,26 @@ def generate_histogram(values, graph_name):
 
 
     plt.savefig("./" + graph_name + "_degree_distribution.png")
+
+    plt.clf()
+
+    # Log,log histogram
+    plt.hist(values, bins, histtype="step")
+
+    plt.xscale("log")
+    plt.yscale("log")
+
+    plt.xlabel("degree (log)")
+    plt.ylabel("# number of occurences")
+
+    plt.title(graph_name + " degree distribution")
+
+    plt.tight_layout()
+    # plt.show()
+
+
+    plt.savefig("./" + graph_name + "_degree_distribution_log_log.png")
+
 
 
 def generate_characteristics_file(values, graph_name):
