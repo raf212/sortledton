@@ -408,6 +408,7 @@ ContigiousBlockIterator &Driver::getIter(TopologyInterface &ds) {
 }
 
 void Driver::check_bfs(vertex_id_t start_vertex, vector<ulong> distances, bool validate_inserts) {
+  cout << "Validating bfs experiment" << endl;
   string inserts = "base";
   if (validate_inserts) {
     inserts = "inserts";
@@ -510,6 +511,7 @@ void Driver::check_insert(shared_ptr<TopologyInterface> ds, EdgeList& el) {
 }
 
 void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts) {
+  cout << "Validating 2-neighbourhood experiment" << endl;
   const string gold_standard_file =  config.gold_standard_directory + "/neighbour2_" + config.base.get_name() + ".goldStandard";
   if (!file_exists(gold_standard_file)) {
     cout << "Writing new gold standard for: " << gold_standard_file << endl;
@@ -551,6 +553,7 @@ void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_
 }
 
 void Driver::check_triangle_counting(size_t count) {
+  cout << "Validating triangle experiment" << endl;
   const string gold_standard_file =  config.gold_standard_directory + "/triangle_" + config.base.get_name() + ".goldStandard";
   if (!file_exists(gold_standard_file)) {
     cout << "Writing new gold standard for: " << gold_standard_file << endl;
