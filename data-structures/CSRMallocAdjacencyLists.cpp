@@ -40,23 +40,17 @@ void CSRMallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
 
       csr_position += shuffled_src.size();
     } else {
-      dst_t *adjacency_list = (dst_t *) malloc((shuffled_src.size()) * sizeof(dst_t));
+      dst_t *adjacency_list = (dst_t *) pool.get_memory((shuffled_src.size()) * sizeof(dst_t));
 
       memcpy((void *) &adjacency_list[0], (void *) shuffled_src.data(), shuffled_src.size() * sizeof(dst_t));
 
       adjacency_index.push_back(adjacency_list);
       adjacency_index.push_back((dst_t*) shuffled_src.size());
-
-      free_list.push_back(adjacency_list);
-      free_list.push_back((dst_t*) malloc(64 * 5));  // See comment on MallocAdjacency list.
     }
   }
 }
 
 CSRMallocAdjacencyLists::~CSRMallocAdjacencyLists() {
-  for (const auto& al : free_list) {
-    free(al);
-  }
   free(csr);
 }
 

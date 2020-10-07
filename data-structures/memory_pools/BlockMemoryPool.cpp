@@ -3,12 +3,16 @@
 //
 
 #include "BlockMemoryPool.h"
+#include <iostream>
+#include <cassert>
+
 
 void *BlockMemoryPool::get_block() {
   if (free_list.empty()) {
     add_pool(grow_rate);
   }
-  void *ret = free_list.front();
+  void* ret = free_list.front();
+  assert(ret != nullptr);
   free_list.pop_front();
   return ret;
 }
@@ -25,7 +29,8 @@ BlockMemoryPool::~BlockMemoryPool() {
 
 BlockMemoryPool::BlockMemoryPool(BlockMemoryPool &&other) noexcept:
         pools(std::move(other.pools)), size(other.size), block_size(other.block_size),
-        free_list(std::move(other.free_list)) {
+        free_list(std::move(other.free_list)), shuffle_free_list(other.shuffle_free_list),
+        grow_rate(other.grow_rate) {
   other.size = 0;
 }
 
@@ -41,6 +46,8 @@ BlockMemoryPool &BlockMemoryPool::operator=(BlockMemoryPool &&other) noexcept {
   size = other.size;
   block_size = other.block_size;
   free_list = std::move(other.free_list);
+  shuffle_free_list = other.shuffle_free_list;
+  grow_rate = other.grow_rate;
 
   other.size = 0;
 

@@ -8,6 +8,7 @@
 
 #include <utils/NotImplemented.h>
 #include "ToplogyInterface.h"
+#include "memory_pools/NonContigiousMemoryPool.h"
 
 class MallocAdjacencyLists : public TopologyInterface {
 public:
@@ -36,6 +37,8 @@ private:
     vector<dst_t *> adjacency_index;
     vector<dst_t *> seperators;  // Unused but malloced memory location to seperate adjacency lists
     bool unordered;
+
+    NonContigiousMemoryPool pool{15};
 };
 
 

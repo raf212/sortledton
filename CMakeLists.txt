@@ -45,7 +45,7 @@ set(SRC
         data-structures/adjacency-lists/BlockedBatchedEdgeIterator.cpp
         data-structures/adjacency-lists/BlockedBatchedEdgeIterator.h
         data-structures/adjacency-lists/ContigiousBlockIterator.cpp
-        data-structures/adjacency-lists/ContigiousBlockIterator.h data-structures/BlockedSkipListAdjacencyLists.cpp data-structures/BlockedSkipListAdjacencyLists.h)
+        data-structures/adjacency-lists/ContigiousBlockIterator.h data-structures/BlockedSkipListAdjacencyLists.cpp data-structures/BlockedSkipListAdjacencyLists.h data-structures/memory_pools/NonContigiousMemoryPool.cpp data-structures/memory_pools/NonContigiousMemoryPool.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp

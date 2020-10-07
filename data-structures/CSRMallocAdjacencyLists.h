@@ -7,6 +7,7 @@
 
 
 #include <utils/NotImplemented.h>
+#include <data-structures/memory_pools/NonContigiousMemoryPool.h>
 #include "ToplogyInterface.h"
 
 /**
@@ -38,11 +39,12 @@ public:
 private:
     size_t malloc_limit;
     vector<dst_t *> adjacency_index;
-    vector<dst_t *> free_list;
 
     dst_t* csr;
 
     bool unordered = true;
+
+    NonContigiousMemoryPool pool = NonContigiousMemoryPool(15);
 };
 
 

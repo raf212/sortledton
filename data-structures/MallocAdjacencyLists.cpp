@@ -29,21 +29,12 @@ void MallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
       shuffle(shuffled_src.begin(), shuffled_src.end(), std::mt19937(std::random_device()()));
     }
 
-    dst_t *adjacency_list = (dst_t *) malloc((shuffled_src.size() + 1) * sizeof(dst_t));
+    dst_t *adjacency_list = (dst_t *) pool.get_memory((shuffled_src.size() + 1) * sizeof(dst_t));
 
     adjacency_list[0] = shuffled_src.size();
     memcpy((void *) &adjacency_list[1], (void *) shuffled_src.data(), shuffled_src.size() * sizeof(dst_t));
 
     adjacency_index.push_back(adjacency_list);
-
-    // malloc seems to return contiguous addresses. Let's seperate them.
-    seperators.push_back((dst_t*) malloc(5 * 64));  // Seperate each malloced region by five cachelines.
-  }
-}
-
-MallocAdjacencyLists::~MallocAdjacencyLists() {
-  for (dst_t *al : adjacency_index) {
-    free(al);
   }
 }
 
@@ -59,3 +50,5 @@ void MallocAdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t b,
 
   intersect_edge_block(a_start, a_end, b_start, b_end, out);
 }
+
+MallocAdjacencyLists::~MallocAdjacencyLists() = default;
