@@ -45,7 +45,8 @@ enum Experiments {
     DELETE,
     TRIANGLE_COUNTING,
     BFS,
-    NEIGHBOUR_2
+    NEIGHBOUR_2,
+    COMMUNITY_DETECTION
 };
 
 class Dataset {

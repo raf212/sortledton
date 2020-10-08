@@ -16,6 +16,10 @@ typedef vertex_id_t dst_t;
 struct edge_t {
     vertex_id_t src;
     dst_t dst;
+
+    bool operator==(const edge_t other) const {
+      return src == other.src && dst == other.dst;
+    }
 };
 
 struct temporal_edge_t {

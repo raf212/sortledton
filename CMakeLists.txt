@@ -59,3 +59,12 @@ set(DATASET_CONVERTER_SRC
 
 add_executable(live_graph_two main.cpp ${SRC})
 add_executable(dataset_converter data-src/dataset-converter/main.cpp ${DATASET_CONVERTER_SRC})
+
+set(TESTS
+        tests/data-src/dataset-converter/DatasetConverterTests.cpp
+        tests/data-src/Asserts.h
+        tests/data-src/Asserts.cpp)
+
+add_executable(Google_Tests_run ${TESTS} ${DATASET_CONVERTER_SRC} ${SRC})
+
+target_link_libraries(Google_Tests_run gtest gtest_main gmock)

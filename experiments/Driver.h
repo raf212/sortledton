@@ -61,18 +61,20 @@ private:
     void run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds, const vector<vertex_id_t>& sources);
     void check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts);
 
+    void run_community_detection(shared_ptr<TopologyInterface> ds);
+    void check_community_detection(vector<vertex_id_t> labels);
+
     void validate_graph_structure(shared_ptr<TopologyInterface> ds, SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes);
 
     unordered_set<dst_t> get_neighbours(shared_ptr<TopologyInterface> ds, vertex_id_t v);
 
     ContigiousBlockIterator& getIter(TopologyInterface& ds);
 
+    void print_graph(shared_ptr<TopologyInterface> ds);
+
     vector<VectorBatchedEdgeIterator> vectorIterators;
+
     vector<BlockedBatchedEdgeIterator> blockIterators;
-
-
-
-
 };
 
 

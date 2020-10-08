@@ -13,6 +13,7 @@ Options parseOptions(int argc, char **argv) {
   Options o;
   int c;
   int digit_optind = 0;
+  optind = 1; // Reset optind for multiple runs
 
   while (1) {
     int this_option_optind = optind ? optind : 1;
@@ -81,7 +82,7 @@ void Options::validate() {
     printf("No output path provided.\n");
     exit(BAD_CONF);
   }
-
+  cout << input_path << endl;
   if(!file_exists(input_path)) {
     cout << "Input file does not exist." << endl;
     exit(BAD_CONF);

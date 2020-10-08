@@ -234,6 +234,11 @@ vector<temporal_edge_t> DatasetConverter::parse_text_file(Options o, size_t &ver
     vertex_count = vertex_set.size();
   }
 
+  cout << "Translation" << endl;
+  for (auto t : translation) {
+    cout << t.first << " " << t.second << endl;
+  }
+
   in.close();
   return out;
 }
@@ -275,15 +280,16 @@ SortedCSRDataSource DatasetConverter::convert_to_sorted_csr(vector<temporal_edge
 
   SortedCSRDataSource out;
   out.adjacency_index.resize(vertex_count + 1);
-  out.adjacency_index[0] = 0;
+
   out.adjacency_lists.reserve(end - begin);
 
   vertex_id_t current_src = 0;
 
-  while (current_src <= begin->src) {
+  while (current_src < begin->src) {
     out.adjacency_index[current_src] = 0;
     current_src++;
   }
+  out.adjacency_index[current_src] = 0;
 
   auto pos = begin;
   while (pos < end) {

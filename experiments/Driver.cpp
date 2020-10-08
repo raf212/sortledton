@@ -16,6 +16,7 @@
 #include <data-structures/BlockedLinkedListAdjacencyLists.h>
 #include <data-structures/BlockedSkipListAdjacencyLists.h>
 #include <cassert>
+#include <map>
 #include "Driver.h"
 
 vector<vertex_id_t> select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
@@ -146,6 +147,9 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   }
   if (config.experiments.find(TRIANGLE_COUNTING) != config.experiments.end()) {
     run_triangle_counting_experiment(wrapped_ds);
+  }
+  if (config.experiments.find(COMMUNITY_DETECTION) != config.experiments.end()) {
+    run_community_detection(wrapped_ds);
   }
   if (config.experiments.find(INSERT) != config.experiments.end()) {
     run_insert_experiment(wrapped_ds, inserts);
@@ -577,3 +581,184 @@ void Driver::check_triangle_counting(size_t count) {
   }
 }
 
+// TODO add get_neighbourcount function for data structure
+
+void Driver::run_community_detection(shared_ptr<TopologyInterface> ds) {
+  cout << "Running community detection experiment ";
+  cout.flush();
+
+  print_graph(ds);
+
+  vector<size_t> run_times;
+
+  size_t vertex_count = ds->vertex_count();
+
+  for (int rep = 0; rep < config.repetitions; rep++) {
+    auto start = chrono::steady_clock::now();
+
+    vector<bool> active1(vertex_count, true);
+    vector<bool> active2(vertex_count, false);
+
+    auto& active_old = active1;
+    auto& active_new = active2;
+
+    vector<vertex_id_t> labels1(vertex_count);
+    vector<vertex_id_t> labels2(vertex_count);
+
+    auto& l_old = labels1;
+    auto& l_new = labels2;
+
+//    vector<uint> neighbour_counts(vertex_count, 0);
+    ContigiousBlockIterator &neighbours = getIter(*ds);
+
+    for (vertex_id_t v = 0; v < ds->vertex_count(); v++) {
+      l_old[v] = v;
+
+//      ds->neighbourhood(v, neighbours);
+//      while (neighbours.has_next()) {
+//        auto& block = neighbours.next();
+//
+//        for(auto& n : block) {
+//          neighbour_counts[v]++;
+//          l_old[v] = std::min(n, l_old[v]);
+//        }
+//      }
+    }
+
+    // Needs to be ordered for correctness; to find the minimum label.
+    map<vertex_id_t, size_t> label_counts;
+    bool done = false;
+    while (!done) {
+      size_t vertices_changed = 0;
+      cout << "new iteration" << endl;
+      done = true;
+
+      for (vertex_id_t v = 0; v < vertex_count; v++) {
+//        if (active_old[v]) {
+//          active_old[v] = true;
+
+          label_counts.clear();
+
+          ds->neighbourhood(v, neighbours);
+          while (neighbours.has_next()) {
+            auto &block = neighbours.next();
+
+            for (auto n : block) {
+              auto l = l_old[n];
+              auto lc = label_counts.find(l);
+              if (lc == label_counts.end()) {
+                label_counts.insert({l, 1});
+              } else {
+                lc->second++;
+              }
+            }
+          }
+
+          vertex_id_t new_label;
+          auto max_count = 0;
+          for (auto lc : label_counts) {
+            if (max_count < lc.second) {
+              max_count = lc.second;
+              new_label = lc.first;
+            }
+          }
+          l_new[v] = new_label;
+          if (l_old[v] != l_new[v]) {
+            done = false;
+            vertices_changed++;
+
+//            ds->neighbourhood(v, neighbours);
+//            while (neighbours.has_next()) {
+//              auto &block = neighbours.next();
+//
+//              for (auto n : block) {
+//                active_new[n] = true;
+//              }
+//            }
+          }
+        }
+        swap(l_old, l_new);
+//        swap(active_old, active_new);
+        cout << "iteration changed: " << vertices_changed << endl;
+
+      cout << endl << "labels" << endl;
+      for (auto l : l_new){
+        cout << l << endl;
+      }
+      }
+//    }
+
+    auto end = chrono::steady_clock::now();
+
+    size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
+    run_times.push_back(microseconds);
+    reporter.add_repetition(COMMUNITY_DETECTION, rep, microseconds);
+
+    cout << ".";
+    cout.flush();
+
+    cout << endl << "labels" << endl;
+    for (auto l : l_new){
+      cout << l << endl;
+    }
+
+#ifdef DEBUG
+    check_community_detection(l_new);
+#endif
+  }
+
+  double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
+  cout << endl << "community detection run in average in " << average << " milliseconds " << endl;
+
+}
+
+void Driver::check_community_detection(vector<vertex_id_t> labels) {
+  cout << "Validating community experiment" << endl;
+  const string gold_standard_file =  config.gold_standard_directory + "/community_" + config.base.get_name() + ".goldStandard";
+  if (!file_exists(gold_standard_file)) {
+    cout << "Writing new gold standard for: " << gold_standard_file << endl;
+    ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
+
+    if (!f.good()) {
+      assert(false);
+    }
+
+    size_t vertex_count = labels.size();
+    f.write((char*) &vertex_count, sizeof(vertex_count));
+
+    for (vertex_id_t v = 0; v < vertex_count; v++) {
+      f.write((char*) &labels[v], sizeof(vertex_id_t));
+    }
+    f.close();
+  } else {
+    ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
+
+    size_t vertex_count;
+    f.read((char*) &vertex_count, sizeof(vertex_count));
+
+    assert(vertex_count == labels.size());
+
+    vertex_id_t l;
+    for (vertex_id_t v = 0; v < vertex_count; v++) {
+      f.read((char*) &l, sizeof(l));
+      assert(labels[v] == l);
+    }
+
+    f.close();
+  }
+
+}
+
+void Driver::print_graph(shared_ptr<TopologyInterface> ds) {
+  ContigiousBlockIterator& ns = getIter(*ds);
+  for (vertex_id_t v = 0; v < ds->vertex_count(); v++) {
+    ds->neighbourhood(v, ns);
+    while (ns.has_next()) {
+      auto& block = ns.next();
+
+      for (dst_t& n : block) {
+        cout << v << " " << n << endl;
+      }
+    }
+  }
+}
