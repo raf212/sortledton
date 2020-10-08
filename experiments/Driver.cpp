@@ -417,7 +417,9 @@ void Driver::check_bfs(vertex_id_t start_vertex, vector<ulong> distances, bool v
   if (validate_inserts) {
     inserts = "inserts";
   }
-  const string gold_standard_file =  config.gold_standard_directory + "/bfs_" + config.base.get_name() + "_" + to_string(start_vertex) + "_" + inserts + ".goldStandard";
+  const string gold_standard_file =
+          config.gold_standard_directory + "/bfs_" + config.base.get_name() + "_" + to_string(start_vertex) + "_" +
+          inserts + ".goldStandard";
   if (!file_exists(gold_standard_file)) {
     cout << "Writing new gold standard for: " << gold_standard_file << endl;
     ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
@@ -427,23 +429,23 @@ void Driver::check_bfs(vertex_id_t start_vertex, vector<ulong> distances, bool v
     }
 
     auto size = distances.size();
-    f.write((char*) &size, sizeof(size));
+    f.write((char *) &size, sizeof(size));
 
     for (auto d : distances) {
-      f.write((char*) &d, sizeof(d));
+      f.write((char *) &d, sizeof(d));
     }
     f.close();
   } else {
     ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
 
     size_t size;
-    f.read((char*) &size, sizeof(size));
+    f.read((char *) &size, sizeof(size));
 
     assert(size == distances.size());
 
     ulong e;
     for (auto d : distances) {
-      f.read((char*) &e, sizeof(d));
+      f.read((char *) &e, sizeof(d));
       assert(d == e);
     }
 
@@ -451,7 +453,8 @@ void Driver::check_bfs(vertex_id_t start_vertex, vector<ulong> distances, bool v
   }
 }
 
-void Driver::validate_graph_structure(shared_ptr<TopologyInterface> ds, SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes) {
+void Driver::validate_graph_structure(shared_ptr<TopologyInterface> ds, SortedCSRDataSource &base, EdgeList &inserts,
+                                      EdgeList &deletes) {
   cout << "Validating data structure." << endl;
   auto vertices = base.vertex_count();
 
@@ -493,7 +496,7 @@ void Driver::validate_graph_structure(shared_ptr<TopologyInterface> ds, SortedCS
 unordered_set<dst_t> Driver::get_neighbours(shared_ptr<TopologyInterface> ds, vertex_id_t v) {
   unordered_set<dst_t> neighbours;
 
-  auto& ns = getIter(*ds);
+  auto &ns = getIter(*ds);
   ds->neighbourhood(v, ns);
   while (ns.has_next()) {
     auto block = ns.next();
@@ -505,7 +508,7 @@ unordered_set<dst_t> Driver::get_neighbours(shared_ptr<TopologyInterface> ds, ve
   return neighbours;
 }
 
-void Driver::check_insert(shared_ptr<TopologyInterface> ds, EdgeList& el) {
+void Driver::check_insert(shared_ptr<TopologyInterface> ds, EdgeList &el) {
   cout << "checking inserts" << endl;
   for (auto e : el.edges) {
     assert(ds->has_edge(e));
@@ -516,7 +519,8 @@ void Driver::check_insert(shared_ptr<TopologyInterface> ds, EdgeList& el) {
 
 void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts) {
   cout << "Validating 2-neighbourhood experiment" << endl;
-  const string gold_standard_file =  config.gold_standard_directory + "/neighbour2_" + config.base.get_name() + ".goldStandard";
+  const string gold_standard_file =
+          config.gold_standard_directory + "/neighbour2_" + config.base.get_name() + ".goldStandard";
   if (!file_exists(gold_standard_file)) {
     cout << "Writing new gold standard for: " << gold_standard_file << endl;
     ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
@@ -526,26 +530,26 @@ void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_
     }
 
     size_t size = neighbour_counts.size();
-    f.write((char*) &size, sizeof(size));
+    f.write((char *) &size, sizeof(size));
 
     for (auto nc : neighbour_counts) {
-      f.write((char*) &(nc.first), sizeof(vertex_id_t));
-      f.write((char*) &(nc.second), sizeof(size_t));
+      f.write((char *) &(nc.first), sizeof(vertex_id_t));
+      f.write((char *) &(nc.second), sizeof(size_t));
     }
     f.close();
   } else {
     ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
 
     size_t size;
-    f.read((char*) &size, sizeof(size));
+    f.read((char *) &size, sizeof(size));
 
     assert(size == neighbour_counts.size());
 
     vertex_id_t v;
     size_t c;
-    for (int i=0; i < size; i++) {
-      f.read((char*) &v, sizeof(v));
-      f.read((char*) &c, sizeof(c));
+    for (int i = 0; i < size; i++) {
+      f.read((char *) &v, sizeof(v));
+      f.read((char *) &c, sizeof(c));
 
       auto a = neighbour_counts.find(v);
       assert(a != neighbour_counts.end() && a->second == c);
@@ -558,7 +562,8 @@ void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_
 
 void Driver::check_triangle_counting(size_t count) {
   cout << "Validating triangle experiment" << endl;
-  const string gold_standard_file =  config.gold_standard_directory + "/triangle_" + config.base.get_name() + ".goldStandard";
+  const string gold_standard_file =
+          config.gold_standard_directory + "/triangle_" + config.base.get_name() + ".goldStandard";
   if (!file_exists(gold_standard_file)) {
     cout << "Writing new gold standard for: " << gold_standard_file << endl;
     ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
@@ -567,13 +572,13 @@ void Driver::check_triangle_counting(size_t count) {
       assert(false);
     }
 
-    f.write((char*) &count, sizeof(count));
+    f.write((char *) &count, sizeof(count));
     f.close();
   } else {
     ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
 
     size_t e_count;
-    f.read((char*) &e_count, sizeof(e_count));
+    f.read((char *) &e_count, sizeof(e_count));
 
     assert(e_count == count);
 
@@ -587,7 +592,7 @@ void Driver::run_community_detection(shared_ptr<TopologyInterface> ds) {
   cout << "Running community detection experiment ";
   cout.flush();
 
-  print_graph(ds);
+  const uint max_iterations = 10;
 
   vector<size_t> run_times;
 
@@ -599,94 +604,66 @@ void Driver::run_community_detection(shared_ptr<TopologyInterface> ds) {
     vector<bool> active1(vertex_count, true);
     vector<bool> active2(vertex_count, false);
 
-    auto& active_old = active1;
-    auto& active_new = active2;
+    auto &active_old = active1;
+    auto &active_new = active2;
 
     vector<vertex_id_t> labels1(vertex_count);
     vector<vertex_id_t> labels2(vertex_count);
 
-    auto& l_old = labels1;
-    auto& l_new = labels2;
+    auto &l_old = labels1;
+    auto &l_new = labels2;
 
-//    vector<uint> neighbour_counts(vertex_count, 0);
     ContigiousBlockIterator &neighbours = getIter(*ds);
 
     for (vertex_id_t v = 0; v < ds->vertex_count(); v++) {
       l_old[v] = v;
-
-//      ds->neighbourhood(v, neighbours);
-//      while (neighbours.has_next()) {
-//        auto& block = neighbours.next();
-//
-//        for(auto& n : block) {
-//          neighbour_counts[v]++;
-//          l_old[v] = std::min(n, l_old[v]);
-//        }
-//      }
     }
 
     // Needs to be ordered for correctness; to find the minimum label.
     map<vertex_id_t, size_t> label_counts;
     bool done = false;
-    while (!done) {
+
+    uint iterations = 0;
+    while (!done && iterations <= max_iterations) {
       size_t vertices_changed = 0;
-      cout << "new iteration" << endl;
       done = true;
 
       for (vertex_id_t v = 0; v < vertex_count; v++) {
-//        if (active_old[v]) {
-//          active_old[v] = true;
+        label_counts.clear();
 
-          label_counts.clear();
+        ds->neighbourhood(v, neighbours);
+        while (neighbours.has_next()) {
+          auto &block = neighbours.next();
 
-          ds->neighbourhood(v, neighbours);
-          while (neighbours.has_next()) {
-            auto &block = neighbours.next();
-
-            for (auto n : block) {
-              auto l = l_old[n];
-              auto lc = label_counts.find(l);
-              if (lc == label_counts.end()) {
-                label_counts.insert({l, 1});
-              } else {
-                lc->second++;
-              }
+          for (auto n : block) {
+            auto l = l_old[n];
+            auto lc = label_counts.find(l);
+            if (lc == label_counts.end()) {
+              label_counts.insert({l, 1});
+            } else {
+              lc->second++;
             }
-          }
-
-          vertex_id_t new_label;
-          auto max_count = 0;
-          for (auto lc : label_counts) {
-            if (max_count < lc.second) {
-              max_count = lc.second;
-              new_label = lc.first;
-            }
-          }
-          l_new[v] = new_label;
-          if (l_old[v] != l_new[v]) {
-            done = false;
-            vertices_changed++;
-
-//            ds->neighbourhood(v, neighbours);
-//            while (neighbours.has_next()) {
-//              auto &block = neighbours.next();
-//
-//              for (auto n : block) {
-//                active_new[n] = true;
-//              }
-//            }
           }
         }
-        swap(l_old, l_new);
-//        swap(active_old, active_new);
-        cout << "iteration changed: " << vertices_changed << endl;
 
-      cout << endl << "labels" << endl;
-      for (auto l : l_new){
-        cout << l << endl;
+        vertex_id_t new_label;
+        auto max_count = 0;
+        for (auto lc : label_counts) {
+          if (max_count < lc.second) {
+            max_count = lc.second;
+            new_label = lc.first;
+          }
+        }
+        l_new[v] = new_label;
+        if (l_old[v] != l_new[v]) {
+          done = false;
+          vertices_changed++;
+        }
       }
-      }
-//    }
+
+      swap(l_old, l_new);
+      iterations++;
+    }
 
     auto end = chrono::steady_clock::now();
 
@@ -696,11 +673,6 @@ void Driver::run_community_detection(shared_ptr<TopologyInterface> ds) {
 
     cout << ".";
     cout.flush();
-
-    cout << endl << "labels" << endl;
-    for (auto l : l_new){
-      cout << l << endl;
-    }
 
 #ifdef DEBUG
     check_community_detection(l_new);
@@ -712,9 +684,12 @@ void Driver::run_community_detection(shared_ptr<TopologyInterface> ds) {
 
 }
 
+
+// TODO shouldn't community detection converge?
 void Driver::check_community_detection(vector<vertex_id_t> labels) {
   cout << "Validating community experiment" << endl;
-  const string gold_standard_file =  config.gold_standard_directory + "/community_" + config.base.get_name() + ".goldStandard";
+  const string gold_standard_file =
+          config.gold_standard_directory + "/community_" + config.base.get_name() + ".goldStandard";
   if (!file_exists(gold_standard_file)) {
     cout << "Writing new gold standard for: " << gold_standard_file << endl;
     ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
@@ -724,23 +699,23 @@ void Driver::check_community_detection(vector<vertex_id_t> labels) {
     }
 
     size_t vertex_count = labels.size();
-    f.write((char*) &vertex_count, sizeof(vertex_count));
+    f.write((char *) &vertex_count, sizeof(vertex_count));
 
     for (vertex_id_t v = 0; v < vertex_count; v++) {
-      f.write((char*) &labels[v], sizeof(vertex_id_t));
+      f.write((char *) &labels[v], sizeof(vertex_id_t));
     }
     f.close();
   } else {
     ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
 
     size_t vertex_count;
-    f.read((char*) &vertex_count, sizeof(vertex_count));
+    f.read((char *) &vertex_count, sizeof(vertex_count));
 
     assert(vertex_count == labels.size());
 
     vertex_id_t l;
     for (vertex_id_t v = 0; v < vertex_count; v++) {
-      f.read((char*) &l, sizeof(l));
+      f.read((char *) &l, sizeof(l));
       assert(labels[v] == l);
     }
 
@@ -750,13 +725,13 @@ void Driver::check_community_detection(vector<vertex_id_t> labels) {
 }
 
 void Driver::print_graph(shared_ptr<TopologyInterface> ds) {
-  ContigiousBlockIterator& ns = getIter(*ds);
+  ContigiousBlockIterator &ns = getIter(*ds);
   for (vertex_id_t v = 0; v < ds->vertex_count(); v++) {
     ds->neighbourhood(v, ns);
     while (ns.has_next()) {
-      auto& block = ns.next();
+      auto &block = ns.next();
 
-      for (dst_t& n : block) {
+      for (dst_t &n : block) {
         cout << v << " " << n << endl;
       }
     }

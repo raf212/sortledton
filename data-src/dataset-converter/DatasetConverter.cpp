@@ -234,11 +234,6 @@ vector<temporal_edge_t> DatasetConverter::parse_text_file(Options o, size_t &ver
     vertex_count = vertex_set.size();
   }
 
-  cout << "Translation" << endl;
-  for (auto t : translation) {
-    cout << t.first << " " << t.second << endl;
-  }
-
   in.close();
   return out;
 }
