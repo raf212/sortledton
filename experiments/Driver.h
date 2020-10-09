@@ -20,6 +20,7 @@ public:
 
     void run();
 
+    ContigiousBlockIterator& getIter(TopologyInterface& ds);
 private:
     Config config;
     Reporter reporter;
@@ -39,12 +40,7 @@ private:
 
     void run_delete_experiment(shared_ptr<TopologyInterface> ds, EdgeList& el);
 
-    /**
-     *
-     * @param ds
-     * @param validate_inserts set to true if called after insertion experiments to validate it, influences the gold standard set picked.
-     */
-    void run_bfs_experiment(shared_ptr<TopologyInterface> ds, bool validate_inserts);
+    void run_bfs_experiment(shared_ptr<TopologyInterface> ds);
 
     /**
      * Checks the BFS search result (distances of all vertices to the start vertex) against a gold standard result.
@@ -52,7 +48,7 @@ private:
      * @param distances
      * @param validate_inserts set to true if called after insertion experiments to validate it, influences the gold standard set picked.
      */
-    void check_bfs(vertex_id_t start_vertex, vector<ulong> distances, bool validate_inserts);
+    void check_bfs(vertex_id_t start_vertex, vector<uint>& distances, bool validate_inserts);
 
     // TODO remove shared pointer from everything to avoid shared counter overhead
     void run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds);
@@ -67,8 +63,6 @@ private:
     void validate_graph_structure(shared_ptr<TopologyInterface> ds, SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes);
 
     unordered_set<dst_t> get_neighbours(shared_ptr<TopologyInterface> ds, vertex_id_t v);
-
-    ContigiousBlockIterator& getIter(TopologyInterface& ds);
 
     void print_graph(shared_ptr<TopologyInterface> ds);
 

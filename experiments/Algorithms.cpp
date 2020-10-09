@@ -1,0 +1,64 @@
+//
+// Created by per on 09.10.20.
+//
+
+#include "Algorithms.h"
+
+#include <algorithm>
+#include <queue>
+
+vector<uint> Algorithms::bfs(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex) {
+  size_t vertices_traversed = 0;
+
+  uint maxDistance = numeric_limits<uint>::max();
+  vector<uint> distances(ds.vertex_count(), numeric_limits<uint>::max());
+  queue<vertex_id_t> work;
+  work.push(start_vertex);
+
+  ContigiousBlockIterator &iter = driver.getIter(ds); // TODO move getIter to data structure instead of driver
+  while (!work.empty()) {
+    vertex_id_t v = work.front();
+    work.pop();
+
+    vertices_traversed++;
+
+    ds.neighbourhood(v, iter);
+    while (iter.has_next()) {
+      auto &batch = iter.next();
+
+      dst_t *end = batch.start + batch.size;
+      dst_t *n = batch.start;
+      while (n < end) {
+        if (distances[*n] == maxDistance) {
+          distances[*n] = distances[v] + 1;
+          work.push(*n);
+        }
+        n++;
+      }
+    }
+  }
+
+  // Direct access version for CSR.
+//    shared_ptr<CSR> csr = dynamic_pointer_cast<CSR>(ds);
+//    while (!work.empty()) {
+//      vertex_id_t v = work.front();
+//      work.pop();
+//
+//      vertices_traversed++;
+//
+//      auto n = &(csr->adjacency_lists[csr->adjacency_index[v]]);
+//      auto end = &(csr->adjacency_lists[csr->adjacency_index[v + 1]]);
+//      while (n < end) {
+//        if (distances[*n] == maxDistance) {
+//          distances[*n] = distances[v] + 1;
+//          work.push(*n);
+//        }
+//        n++;
+//      }
+//    }
+  return distances;
+}
+
+uint Algorithms::traversed_vertices(TopologyInterface& ds, vector<uint>& distances) {
+  return ds.vertex_count() - count(distances.begin(), distances.end(), numeric_limits<uint>::max());
+}

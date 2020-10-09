@@ -19,6 +19,9 @@
 #include <map>
 #include "Driver.h"
 
+#include "BFSSourceSelector.h"
+#include "Algorithms.h"
+
 vector<vertex_id_t> select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
   vector<vertex_id_t> out;
 
@@ -143,7 +146,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     run_neighbourhood_2_experiment(wrapped_ds, neighbourhood_2_sources);
   }
   if (config.experiments.find(BFS) != config.experiments.end()) {
-    run_bfs_experiment(wrapped_ds, false);
+    run_bfs_experiment(wrapped_ds);
   }
   if (config.experiments.find(TRIANGLE_COUNTING) != config.experiments.end()) {
     run_triangle_counting_experiment(wrapped_ds);
@@ -163,81 +166,38 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   }
 }
 
-// TODO break apart for validation and experiment purposes
-void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds, bool validate_inserts) {
-  vertex_id_t start_vertex = 2;
+void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
+  BFSSourceSelector ss(*this, config.base, *ds);
+  vertex_id_t start_vertex = ss.get_source();
 
   cout << "Running BFS experiment ";
   cout.flush();
 
-  size_t vertices_traversed = 0;
+  vector<uint> distances;
 
   vector<size_t> run_times;
   for (int rep = 0; rep < config.repetitions; rep++) {
     // BFS
     auto start = chrono::steady_clock::now();
-    ulong maxDistance = numeric_limits<ulong>::max();
-    vector<ulong> distances(ds->vertex_count(), numeric_limits<ulong>::max());
-    queue<vertex_id_t> work;
-    work.push(start_vertex);
-
-    ContigiousBlockIterator &iter = getIter(*ds);
-    while (!work.empty()) {
-      vertex_id_t v = work.front();
-      work.pop();
-
-      vertices_traversed++;
-
-      ds->neighbourhood(v, iter);
-//      VectorBatchedEdgeIterator& a = dynamic_cast<VectorBatchedEdgeIterator&>(iter);
-      while (iter.has_next()) {
-        auto &batch = iter.next();
-
-        dst_t *end = batch.start + batch.size;
-        dst_t *n = batch.start;
-        while (n < end) {
-          if (distances[*n] == maxDistance) {
-            distances[*n] = distances[v] + 1;
-            work.push(*n);
-          }
-          n++;
-        }
-      }
-    }
-//    shared_ptr<CSR> csr = dynamic_pointer_cast<CSR>(ds);
-//    while (!work.empty()) {
-//      vertex_id_t v = work.front();
-//      work.pop();
-//
-//      vertices_traversed++;
-//
-//      auto n = &(csr->adjacency_lists[csr->adjacency_index[v]]);
-//      auto end = &(csr->adjacency_lists[csr->adjacency_index[v + 1]]);
-//      while (n < end) {
-//        if (distances[*n] == maxDistance) {
-//          distances[*n] = distances[v] + 1;
-//          work.push(*n);
-//        }
-//        n++;
-//      }
-//    }
-
+    distances = Algorithms::bfs(*this, *ds, start_vertex);
     auto end = chrono::steady_clock::now();
+
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
-    if (!validate_inserts) {
-      run_times.push_back(microseconds);
-      reporter.add_repetition(BFS, rep, microseconds);
-    }
+
+    run_times.push_back(microseconds);
+    reporter.add_repetition(BFS, rep, microseconds);
+
 
     cout << ".";
     cout.flush();
 
 #ifdef DEBUG
-    check_bfs(start_vertex, distances, validate_inserts);
+    check_bfs(start_vertex, distances, false);
 #endif
   }
 
-  cout << "Traversed vertices " << vertices_traversed << endl;
+  auto traversed_vertices = Algorithms::traversed_vertices(*ds, distances);
+  cout << "Traversed vertices " << traversed_vertices << " from " << ds->vertex_count() << " " << (float) traversed_vertices / (float) ds->vertex_count() << "%" << endl;
   double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
   cout << endl << "BFS run in average in " << average << " milliseconds " << endl;
 }
@@ -266,7 +226,9 @@ void Driver::run_insert_experiment(shared_ptr<TopologyInterface> ds, EdgeList &e
     double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
     cout << "Inserting took: " << average << " milliseconds " << endl;
 
+#ifdef DEBUG
     check_insert(ds, el);
+#endif
   } catch (const NotImplemented &e) {
     cout << "Insertion not supported by ds: " << typeid(ds).name() << endl;
   }
@@ -411,7 +373,7 @@ ContigiousBlockIterator &Driver::getIter(TopologyInterface &ds) {
   }
 }
 
-void Driver::check_bfs(vertex_id_t start_vertex, vector<ulong> distances, bool validate_inserts) {
+void Driver::check_bfs(vertex_id_t start_vertex, vector<uint>& distances, bool validate_inserts) {
   cout << "Validating bfs experiment" << endl;
   string inserts = "base";
   if (validate_inserts) {
@@ -514,7 +476,12 @@ void Driver::check_insert(shared_ptr<TopologyInterface> ds, EdgeList &el) {
     assert(ds->has_edge(e));
   }
 
-  run_bfs_experiment(ds, true);
+  BFSSourceSelector ss(*this, config.base, *ds);
+  vertex_id_t start_vertex = ss.get_source();
+
+  auto distances = Algorithms::bfs(*this, *ds, start_vertex);
+  check_bfs(start_vertex, distances, true);
+  check_bfs(start_vertex, distances, true);
 }
 
 void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts) {
