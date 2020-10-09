@@ -21,19 +21,14 @@
 
 #include "BFSSourceSelector.h"
 #include "Algorithms.h"
+#include "TwoNeighbourSourceSelector.h"
 
-vector<vertex_id_t> select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
-  vector<vertex_id_t> out;
+vector<vector<vertex_id_t>> Driver::select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
+  vector<vector<vertex_id_t>> out;
 
-  auto vertex_count = src.vertex_count();
-
-  mt19937 engine(43);
-  uniform_int_distribution<vertex_id_t> distribution(0, vertex_count - 1);
-
-  auto ran = bind(distribution, engine);
-
-  for (int i = 0; i < count; i++) {
-    out.push_back(ran());
+  TwoNeighbourSourceSelector s(src);
+  for (int r = 0; r < config.repetitions; r++) {
+    out.push_back(s.get_sources(count));
   }
 
   return out;
@@ -58,7 +53,7 @@ void Driver::run() {
     inserts = read_delete_dataset();
   }
 
-  vector<vertex_id_t> neighbour_2_sources;
+  vector<vector<vertex_id_t>> neighbour_2_sources;
   if (config.experiments.find(NEIGHBOUR_2) != config.experiments.end()) {
     neighbour_2_sources = select_2_neighbourhood_src(base, 1000);
   }
@@ -73,7 +68,7 @@ void Driver::run() {
 
 void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes,
                                 DataStructures ds, const vector<string> &ds_parameters,
-                                vector<vertex_id_t> &neighbourhood_2_sources) {
+                                vector<vector<vertex_id_t>> &neighbourhood_2_sources) {
   reporter.set_data_structure(ds, ds_parameters);
 
   TopologyInterface* data_structure;
@@ -288,7 +283,7 @@ void Driver::run_triangle_counting_experiment(TopologyInterface& ds) {
 }
 
 void Driver::run_neighbourhood_2_experiment(TopologyInterface& ds,
-                                            const vector<vertex_id_t> &sources) {
+                                            const vector<vector<vertex_id_t>> &sources) {
   cout << "Running 2 neighbourhood experiment ";
   cout.flush();
 
@@ -302,7 +297,7 @@ void Driver::run_neighbourhood_2_experiment(TopologyInterface& ds,
     auto start = chrono::steady_clock::now();
 
     unordered_map<vertex_id_t, size_t> neighbour_counts;
-    for (const auto &s : sources) {
+    for (const auto &s : sources[rep]) {
       size_t count = 0;
       ds.neighbourhood(s, neighbours);
       while (neighbours.has_next()) {
@@ -336,7 +331,9 @@ void Driver::run_neighbourhood_2_experiment(TopologyInterface& ds,
     cout.flush();
 
 #ifdef DEBUG
-    check_neighbourhood_2(neighbour_counts);
+    if (rep == 0) { // Gold standard only saves the result from rep==0 runs, they differ in the set of sources.
+      check_neighbourhood_2(neighbour_counts);
+    }
 #endif
   }
 
@@ -557,7 +554,7 @@ void Driver::run_community_detection(TopologyInterface& ds) {
   cout << "Running community detection experiment ";
   cout.flush();
 
-  const uint max_iterations = 10;
+  const uint max_iterations = 5;
 
   vector<size_t> run_times;
 

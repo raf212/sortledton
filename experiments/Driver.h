@@ -21,6 +21,7 @@ public:
     void run();
 
     ContigiousBlockIterator& getIter(TopologyInterface& ds);
+    unordered_set<dst_t> get_neighbours(TopologyInterface& ds, vertex_id_t v);
 private:
     Config config;
     Reporter reporter;
@@ -31,7 +32,7 @@ private:
     void run_data_structure(SortedCSRDataSource& base, EdgeList& inserts, EdgeList& deletes,
                             DataStructures ds,
                             const vector<string>& ds_parameters,
-                            vector<vertex_id_t>& neighbour_2_sources);
+                            vector<vector<vertex_id_t>>& neighbour_2_sources);
 
     void load_base_dataset(TopologyInterface& ds, SortedCSRDataSource& base);
 
@@ -54,7 +55,8 @@ private:
     void run_triangle_counting_experiment(TopologyInterface& ds);
     void check_triangle_counting(size_t count);
 
-    void run_neighbourhood_2_experiment(TopologyInterface& ds, const vector<vertex_id_t>& sources);
+    vector<vector<vertex_id_t>> select_2_neighbourhood_src(const SortedCSRDataSource &src, int count);
+    void run_neighbourhood_2_experiment(TopologyInterface& ds, const vector<vector<vertex_id_t>>& sources);
     void check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts);
 
     void run_community_detection(TopologyInterface& ds);
@@ -62,7 +64,7 @@ private:
 
     void validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes);
 
-    unordered_set<dst_t> get_neighbours(TopologyInterface& ds, vertex_id_t v);
+
 
     void print_graph(TopologyInterface& ds);
 
