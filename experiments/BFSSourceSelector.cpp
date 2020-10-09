@@ -17,6 +17,11 @@ vertex_id_t BFSSourceSelector::get_source() {
     string s_source = to_string(source);
 
     ofstream f(file_path);
+
+    if (f.bad()) {
+      throw ConfigurationError("Cannot create source file for BFS configuration.");
+    }
+
     f << s_source << endl;
     f.close();
   } else {
