@@ -6,11 +6,11 @@
 #define LIVE_GRAPH_TWO_TWONEIGHBOURSOURCESELECTOR_H
 
 #include "Driver.h"
-#include "ToplogyInterface.h";
+#include "ToplogyInterface.h"
 
 class TwoNeighbourSourceSelector {
 public:
-    TwoNeighbourSourceSelector(const SortedCSRDataSource &src) : graph(graph), distribution(0, src.vertex_count() - 1) {
+    TwoNeighbourSourceSelector(const SortedCSRDataSource &src) : graph(src), distribution(0, src.vertex_count() - 1) {
       gen = mt19937(42);
     };
 
@@ -22,7 +22,7 @@ public:
      */
     vector<vertex_id_t> get_sources(uint number);
 private:
-    SortedCSRDataSource& graph;
+    const SortedCSRDataSource& graph;
 
     mt19937 gen;
     uniform_int_distribution<vertex_id_t> distribution;
