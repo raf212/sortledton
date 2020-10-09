@@ -76,7 +76,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
                                 vector<vertex_id_t> &neighbourhood_2_sources) {
   reporter.set_data_structure(ds, ds_parameters);
 
-  TopologyInterface *data_structure;
+  TopologyInterface* data_structure;
   switch (ds) {
     case CSR_DS: {
       data_structure = new CSR();
@@ -137,37 +137,35 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     }
   }
 
-  shared_ptr<TopologyInterface> wrapped_ds = shared_ptr<TopologyInterface>(data_structure);
-
   cout << "Loading base dataset." << endl;
-  load_base_dataset(wrapped_ds, base);
+  load_base_dataset(*data_structure, base);
 
   if (config.experiments.find(NEIGHBOUR_2) != config.experiments.end()) {
-    run_neighbourhood_2_experiment(wrapped_ds, neighbourhood_2_sources);
+    run_neighbourhood_2_experiment(*data_structure, neighbourhood_2_sources);
   }
   if (config.experiments.find(BFS) != config.experiments.end()) {
-    run_bfs_experiment(wrapped_ds);
+    run_bfs_experiment(*data_structure);
   }
   if (config.experiments.find(TRIANGLE_COUNTING) != config.experiments.end()) {
-    run_triangle_counting_experiment(wrapped_ds);
+    run_triangle_counting_experiment(*data_structure);
   }
   if (config.experiments.find(COMMUNITY_DETECTION) != config.experiments.end()) {
-    run_community_detection(wrapped_ds);
+    run_community_detection(*data_structure);
   }
   if (config.experiments.find(INSERT) != config.experiments.end()) {
-    run_insert_experiment(wrapped_ds, inserts);
+    run_insert_experiment(*data_structure, inserts);
   }
   if (config.experiments.find(DELETE) != config.experiments.end()) {
-    run_delete_experiment(wrapped_ds, deletes);
+    run_delete_experiment(*data_structure, deletes);
   }
 
   if (config.validate_datastructures) {
-    validate_graph_structure(wrapped_ds, base, inserts, deletes);
+    validate_graph_structure(*data_structure, base, inserts, deletes);
   }
 }
 
-void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
-  BFSSourceSelector ss(*this, config.base, *ds);
+void Driver::run_bfs_experiment(TopologyInterface& ds) {
+  BFSSourceSelector ss(*this, config.base, ds);
   vertex_id_t start_vertex = ss.get_source();
 
   cout << "Running BFS experiment ";
@@ -179,7 +177,7 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
   for (int rep = 0; rep < config.repetitions; rep++) {
     // BFS
     auto start = chrono::steady_clock::now();
-    distances = Algorithms::bfs(*this, *ds, start_vertex);
+    distances = Algorithms::bfs(*this, ds, start_vertex);
     auto end = chrono::steady_clock::now();
 
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
@@ -196,17 +194,17 @@ void Driver::run_bfs_experiment(shared_ptr<TopologyInterface> ds) {
 #endif
   }
 
-  auto traversed_vertices = Algorithms::traversed_vertices(*ds, distances);
-  cout << "Traversed vertices " << traversed_vertices << " from " << ds->vertex_count() << " " << (float) traversed_vertices / (float) ds->vertex_count() << "%" << endl;
+  auto traversed_vertices = Algorithms::traversed_vertices(ds, distances);
+  cout << "Traversed vertices " << traversed_vertices << " from " << ds.vertex_count() << " " << (float) traversed_vertices / (float) ds.vertex_count() << "%" << endl;
   double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
   cout << endl << "BFS run in average in " << average << " milliseconds " << endl;
 }
 
-void Driver::load_base_dataset(shared_ptr<TopologyInterface> ds, SortedCSRDataSource &base) {
-  ds->bulkload(base);
+void Driver::load_base_dataset(TopologyInterface& ds, SortedCSRDataSource &base) {
+  ds.bulkload(base);
 }
 
-void Driver::run_insert_experiment(shared_ptr<TopologyInterface> ds, EdgeList &el) {
+void Driver::run_insert_experiment(TopologyInterface& ds, EdgeList &el) {
   cout << "Running insert experiment " << endl;
 
   vector<size_t> run_times;
@@ -215,7 +213,7 @@ void Driver::run_insert_experiment(shared_ptr<TopologyInterface> ds, EdgeList &e
 
   try {
     for (const auto &edge : el) {
-      ds->insert_edge(edge);
+      ds.insert_edge(edge);
     }
     auto end = chrono::steady_clock::now();
 
@@ -234,11 +232,11 @@ void Driver::run_insert_experiment(shared_ptr<TopologyInterface> ds, EdgeList &e
   }
 }
 
-void Driver::run_delete_experiment(shared_ptr<TopologyInterface> ds, EdgeList &el) {
+void Driver::run_delete_experiment(TopologyInterface& ds, EdgeList &el) {
   throw NotImplemented();
 }
 
-void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) {
+void Driver::run_triangle_counting_experiment(TopologyInterface& ds) {
   cout << "Running triangle experiment ";
   cout.flush();
 
@@ -251,15 +249,15 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
     vector<dst_t> out;
 
     VectorBatchedEdgeIterator a_neighbours;
-    for (int a = 0; a < ds->vertex_count(); a++) {
-      ds->neighbourhood(a, a_neighbours);
+    for (int a = 0; a < ds.vertex_count(); a++) {
+      ds.neighbourhood(a, a_neighbours);
 
       while (a_neighbours.has_next()) {
         auto &a_n_batch = a_neighbours.next();
 
         for (auto b : a_n_batch) {
           if (a < b) {
-            ds->intersect_neighbourhood(a, b, out);
+            ds.intersect_neighbourhood(a, b, out);
             for (auto c : out) {
               if (b < c) {
                 triangles += 1;
@@ -289,7 +287,7 @@ void Driver::run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds) 
   cout << "Counted " << triangles << " triangles." << endl;
 }
 
-void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
+void Driver::run_neighbourhood_2_experiment(TopologyInterface& ds,
                                             const vector<vertex_id_t> &sources) {
   cout << "Running 2 neighbourhood experiment ";
   cout.flush();
@@ -297,20 +295,20 @@ void Driver::run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds,
   vector<size_t> run_times;
 
   // Does count neighbours more than once.
-  ContigiousBlockIterator &neighbour_neighbours = getIter(*ds);
-  ContigiousBlockIterator &neighbours = getIter(*ds);
-  ContigiousBlockIterator &neighbours_3 = getIter(*ds);
+  ContigiousBlockIterator &neighbour_neighbours = getIter(ds);
+  ContigiousBlockIterator &neighbours = getIter(ds);
+  ContigiousBlockIterator &neighbours_3 = getIter(ds);
   for (int rep = 0; rep < config.repetitions; rep++) {
     auto start = chrono::steady_clock::now();
 
     unordered_map<vertex_id_t, size_t> neighbour_counts;
     for (const auto &s : sources) {
       size_t count = 0;
-      ds->neighbourhood(s, neighbours);
+      ds.neighbourhood(s, neighbours);
       while (neighbours.has_next()) {
         auto &batch = neighbours.next();
         for (const auto &n : batch) {
-          ds->neighbourhood(n, neighbours_3);
+          ds.neighbourhood(n, neighbours_3);
           count++;
 
           while (neighbours_3.has_next()) {
@@ -415,7 +413,7 @@ void Driver::check_bfs(vertex_id_t start_vertex, vector<uint>& distances, bool v
   }
 }
 
-void Driver::validate_graph_structure(shared_ptr<TopologyInterface> ds, SortedCSRDataSource &base, EdgeList &inserts,
+void Driver::validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource &base, EdgeList &inserts,
                                       EdgeList &deletes) {
   cout << "Validating data structure." << endl;
   auto vertices = base.vertex_count();
@@ -455,11 +453,11 @@ void Driver::validate_graph_structure(shared_ptr<TopologyInterface> ds, SortedCS
 }
 
 
-unordered_set<dst_t> Driver::get_neighbours(shared_ptr<TopologyInterface> ds, vertex_id_t v) {
+unordered_set<dst_t> Driver::get_neighbours(TopologyInterface& ds, vertex_id_t v) {
   unordered_set<dst_t> neighbours;
 
-  auto &ns = getIter(*ds);
-  ds->neighbourhood(v, ns);
+  auto &ns = getIter(ds);
+  ds.neighbourhood(v, ns);
   while (ns.has_next()) {
     auto block = ns.next();
 
@@ -470,16 +468,16 @@ unordered_set<dst_t> Driver::get_neighbours(shared_ptr<TopologyInterface> ds, ve
   return neighbours;
 }
 
-void Driver::check_insert(shared_ptr<TopologyInterface> ds, EdgeList &el) {
+void Driver::check_insert(TopologyInterface& ds, EdgeList &el) {
   cout << "checking inserts" << endl;
   for (auto e : el.edges) {
-    assert(ds->has_edge(e));
+    assert(ds.has_edge(e));
   }
 
-  BFSSourceSelector ss(*this, config.base, *ds);
+  BFSSourceSelector ss(*this, config.base, ds);
   vertex_id_t start_vertex = ss.get_source();
 
-  auto distances = Algorithms::bfs(*this, *ds, start_vertex);
+  auto distances = Algorithms::bfs(*this, ds, start_vertex);
   check_bfs(start_vertex, distances, true);
   check_bfs(start_vertex, distances, true);
 }
@@ -555,7 +553,7 @@ void Driver::check_triangle_counting(size_t count) {
 
 // TODO add get_neighbourcount function for data structure
 
-void Driver::run_community_detection(shared_ptr<TopologyInterface> ds) {
+void Driver::run_community_detection(TopologyInterface& ds) {
   cout << "Running community detection experiment ";
   cout.flush();
 
@@ -563,7 +561,7 @@ void Driver::run_community_detection(shared_ptr<TopologyInterface> ds) {
 
   vector<size_t> run_times;
 
-  size_t vertex_count = ds->vertex_count();
+  size_t vertex_count = ds.vertex_count();
 
   for (int rep = 0; rep < config.repetitions; rep++) {
     auto start = chrono::steady_clock::now();
@@ -580,9 +578,9 @@ void Driver::run_community_detection(shared_ptr<TopologyInterface> ds) {
     auto &l_old = labels1;
     auto &l_new = labels2;
 
-    ContigiousBlockIterator &neighbours = getIter(*ds);
+    ContigiousBlockIterator &neighbours = getIter(ds);
 
-    for (vertex_id_t v = 0; v < ds->vertex_count(); v++) {
+    for (vertex_id_t v = 0; v < ds.vertex_count(); v++) {
       l_old[v] = v;
     }
 
@@ -598,7 +596,7 @@ void Driver::run_community_detection(shared_ptr<TopologyInterface> ds) {
       for (vertex_id_t v = 0; v < vertex_count; v++) {
         label_counts.clear();
 
-        ds->neighbourhood(v, neighbours);
+        ds.neighbourhood(v, neighbours);
         while (neighbours.has_next()) {
           auto &block = neighbours.next();
 
@@ -691,10 +689,10 @@ void Driver::check_community_detection(vector<vertex_id_t> labels) {
 
 }
 
-void Driver::print_graph(shared_ptr<TopologyInterface> ds) {
-  ContigiousBlockIterator &ns = getIter(*ds);
-  for (vertex_id_t v = 0; v < ds->vertex_count(); v++) {
-    ds->neighbourhood(v, ns);
+void Driver::print_graph(TopologyInterface& ds) {
+  ContigiousBlockIterator &ns = getIter(ds);
+  for (vertex_id_t v = 0; v < ds.vertex_count(); v++) {
+    ds.neighbourhood(v, ns);
     while (ns.has_next()) {
       auto &block = ns.next();
 

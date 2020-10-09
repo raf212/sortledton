@@ -33,14 +33,14 @@ private:
                             const vector<string>& ds_parameters,
                             vector<vertex_id_t>& neighbour_2_sources);
 
-    void load_base_dataset(shared_ptr<TopologyInterface> ds, SortedCSRDataSource& base);
+    void load_base_dataset(TopologyInterface& ds, SortedCSRDataSource& base);
 
-    void run_insert_experiment(shared_ptr<TopologyInterface> ds, EdgeList& el);
-    void check_insert(shared_ptr<TopologyInterface> ds, EdgeList& el);
+    void run_insert_experiment(TopologyInterface& ds, EdgeList& el);
+    void check_insert(TopologyInterface& ds, EdgeList& el);
 
-    void run_delete_experiment(shared_ptr<TopologyInterface> ds, EdgeList& el);
+    void run_delete_experiment(TopologyInterface& ds, EdgeList& el);
 
-    void run_bfs_experiment(shared_ptr<TopologyInterface> ds);
+    void run_bfs_experiment(TopologyInterface& ds);
 
     /**
      * Checks the BFS search result (distances of all vertices to the start vertex) against a gold standard result.
@@ -51,20 +51,20 @@ private:
     void check_bfs(vertex_id_t start_vertex, vector<uint>& distances, bool validate_inserts);
 
     // TODO remove shared pointer from everything to avoid shared counter overhead
-    void run_triangle_counting_experiment(shared_ptr<TopologyInterface> ds);
+    void run_triangle_counting_experiment(TopologyInterface& ds);
     void check_triangle_counting(size_t count);
 
-    void run_neighbourhood_2_experiment(shared_ptr<TopologyInterface> ds, const vector<vertex_id_t>& sources);
+    void run_neighbourhood_2_experiment(TopologyInterface& ds, const vector<vertex_id_t>& sources);
     void check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts);
 
-    void run_community_detection(shared_ptr<TopologyInterface> ds);
+    void run_community_detection(TopologyInterface& ds);
     void check_community_detection(vector<vertex_id_t> labels);
 
-    void validate_graph_structure(shared_ptr<TopologyInterface> ds, SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes);
+    void validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes);
 
-    unordered_set<dst_t> get_neighbours(shared_ptr<TopologyInterface> ds, vertex_id_t v);
+    unordered_set<dst_t> get_neighbours(TopologyInterface& ds, vertex_id_t v);
 
-    void print_graph(shared_ptr<TopologyInterface> ds);
+    void print_graph(TopologyInterface& ds);
 
     vector<VectorBatchedEdgeIterator> vectorIterators;
 
