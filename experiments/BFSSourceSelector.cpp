@@ -40,15 +40,26 @@ vertex_id_t BFSSourceSelector::find_source() {
   cout << "Finding source for bfs in graph " << dataset.get_name() << endl;
   uint target_vertices = ds.vertex_count() * TARGET_PERCENTAGE;
 
+  vertex_id_t max_vertex =0;
+  size_t max_traversed = 0;
   vector<uint> distances;
   for (vertex_id_t v = 0; v < ds.vertex_count(); v++) {
     distances = Algorithms::bfs(driver, ds, v);
+    auto traversed_vertices = Algorithms::traversed_vertices(ds, distances);
 
-    cout << "Traversed " << Algorithms::traversed_vertices(ds, distances) << endl;
-    cout << "Percentage " << (float) Algorithms::traversed_vertices(ds, distances) / (float) ds.vertex_count() << endl;
-    if (target_vertices < Algorithms::traversed_vertices(ds, distances)) {
+    if (max_traversed < traversed_vertices) {
+      max_vertex = v;
+      max_traversed = traversed_vertices;
+    }
+
+    cout << "Traversed " << traversed_vertices << endl;
+    cout << "Percentage " << (float) traversed_vertices / (float) ds.vertex_count() << endl;
+    if (target_vertices < traversed_vertices) {
       cout << "Found source " << v << endl;
       return v;
     }
   }
+  cout << "Couldn't find a source from which a BFS traverses " << TARGET_PERCENTAGE << "% of the graph." << endl;
+  cout << "Highest was " << max_traversed / ds.vertex_count() << "% at vertex " << max_vertex << endl;
+  throw ConfigurationError("No BFS source available");
 }
