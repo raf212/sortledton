@@ -6,16 +6,17 @@
 #define LIVE_GRAPH_TWO_MALLOCADJACENCYLISTS_H
 
 
+#include <unordered_map>
 #include <utils/NotImplemented.h>
 #include "ToplogyInterface.h"
 #include "memory_pools/NonContigiousMemoryPool.h"
 
 class MallocAdjacencyLists : public TopologyInterface {
 public:
-    explicit MallocAdjacencyLists(bool unordered) : unordered(unordered) {};
+    MallocAdjacencyLists(bool unordered, bool hash_index) : unordered(unordered), use_hash_index(hash_index) {};
     ~MallocAdjacencyLists() override;
 
-    size_t vertex_count() override { return adjacency_index.size(); };
+    size_t vertex_count() override;
 
     vertex_id_t insert_vertex() override { throw NotImplemented(); };
 
@@ -35,8 +36,9 @@ public:
 
 private:
     vector<dst_t *> adjacency_index;
-    vector<dst_t *> seperators;  // Unused but malloced memory location to seperate adjacency lists
+    unordered_map<vertex_id_t, dst_t*> hash_index;
     bool unordered;
+    bool use_hash_index;
 
     NonContigiousMemoryPool pool{15};
 };

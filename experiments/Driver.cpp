@@ -87,10 +87,12 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     }
     case MALLOC_ADJACENCY_LIST: {
       bool unordered = true;
+      bool use_hash_index = false;
       if (!ds_parameters.empty()) {
         unordered = stoi(ds_parameters[0]);
+        use_hash_index = stoi(ds_parameters[1]);
       }
-      data_structure = new MallocAdjacencyLists(unordered);
+      data_structure = new MallocAdjacencyLists(unordered, use_hash_index);
       break;
     }
     case CSR_MALLOC_ADJACENCY_LIST: {
@@ -190,7 +192,7 @@ void Driver::run_bfs_experiment(TopologyInterface& ds) {
   }
 
   auto traversed_vertices = Algorithms::traversed_vertices(ds, distances);
-  cout << "Traversed vertices " << traversed_vertices << " from " << ds.vertex_count() << " " << (float) traversed_vertices / (float) ds.vertex_count() << "%" << endl;
+  cout << "Traversed vertices " << traversed_vertices << " from " << ds.vertex_count() << " " << (float) traversed_vertices / (float) ds.vertex_count() * 100 << "%" << endl;
   double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
   cout << endl << "BFS run in average in " << average << " milliseconds " << endl;
 }
