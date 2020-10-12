@@ -91,7 +91,7 @@ public:
     const static unordered_map<DataStructures, string> DATA_STRUCTURE_MAPPING;
     const static unordered_map<Experiments, string> EXPERIMENT_MAPPING;
 
-    unordered_map<DataStructures, vector<string>> data_structures;
+    vector<pair<DataStructures, vector<string>>> data_structures;
     unordered_set<Experiments> experiments;
 
     Dataset base;
@@ -100,6 +100,8 @@ public:
 
     uint repetitions;
 
+    bool release = false;
+
     bool validate_datastructures = false;
 
     void initialize(int argc, char **argv);
@@ -107,7 +109,7 @@ public:
 private:
     vector<string> string_split(char seperator, string list);
 
-    unordered_map<DataStructures, vector<string>> parse_data_structures(string arg);
+    vector<pair<DataStructures, vector<string>>> parse_data_structures(string arg);
 
     unordered_set<Experiments> parse_experiments(string arg);
 

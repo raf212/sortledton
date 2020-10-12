@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "Configuration.h"
+#include "Configuration.h"
 
 /**
  * Reports experimental results to a CSR file.
@@ -26,21 +27,26 @@
  */
 class Reporter {
 public:
-    Reporter() {
-      const string FILE_PATH = get_home_dir() + "/graph-two-results.csv";
+    Reporter(Config& config) {
+      string file_path = get_home_dir();
+      if (config.release) {
+        file_path += + "/graph-two-results.csv";
+      } else {
+        file_path += + "/graph-two-results-debug.csv";
+      }
 
-      if (!file_exists(FILE_PATH)) {
-        cout << "Starting new reporting file at " + FILE_PATH << endl;
-        file.open(FILE_PATH, fstream::in | fstream::out | fstream::app);
+      if (!file_exists(file_path)) {
+        cout << "Starting new reporting file at " + file_path << endl;
+        file.open(file_path, fstream::in | fstream::out | fstream::app);
 
         if (!file.good()) {
-          throw ConfigurationError("Could not create configuration file: " + FILE_PATH);
+          throw ConfigurationError("Could not create report file: " + file_path);
         }
 
         write_standard_header();
       } else {
-        cout << "Reporting to file at " + FILE_PATH << endl;
-        file.open(FILE_PATH, fstream::in | fstream::out | fstream::app);
+        cout << "Reporting to file at " + file_path << endl;
+        file.open(file_path, fstream::in | fstream::out | fstream::app);
       }
 
       execution_id = get_highest_execution_id() + 1;

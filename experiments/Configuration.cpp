@@ -22,7 +22,9 @@ void Config::initialize(int argc, char **argv) {
             {"dataset_insert", required_argument, 0, 'i'},
             {"dataset_delete", required_argument, 0, 'd'},
             {"validate", required_argument, 0, 'v'},
-            {"repetitions", required_argument, 0, 'r'}
+            {"repetitions", required_argument, 0, 'r'},
+            {"release_run", no_argument, 0, 'l'},
+
     };
 
     c = getopt_long(argc, argv, "",
@@ -31,6 +33,9 @@ void Config::initialize(int argc, char **argv) {
       break;
 
     switch (c) {
+      case 'l':
+        release = true;
+        break;
       case 'e':
         experiments = parse_experiments(optarg);
         break;
@@ -79,8 +84,8 @@ vector <string> Config::string_split(char seperator, string list) {
   return cont;
 }
 
-unordered_map<DataStructures, vector<string>> Config::parse_data_structures(string arg) {
-  unordered_map<DataStructures, vector<string>> ret;
+vector<pair<DataStructures, vector<string>>> Config::parse_data_structures(string arg) {
+  vector<pair<DataStructures, vector<string>>> ret;
   auto ds = string_split(',', arg);
 
   auto ds_map = reverse_map(DATA_STRUCTURE_MAPPING);
@@ -100,7 +105,7 @@ unordered_map<DataStructures, vector<string>> Config::parse_data_structures(stri
     if (mapping == ds_map.end()) {
       throw ConfigurationError("Unknown data structure " + d);
     } else {
-      ret.insert({mapping->second, parameters});
+      ret.push_back({mapping->second, parameters});
     }
   }
 

@@ -16,7 +16,7 @@
 
 class Driver {
 public:
-    Driver(Config config) : config(config), reporter() { };
+    Driver(Config config) : config(config), reporter(config) { };
 
     void run();
 

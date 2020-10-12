@@ -5,6 +5,9 @@ import pandas as pd
 import numpy as np
 from enum import Enum
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
+
+rcParams['figure.figsize'] = 10, 8
 
 REMOTE_USER = "fuchs"
 REMOTE_URL = "scyper15.in.tum.de"
@@ -32,10 +35,10 @@ def get_report_file(remote_user, remote_url, remote_path, local_path):
 
 # Drops the first three repetition as warmup.
 def filter_out_warmup(data):
-    if input("Use cold runs? ") == "y":
-        return data[data["repetition"] == 0]
-    else:
-        return data[data["repetition"] > 2]
+    # if input("Use cold runs? ") == "y":
+    #     return data[data["repetition"] == 0]
+    # else:
+    return data[data["repetition"] > 2]
 
 
 def get_last_executions(data):
@@ -56,13 +59,12 @@ def rewrite_dataset(data):
 
 def generate_report():
   data = pd.read_csv(LOCAL_PATH, delimiter=";")
-  # data = filter_out_warmup(data)
-  data = get_last_executions(data)
+  data = filter_out_warmup(data)
+  # data = get_last_executions(data)
   data = rewrite_dataset(data)
 
   data["data_structure"] = data["data_structure"].map(lambda s: s.replace("csrMalloc", "csr"))
   data["r"] = data["runtime"]
-
 
   data = data.drop("runtime", axis=1)
   data = data.drop("storage", axis=1)
@@ -74,15 +76,17 @@ def generate_report():
   datasets = set(data["dataset"])
   experiments = set(data["experiment"])
 
-
   data["pivot_index"] = data.groupby("data_structure")["data_structure"].cumcount()
 
   data = data.set_index(["experiment", "dataset", "pivot_index", "data_structure"]).stack().unstack([3, 4])
   data.index = data.index.droplevel(2)
-
+  print(data)
   for e in experiments:
       for d in datasets:
-          subplot = data.query("experiment == '%s' & dataset == '%s'" % (e, d)).boxplot()
+          filtered_data = data.query("experiment == '%s' & dataset == '%s'" % (e, d))
+          median =  filtered_data.median().sort_values()
+
+          subplot = filtered_data[median.index].boxplot()
 
           title = "%s, %s" % (e, d)
           subplot.set_title(title)
