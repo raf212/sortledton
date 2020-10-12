@@ -80,15 +80,17 @@ def generate_report():
 
   data = data.set_index(["experiment", "dataset", "pivot_index", "data_structure"]).stack().unstack([3, 4])
   data.index = data.index.droplevel(2)
-  print(data)
+  # print(data)
   for e in experiments:
       for d in datasets:
           filtered_data = data.query("experiment == '%s' & dataset == '%s'" % (e, d))
+
           median =  filtered_data.median().sort_values()
-
           subplot = filtered_data[median.index].boxplot()
+          difference_in_percent = (float(median[-1]) - float(median[1])) / float(median[0]) * 100
 
-          title = "%s, %s" % (e, d)
+          file_title = "%s, %s" % (e, d)
+          title = "%s, %s, Difference total: %i%%" % (e, d, difference_in_percent)
           subplot.set_title(title)
           subplot.set_xlabel("data structures")
           subplot.set_ylabel("runtime [microseconds]")
@@ -98,7 +100,7 @@ def generate_report():
           subplot.set_xticklabels(subplot.get_xticklabels(), rotation=90)
 
           plt.tight_layout()
-          plt.savefig(FIGURE_PATH + "/" + title + ".png")
+          plt.savefig(FIGURE_PATH + "/" + file_title + ".png")
 
           plt.clf()
 
@@ -119,7 +121,7 @@ def generate_report():
   return data
 
 
-get_report_file(REMOTE_USER, REMOTE_URL, REMOTE_PATH, LOCAL_PATH)
+# get_report_file(REMOTE_USER, REMOTE_URL, REMOTE_PATH, LOCAL_PATH)
 
 global data
 data = generate_report()
