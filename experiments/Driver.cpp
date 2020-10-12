@@ -330,6 +330,14 @@ void Driver::run_neighbourhood_2_experiment(TopologyInterface& ds,
     cout << ".";
     cout.flush();
 
+    uint all_neighbours = 0;
+    for (auto nc : neighbour_counts) {
+      all_neighbours += nc.second;
+    }
+
+    cout << "Counted " << all_neighbours << endl;
+
+
 #ifdef DEBUG
     if (rep == 0) { // Gold standard only saves the result from rep==0 runs, they differ in the set of sources.
       check_neighbourhood_2(neighbour_counts);
