@@ -93,3 +93,5 @@ analysis/__pycache__/
 analysis/figures/
 cmake-build-debug-scyper15/
 cmake-build-release-scyper15/
+/analysis/ordered_free_list/
+/analysis/random_free_list/
