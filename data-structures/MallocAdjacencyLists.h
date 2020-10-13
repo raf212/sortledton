@@ -7,6 +7,7 @@
 
 
 #include <unordered_map>
+#include "utils/robin_hood.h"
 #include <utils/NotImplemented.h>
 #include "ToplogyInterface.h"
 #include "memory_pools/NonContigiousMemoryPool.h"
@@ -36,7 +37,7 @@ public:
 
 private:
     vector<dst_t *> adjacency_index;
-    unordered_map<vertex_id_t, dst_t*> hash_index;
+    robin_hood::unordered_map<vertex_id_t, dst_t*> hash_index;
     bool unordered;
     bool use_hash_index;
 
