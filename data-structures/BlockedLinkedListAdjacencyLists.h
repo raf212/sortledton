@@ -33,14 +33,31 @@ public:
      * @param block_size the size of a block as the amount of dst_t that should be hold in a block.
      * @param unordered should the elements be loaded in order or unordered
      * @param max_edges the size of the underlying pool as the amount of dst_t that should be hold in total during this execution.
+     * @param adjust_size if true, there will be one block pool for each size up to <block_size> and bulkloading will choose the best fit. That's the smallest that fits all vertices or the largest size.
      */
-    BlockedLinkedListAdjacencyLists(size_t block_size, bool unordered, size_t max_edges, size_t max_vertices) :
-    block_size(block_size), unordered(unordered),
-    pool(max_edges / block_size + 1,
-            block_size * sizeof(dst_t) + sizeof(BlockHeader),
-            500, true) {
+    BlockedLinkedListAdjacencyLists(size_t block_size, bool unordered, size_t max_edges, size_t max_vertices, bool adjust_size) :
+    block_size(block_size), unordered(unordered) {
       if (block_size % 2 != 0) {
         throw ConfigurationError("We rely on the block to be an even number.");
+      }
+
+      if (adjust_size) {
+        if (bulk_load_fill_rate != 1.0) {
+          throw ConfigurationError("Cannot use adjusting blocksizes with other fill rates than 1.0.");
+        }
+
+        uint i = 5;
+        while ((1<<i) < block_size) {
+          uint bs = 1 << i;
+          pools.emplace_back(1000, bs * sizeof(dst_t) + sizeof(BlockHeader), 500, true);
+          pool_sizes.push_back(bs);
+          i++;
+        }
+        pools.emplace_back(1000, block_size * sizeof(dst_t) + sizeof(BlockHeader), 500, true);
+        pool_sizes.push_back(block_size);
+      } else {
+        pools.emplace_back(max_edges / block_size + 1, block_size * sizeof(dst_t) + sizeof(BlockHeader), 500, true);
+        pool_sizes.push_back(block_size);
       }
     };
 
@@ -69,9 +86,10 @@ private:
 
     bool unordered;
     size_t block_size;
-    const float bulk_load_fill_rate = 0.9;
+    const float bulk_load_fill_rate = 1.0;
 
-    BlockMemoryPool pool;
+    vector<BlockMemoryPool> pools;
+    vector<uint> pool_sizes;
 
     BlockHeader* write_to_blocks(const dst_t* start, const dst_t* end);
 

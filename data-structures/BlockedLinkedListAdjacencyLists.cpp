@@ -35,10 +35,20 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
     BlockHeader *first_block = nullptr;
     BlockHeader *last_block = nullptr;
 
-    size_t block_fill = block_size * bulk_load_fill_rate;
+
 
     while (start < end) {
-      BlockHeader *block = (BlockHeader *) pool.get_block();
+      size_t data_size = end - start;
+
+      uint chosen_pool = 0;
+      for (int i = 1; i < pools.size(); i++) {
+        if (pool_sizes[i] <= data_size) {
+          chosen_pool = i;
+        }
+      }
+      size_t block_capacity = pool_sizes[chosen_pool] * bulk_load_fill_rate;
+
+      BlockHeader *block = (BlockHeader *) pools[chosen_pool].get_block();
       block->data = (dst_t*) ((char*) block + sizeof(BlockHeader));
       block->next = nullptr;
 
@@ -49,7 +59,7 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
       }
       last_block = block;
 
-      block->size = block_fill < end - start ? block_fill : end - start;
+      block->size = block_capacity < end - start ? block_capacity : end - start;
 
       dst_t *block_data = block->data;
       memcpy((void *) block_data, (void *) start, block->size * sizeof(dst_t));
@@ -99,12 +109,15 @@ void BlockedLinkedListAdjacencyLists::insert_edge(edge_t edge) {
   if (unordered) {
     throw NotImplemented();
   }
+  if (pools.size() != 1) {
+    throw NotImplemented("Cannot insert new edges because capacity is not saved yet.");
+  }
 
   BlockHeader *adjacency_list = adjacency_index[edge.src];
 
   // Insert to empty list
   if (adjacency_list == nullptr) {
-    BlockHeader* first_block = (BlockHeader*) pool.get_block();
+    BlockHeader* first_block = (BlockHeader*) pools[0].get_block();
     first_block->data = (dst_t*) ((char*) first_block + sizeof(BlockHeader));
 
     *first_block->data = edge.dst;
@@ -128,7 +141,7 @@ void BlockedLinkedListAdjacencyLists::insert_edge(edge_t edge) {
       auto data = i->data;
       const auto split = block_size / 2;
 
-      BlockHeader* new_block = (BlockHeader*) pool.get_block();
+      BlockHeader* new_block = (BlockHeader*) pools[0].get_block();
       new_block->data = (dst_t*) ((char*) new_block + sizeof(BlockHeader));
 
       new_block->size = split;
