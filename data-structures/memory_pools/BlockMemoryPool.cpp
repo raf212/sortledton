@@ -2,10 +2,12 @@
 // Created by per on 09.09.20.
 //
 
+#include <memory>
 #include "BlockMemoryPool.h"
 #include <iostream>
 #include <cassert>
 
+using namespace std;
 
 void *BlockMemoryPool::get_block() {
   if (free_list.empty()) {
@@ -66,9 +68,18 @@ void BlockMemoryPool::add_pool(size_t additional_blocks) {
   }
   pools.push_back(pool);
 
-  for (int i = 0; i < additional_blocks; i++) {
-    char* ptr = pool + i * block_size;
-    free_list.push_back(ptr);
+  char* ptr = pool;
+  size_t sp = additional_blocks * block_size;
+  char* end = ptr + sp;
+  while (1) {
+    ptr = (char*) std::align(64, block_size, (void*&) ptr, sp);
+    sp = additional_blocks * block_size;
+    if (ptr + block_size < end) {
+      free_list.push_back(ptr);
+    } else {
+      break;
+    }
+    ptr = ptr + block_size;
   }
 
   if (shuffle_free_list) {
