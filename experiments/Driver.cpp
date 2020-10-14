@@ -297,36 +297,43 @@ void Driver::run_neighbourhood_2_experiment(TopologyInterface& ds,
 
   vector<size_t> run_times;
 
-  // Does count neighbours more than once.
+  ContigiousBlockIterator &neighbour_neighbours = getIter(ds);
+  ContigiousBlockIterator &neighbours = getIter(ds);
+  ContigiousBlockIterator &neighbours_3 = getIter(ds);
   for (int rep = 0; rep < config.repetitions; rep++) {
-    ContigiousBlockIterator &neighbour_neighbours = getIter(ds);
-    ContigiousBlockIterator &neighbours = getIter(ds);
-    ContigiousBlockIterator &neighbours_3 = getIter(ds);
+
     auto start = chrono::steady_clock::now();
 
     unordered_map<vertex_id_t, size_t> neighbour_counts;
+    unordered_set<dst_t> visited;
+    visited.reserve(100000);
     for (const auto &s : sources[rep]) {
+      visited.clear();
+
       size_t count = 0;
       ds.neighbourhood(s, neighbours);
       while (neighbours.has_next()) {
         auto &batch = neighbours.next();
         for (const auto &n : batch) {
-          ds.neighbourhood(n, neighbours_3);
-          count++;
+          if (visited.find(n) == visited.end()) {
+            visited.insert(n);
+            count++;
 
-          while (neighbours_3.has_next()) {
-            auto &batch2 = neighbours_3.next();
+            ds.neighbourhood(n, neighbours_3);
+            while (neighbours_3.has_next()) {
+              auto &batch2 = neighbours_3.next();
 
-            for (const auto &nn : batch2) {
-//              cout << s << " " << n << " " << nn << endl;
-              count++;
+              for (const auto &nn : batch2) {
+                if (visited.find(nn) == visited.end()) {
+                  visited.insert(nn);
+                  count++;
+                }
+              }
             }
           }
         }
       }
-//      if (count > 10000) {
-//        break;
-//      }
+
       neighbour_counts.insert(make_pair(s, count));
     }
     auto end = chrono::steady_clock::now();
@@ -376,7 +383,7 @@ SortedCSRDataSource Driver::read_base_dataset() {
 
 ContigiousBlockIterator& Driver::getIter(TopologyInterface &ds) {
   if (typeid(ds) == typeid(BlockedLinkedListAdjacencyLists) || typeid(ds) == typeid(BlockedSkipListAdjacencyLists)) {
-    blockIterators.push_back(BlockedBatchedEdgeIterator(config.prefetch_blocks));
+    blockIterators.push_back(BlockedBatchedEdgeIterator());
     return blockIterators[blockIterators.size() - 1];
   } else {
     vectorIterators.push_back(VectorBatchedEdgeIterator());

@@ -15,7 +15,7 @@
 // TODO rename the iterator families
 class BlockedBatchedEdgeIterator : public ContigiousBlockIterator {
 public:
-    BlockedBatchedEdgeIterator(uint prefetch) : prefetch_ahead(prefetch), batch(nullptr, 0) {};
+    BlockedBatchedEdgeIterator() : batch(nullptr, 0) {};
 
     void initialize(BlockHeader* head);
 
@@ -27,11 +27,7 @@ private:
     BlockHeader* current_block;
     ContiguousEdgeBatch batch;
 
-    const uint prefetch_ahead;
-
-    BlockHeader* last_prefetched;
-
-    inline void prefetch(BlockHeader* addr);
+    void prefetch(BlockHeader* h);
 };
 
 
