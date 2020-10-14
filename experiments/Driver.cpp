@@ -298,10 +298,10 @@ void Driver::run_neighbourhood_2_experiment(TopologyInterface& ds,
   vector<size_t> run_times;
 
   // Does count neighbours more than once.
-  ContigiousBlockIterator &neighbour_neighbours = getIter(ds);
-  ContigiousBlockIterator &neighbours = getIter(ds);
-  ContigiousBlockIterator &neighbours_3 = getIter(ds);
   for (int rep = 0; rep < config.repetitions; rep++) {
+    ContigiousBlockIterator &neighbour_neighbours = getIter(ds);
+    ContigiousBlockIterator &neighbours = getIter(ds);
+    ContigiousBlockIterator &neighbours_3 = getIter(ds);
     auto start = chrono::steady_clock::now();
 
     unordered_map<vertex_id_t, size_t> neighbour_counts;
@@ -374,9 +374,9 @@ SortedCSRDataSource Driver::read_base_dataset() {
   return out;
 }
 
-ContigiousBlockIterator &Driver::getIter(TopologyInterface &ds) {
+ContigiousBlockIterator& Driver::getIter(TopologyInterface &ds) {
   if (typeid(ds) == typeid(BlockedLinkedListAdjacencyLists) || typeid(ds) == typeid(BlockedSkipListAdjacencyLists)) {
-    blockIterators.push_back(BlockedBatchedEdgeIterator());
+    blockIterators.push_back(BlockedBatchedEdgeIterator(config.prefetch_blocks));
     return blockIterators[blockIterators.size() - 1];
   } else {
     vectorIterators.push_back(VectorBatchedEdgeIterator());

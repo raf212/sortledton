@@ -15,23 +15,23 @@
 // TODO rename the iterator families
 class BlockedBatchedEdgeIterator : public ContigiousBlockIterator {
 public:
-    BlockedBatchedEdgeIterator() : batch(nullptr, 0) {};
-    void initialize(BlockHeader* head) {
-      current_block = head;
-    };
+    BlockedBatchedEdgeIterator(uint prefetch) : prefetch_ahead(prefetch), batch(nullptr, 0) {};
 
-    bool has_next() override { return current_block != nullptr; };
-    ContiguousEdgeBatch& next() override {
-      batch.start = current_block->data;
-      batch.size = current_block->size;
+    void initialize(BlockHeader* head);
 
-      current_block = current_block->next;
-      return batch;
-    }
+    bool has_next() override;
+
+    ContiguousEdgeBatch& next() override;
 
 private:
     BlockHeader* current_block;
     ContiguousEdgeBatch batch;
+
+    const uint prefetch_ahead;
+
+    BlockHeader* last_prefetched;
+
+    inline void prefetch(BlockHeader* addr);
 };
 
 

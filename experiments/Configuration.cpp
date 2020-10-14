@@ -24,6 +24,7 @@ void Config::initialize(int argc, char **argv) {
             {"validate", no_argument, 0, 'v'},
             {"repetitions", required_argument, 0, 'r'},
             {"release_run", no_argument, 0, 'l'},
+            {"prefetch_blocks", required_argument, 0, 'p'},
 
     };
 
@@ -33,6 +34,9 @@ void Config::initialize(int argc, char **argv) {
       break;
 
     switch (c) {
+      case 'p':
+        prefetch_blocks = stoi(optarg);
+        break;
       case 'l':
         release = true;
         break;

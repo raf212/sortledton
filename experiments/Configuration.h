@@ -100,6 +100,11 @@ public:
 
     uint repetitions;
 
+    /**
+     * Configures the BlockedBatchedEdgeIterator to prefetch <prefetch_blocks> ahead.
+     */
+    uint prefetch_blocks = 0;
+
     bool release = false;
 
     bool validate_datastructures = false;
