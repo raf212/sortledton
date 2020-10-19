@@ -23,8 +23,8 @@ public:
 
     void delete_edge(edge_t edge) override { throw NotImplemented(); };
 
-    // TODO make BatchedEdgeIterator a out parameter, to avoid needing to provide it per adjacency list
     void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) override;
+    void neighbourhood(vertex_id_t src, EdgeIterator &iter) override { throw NotImplemented(); };
 
     void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) override;
 

@@ -29,6 +29,7 @@ public:
     void delete_edge(edge_t edge) override { throw NotImplemented(); };
 
     void neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) override;
+    void neighbourhood(vertex_id_t src, EdgeIterator &iter) override { throw NotImplemented(); };
 
     void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) override;
 

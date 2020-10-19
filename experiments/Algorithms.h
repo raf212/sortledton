@@ -18,6 +18,10 @@ public:
   static vector<uint> bfs(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex);
 
     static uint traversed_vertices(TopologyInterface& ds, vector<uint>& vector);
+
+private:
+    static vector<uint> bfs_batched_interface(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex);
+    static vector<uint> bfs_single_edge_interface(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex);
 };
 
 

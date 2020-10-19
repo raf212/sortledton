@@ -48,7 +48,7 @@ set(SRC
         data-structures/adjacency-lists/BlockedBatchedEdgeIterator.h
         data-structures/adjacency-lists/ContigiousBlockIterator.cpp
         utils/robin_hood.h
-        data-structures/adjacency-lists/ContigiousBlockIterator.h data-structures/BlockedSkipListAdjacencyLists.cpp data-structures/BlockedSkipListAdjacencyLists.h data-structures/memory_pools/NonContigiousMemoryPool.cpp data-structures/memory_pools/NonContigiousMemoryPool.h experiments/BFSSourceSelector.cpp experiments/BFSSourceSelector.h experiments/Algorithms.cpp experiments/Algorithms.h experiments/TwoNeighbourSourceSelector.cpp experiments/TwoNeighbourSourceSelector.h)
+        data-structures/adjacency-lists/ContigiousBlockIterator.h data-structures/BlockedSkipListAdjacencyLists.cpp data-structures/BlockedSkipListAdjacencyLists.h data-structures/memory_pools/NonContigiousMemoryPool.cpp data-structures/memory_pools/NonContigiousMemoryPool.h experiments/BFSSourceSelector.cpp experiments/BFSSourceSelector.h experiments/Algorithms.cpp experiments/Algorithms.h experiments/TwoNeighbourSourceSelector.cpp experiments/TwoNeighbourSourceSelector.h data-structures/HashSetSimulatorAdjacencyList.cpp data-structures/HashSetSimulatorAdjacencyList.h data-structures/adjacency-lists/FilteredVectorIterator.cpp data-structures/adjacency-lists/FilteredVectorIterator.h data-structures/adjacency-lists/EdgeIterator.cpp data-structures/adjacency-lists/EdgeIterator.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp
@@ -64,7 +64,7 @@ add_executable(dataset_converter data-src/dataset-converter/main.cpp ${DATASET_C
 set(TESTS
         tests/data-src/dataset-converter/DatasetConverterTests.cpp
         tests/data-src/Asserts.h
-        tests/data-src/Asserts.cpp)
+        tests/data-src/Asserts.cpp tests/data-structures/HashSetSimulatorAdjacencyList.cpp)
 
 add_executable(Google_Tests_run ${TESTS} ${DATASET_CONVERTER_SRC} ${SRC})
 

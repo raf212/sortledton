@@ -15,6 +15,7 @@
 #include <functional>
 #include <data-structures/BlockedLinkedListAdjacencyLists.h>
 #include <data-structures/BlockedSkipListAdjacencyLists.h>
+#include <data-structures/HashSetSimulatorAdjacencyList.h>
 #include <cassert>
 #include <map>
 #include "Driver.h"
@@ -126,13 +127,22 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     case BLOCKED_SKIP_LIST_AL: {
       bool unordered = false;
       size_t block_size = 128;
-      if (!ds_parameters.empty()) {
+      if (!ds_parameters.empty()) {  // TODO better parameter sanitization
         block_size = stoi(ds_parameters[0]);
         unordered = stoi(ds_parameters[1]);
       }
       data_structure = new BlockedSkipListAdjacencyLists(block_size, 6, unordered,
                                                          base.adjacency_lists.size() + inserts.edges.size() + 100,
                                                          base.vertex_count());
+      break;
+    }
+    case HASH_SET_SIMULATOR_AL: {
+      bool unordered = false;
+      float fill_factor = 0.9;
+      if (!ds_parameters.empty()) {
+        fill_factor = stof(ds_parameters[0]);
+      }
+      data_structure = new HashSetSimulatorAdjacencyList(fill_factor);
       break;
     }
     default: {
@@ -385,9 +395,21 @@ ContigiousBlockIterator& Driver::getIter(TopologyInterface &ds) {
   if (typeid(ds) == typeid(BlockedLinkedListAdjacencyLists) || typeid(ds) == typeid(BlockedSkipListAdjacencyLists)) {
     blockIterators.push_back(BlockedBatchedEdgeIterator());
     return blockIterators[blockIterators.size() - 1];
-  } else {
+  } else if (typeid(ds) == typeid(MallocAdjacencyLists) || typeid(ds) == typeid(VectorAdjacencyLists)
+    || typeid(ds) == typeid(CSRMallocAdjacencyLists) || typeid(ds) == typeid(CSR)) {
     vectorIterators.push_back(VectorBatchedEdgeIterator());
     return vectorIterators[vectorIterators.size() - 1];
+  } else {
+    throw NotImplemented();
+  }
+}
+
+EdgeIterator& Driver::getSingleEdgeIter(TopologyInterface &ds) {
+  if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
+    filteredBlockIterators.push_back(FilteredVectorIterator());
+    return filteredBlockIterators[filteredBlockIterators.size() - 1];
+  } else {
+    throw NotImplemented();
   }
 }
 
@@ -476,13 +498,21 @@ void Driver::validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource
 unordered_set<dst_t> Driver::get_neighbours(TopologyInterface& ds, vertex_id_t v) {
   unordered_set<dst_t> neighbours;
 
-  auto &ns = getIter(ds);
-  ds.neighbourhood(v, ns);
-  while (ns.has_next()) {
-    auto block = ns.next();
+  if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
+    auto &ns = getSingleEdgeIter(ds);
+    ds.neighbourhood(v, ns);
+    while (ns.has_next()) {
+      neighbours.insert(ns.next());
+    }
+  } else {
+    auto &ns = getIter(ds);
+    ds.neighbourhood(v, ns);
+    while (ns.has_next()) {
+      auto block = ns.next();
 
-    for (auto e : block) {
-      neighbours.insert(e);
+      for (auto e : block) {
+        neighbours.insert(e);
+      }
     }
   }
   return neighbours;
@@ -498,6 +528,7 @@ void Driver::check_insert(TopologyInterface& ds, EdgeList &el) {
   vertex_id_t start_vertex = ss.get_source();
 
   auto distances = Algorithms::bfs(*this, ds, start_vertex);
+  check_bfs(start_vertex, distances, true);
   check_bfs(start_vertex, distances, true);
   check_bfs(start_vertex, distances, true);
 }

@@ -7,7 +7,9 @@
 #include <algorithm>
 #include <queue>
 
-vector<uint> Algorithms::bfs(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex) {
+#include <HashSetSimulatorAdjacencyList.h>
+
+vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
   size_t vertices_traversed = 0;
 
   uint maxDistance = numeric_limits<uint>::max();
@@ -59,6 +61,43 @@ vector<uint> Algorithms::bfs(Driver& driver, TopologyInterface& ds, vertex_id_t 
   return distances;
 }
 
-uint Algorithms::traversed_vertices(TopologyInterface& ds, vector<uint>& distances) {
+vector<uint> Algorithms::bfs_single_edge_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
+  size_t vertices_traversed = 0;
+
+  uint maxDistance = numeric_limits<uint>::max();
+  vector<uint> distances(ds.vertex_count(), numeric_limits<uint>::max());
+  queue<vertex_id_t> work;
+  work.push(start_vertex);
+
+  EdgeIterator &iter = driver.getSingleEdgeIter(ds); // TODO move getIter to data structure instead of driver
+  while (!work.empty()) {
+    vertex_id_t v = work.front();
+    work.pop();
+
+    vertices_traversed++;
+
+    ds.neighbourhood(v, iter);
+    while (iter.has_next()) {
+      dst_t n = iter.next();
+      if (distances[n] == maxDistance) {
+        distances[n] = distances[v] + 1;
+        work.push(n);
+      }
+    }
+  }
+
+  return distances;
+}
+
+
+uint Algorithms::traversed_vertices(TopologyInterface &ds, vector<uint> &distances) {
   return ds.vertex_count() - count(distances.begin(), distances.end(), numeric_limits<uint>::max());
+}
+
+vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
+  if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
+    return bfs_single_edge_interface(driver, ds, start_vertex);
+  } else {
+    return bfs_batched_interface(driver, ds, start_vertex);
+  }
 }

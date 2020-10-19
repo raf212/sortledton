@@ -5,6 +5,7 @@
 #include <data-src/SortedCSRDataSource.h>
 #include "../data_types.h"
 #include "adjacency-lists/BatchedEdgeIterator.h"
+#include "adjacency-lists/EdgeIterator.h"
 
 class TopologyInterface {
 public:
@@ -20,6 +21,7 @@ public:
     virtual void delete_edge(edge_t edge) = 0;
 
     virtual void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) = 0;
+    virtual void neighbourhood(vertex_id_t src, EdgeIterator& iter) = 0;
     virtual void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) = 0;
 
     virtual bool has_edge(edge_t edge) = 0;

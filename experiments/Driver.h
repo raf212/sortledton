@@ -14,6 +14,8 @@
 #include "Reporter.h"
 #include "Configuration.h"
 
+#include "data-structures/adjacency-lists/FilteredVectorIterator.h"
+
 class Driver {
 public:
     Driver(Config config) : config(config), reporter(config) { };
@@ -21,6 +23,7 @@ public:
     void run();
 
     ContigiousBlockIterator& getIter(TopologyInterface& ds);
+    EdgeIterator& getSingleEdgeIter(TopologyInterface& ds);
     unordered_set<dst_t> get_neighbours(TopologyInterface& ds, vertex_id_t v);
 private:
     Config config;
@@ -68,9 +71,11 @@ private:
 
     void print_graph(TopologyInterface& ds);
 
+    // TODO rename to _ naming convention
     vector<VectorBatchedEdgeIterator> vectorIterators;
 
     vector<BlockedBatchedEdgeIterator> blockIterators;
+    vector<FilteredVectorIterator> filteredBlockIterators;
 };
 
 
