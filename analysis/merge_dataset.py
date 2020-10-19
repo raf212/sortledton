@@ -1,7 +1,7 @@
 import pandas as pd
 
-MERGE_1_PATH = "/home/per/graph-two-results-merge-1.csv"
-MERGE_2_PATH = "/home/per/graph-two-results-merge-2.csv"
+MERGE_1_PATH = "/home/per/graph-two-results.csv"
+MERGE_2_PATH = "/home/per/graph-two-results-merge.csv"
 OUTPUT_PATH = "/home/per/graph-two-results.csv"
 
 data = pd.read_csv(MERGE_1_PATH, delimiter=";")
