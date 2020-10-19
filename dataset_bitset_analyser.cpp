@@ -11,17 +11,26 @@ float get_density(dst_t min, dst_t max, size_t size) {
   return (float) size / (float) (max - min);
 }
 
-uint find_dense_regions(SortedCSRDataSource& src, vertex_id_t v) {
-  uint dense_regions = 0;
+uint find_edges_in_dense_regions(SortedCSRDataSource& src, vertex_id_t v) {
+  uint edges_in_dense_regions = 0;
   float one_16th = 1.0 / 16.0;
+
   dst_t* start = &src.adjacency_lists[src.adjacency_index[v]];
+
+  dst_t* dense_region_start = nullptr;
   for (int i = 0; i + 128 < src.neighbourhood_size(v); i++) {
-    if (one_16th < get_density(*(start + i), *(start + i + 127), 128)) {
-      dense_regions += 1;
-      i += 128;
+    if (dense_region_start == nullptr) {
+      if (one_16th < get_density(*(start + i), *(start + i + 127), 128)) {
+        dense_region_start = start + i;
+      }
+    } else {
+      if (one_16th > get_density(*dense_region_start, *(start + i + 127), (start + i + 127) - dense_region_start)) {
+        edges_in_dense_regions += (start + i + 127) - dense_region_start;
+        dense_region_start = nullptr;
+      }
     }
   }
-  return dense_regions;
+  return edges_in_dense_regions;
 }
 
 int main(int argc, char **argv) {
@@ -49,15 +58,18 @@ int main(int argc, char **argv) {
   uint double_dense_neighbourhoods = 0;
   uint double_dense_size_avg = 0;
 
-  uint dense_regions = 0;
+  uint edges_in_dense_regions = 0;
 
   // Neighbourhood below 16 neighbours. 16 neighbours fit into a single cache line, therefore it's unlikely that compressing them will help execution speed.
   uint small_neighbourhoods = 0;
+
+  uint edges_in_big_neighbourhoods = 0;
 
   for (vertex_id_t v = 0; v < src.vertex_count(); v++) {
     if (src.neighbourhood_size(v) <= 16) {
       small_neighbourhoods++;
     } else {
+      edges_in_big_neighbourhoods += src.neighbourhood_size(v);
       float density = get_density(src.get_min_neighbour(v), src.get_max_neighbour(v), src.neighbourhood_size(v));
       if (one_16th < density) {
         double_dense_neighbourhoods++;
@@ -66,7 +78,7 @@ int main(int argc, char **argv) {
         dense_neighbourhoods++;
         dense_size_avg += src.neighbourhood_size(v);
       } else if(256 < src.neighbourhood_size(v)) {
-        dense_regions += find_dense_regions(src, v);
+        edges_in_dense_regions += find_edges_in_dense_regions(src, v);
       }
     }
   }
@@ -80,7 +92,10 @@ int main(int argc, char **argv) {
   f << "Double dense: " << double_dense_neighbourhoods << " (" << ((float) double_dense_neighbourhoods / (float) (total)) * 100
     << ") " << "Average size: " << (float) double_dense_size_avg / (float) double_dense_neighbourhoods << endl;
 
-  f << "Dense regions: " << dense_regions << " (" << ((float) dense_regions / ((float) src.adjacency_lists.size() / 128)) * 100 << ")" << endl;
+
+  f << "Dense regions: " << edges_in_dense_regions
+  << " (" << ((float) edges_in_dense_regions / ((float) edges_in_big_neighbourhoods)) * 100 << ") "
+  << "(" <<  ((float) edges_in_dense_regions / ((float) src.adjacency_lists.size())) * 100  << ")" << endl;
 
   f.close();
   return 0;
