@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import math
 import subprocess
 import pandas as pd
 import numpy as np
@@ -23,6 +23,25 @@ pd.options.display.precision = 2
 
 class DataStructure(Enum):
     CSR = "csr"
+
+
+def merge_datasets():
+    if input("Merge datasets?") == "y":
+        data = pd.read_csv("/home/per/graph-two-results.csv", delimiter=";")
+        data1 = pd.read_csv("/home/per/graph-two-results-merge.csv", delimiter=";")
+
+        concat_data = pd.concat((data, data1), )
+
+        concat_data.to_csv("/home/per/graph-two-results.csv", sep=";", index=False)
+
+
+def get_differences_in_percent(numbers):
+    differences = []
+
+    for i in range(1, len(numbers)):
+        differences.append(float((numbers[i] - numbers[0])) / float(numbers[0]) * 100)
+
+    return differences
 
 
 def get_report_file(remote_user, remote_url, remote_path, local_path):
@@ -59,7 +78,7 @@ def rewrite_dataset(data):
 
 def generate_report():
   data = pd.read_csv(LOCAL_PATH, delimiter=";")
-  data = filter_out_warmup(data)
+  # data = filter_out_warmup(data)
   # data = get_last_executions(data)
   data = rewrite_dataset(data)
 
@@ -72,6 +91,8 @@ def generate_report():
   data = data.drop("repetition", axis=1)
   data = data.drop("timestamp", axis=1)
   data = data.drop("execution_id", axis=1)
+
+  # data.query("data_structure != 'mallocAL(0,1)'", inplace=True)
 
   datasets = set(data["dataset"])
   experiments = set(data["experiment"])
@@ -86,18 +107,35 @@ def generate_report():
           filtered_data = data.query("experiment == '%s' & dataset == '%s'" % (e, d))
 
           median =  filtered_data.median().sort_values()
+          median = median.dropna()
+          print(median)
           subplot = filtered_data[median.index].boxplot()
-          difference_in_percent = (float(median[-1]) - float(median[1])) / float(median[0]) * 100
+
+          difference_total = (float(median[-1]) - float(median[0])) / float(median[0]) * 100
+          difference_min = (float(median[1]) - float(median[0])) / float(median[0]) * 100
+          if math.isnan(difference_total):
+              difference_in_percent = 0
+          if math.isnan(difference_min):
+              difference_min = 0
+
 
           file_title = "%s, %s" % (e, d)
-          title = "%s, %s, Difference total: %i%%" % (e, d, difference_in_percent)
+          title = "%s, %s, Difference total / min: %i%% / %i%%" % (e, d, difference_total, difference_min)
           subplot.set_title(title)
           subplot.set_xlabel("data structures")
           subplot.set_ylabel("runtime [microseconds]")
 
           subplot.set_ylim((0.0, subplot.get_ylim()[1]))
 
+          differences = get_differences_in_percent(median)
+
+          def modify_x_tick_labels(tl):
+              if tl[0] >= 1:
+                tl[1].set_text("%s (%.1f%%)" % (tl[1].get_text(), differences[tl[0] - 1]))
+
+          list(map(modify_x_tick_labels, enumerate(subplot.get_xticklabels())))
           subplot.set_xticklabels(subplot.get_xticklabels(), rotation=90)
+
 
           plt.tight_layout()
           plt.savefig(FIGURE_PATH + "/" + file_title + ".png")
@@ -121,7 +159,8 @@ def generate_report():
   return data
 
 
-# get_report_file(REMOTE_USER, REMOTE_URL, REMOTE_PATH, LOCAL_PATH)
+get_report_file(REMOTE_USER, REMOTE_URL, REMOTE_PATH, LOCAL_PATH)
+# merge_datasets()
 
 global data
 data = generate_report()
