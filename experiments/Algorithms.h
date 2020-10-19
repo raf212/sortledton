@@ -15,13 +15,15 @@
 using namespace std;
 class Algorithms {
 public:
-  static vector<uint> bfs(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex);
+    static vector<uint> bfs(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex, bool run_on_raw_neighbourhood);
+    static vector<uint> bfs(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex) { return bfs(driver, ds, start_vertex, false); };
 
     static uint traversed_vertices(TopologyInterface& ds, vector<uint>& vector);
 
 private:
     static vector<uint> bfs_batched_interface(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex);
     static vector<uint> bfs_single_edge_interface(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex);
+    static vector<uint> bfs_raw_neighbourhood(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex);
 };
 
 

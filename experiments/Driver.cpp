@@ -153,22 +153,42 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   cout << "Loading base dataset." << endl;
   load_base_dataset(*data_structure, base);
 
+  bool run_on_raw_neighbourhood = false;
+  if (find(ds_parameters.begin(), ds_parameters.end(), "raw") != ds_parameters.end()) {
+    run_on_raw_neighbourhood = true;
+  }
+
   if (config.experiments.find(NEIGHBOUR_2) != config.experiments.end()) {
+    if (run_on_raw_neighbourhood) {
+      throw NotImplemented();
+    }
     run_neighbourhood_2_experiment(*data_structure, neighbourhood_2_sources);
   }
   if (config.experiments.find(BFS) != config.experiments.end()) {
-    run_bfs_experiment(*data_structure);
+    run_bfs_experiment(*data_structure, run_on_raw_neighbourhood);
   }
   if (config.experiments.find(TRIANGLE_COUNTING) != config.experiments.end()) {
+    if (run_on_raw_neighbourhood) {
+      throw NotImplemented();
+    }
     run_triangle_counting_experiment(*data_structure);
   }
   if (config.experiments.find(COMMUNITY_DETECTION) != config.experiments.end()) {
+    if (run_on_raw_neighbourhood) {
+      throw NotImplemented();
+    }
     run_community_detection(*data_structure);
   }
   if (config.experiments.find(INSERT) != config.experiments.end()) {
+    if (run_on_raw_neighbourhood) {
+      throw NotImplemented();
+    }
     run_insert_experiment(*data_structure, inserts);
   }
   if (config.experiments.find(DELETE) != config.experiments.end()) {
+    if (run_on_raw_neighbourhood) {
+      throw NotImplemented();
+    }
     run_delete_experiment(*data_structure, deletes);
   }
 
@@ -177,7 +197,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   }
 }
 
-void Driver::run_bfs_experiment(TopologyInterface& ds) {
+void Driver::run_bfs_experiment(TopologyInterface& ds, bool run_on_raw_neighbourhood) {
   BFSSourceSelector ss(*this, config.base, ds);
   vertex_id_t start_vertex = ss.get_source();
 
@@ -190,7 +210,7 @@ void Driver::run_bfs_experiment(TopologyInterface& ds) {
   for (int rep = 0; rep < config.repetitions; rep++) {
     // BFS
     auto start = chrono::steady_clock::now();
-    distances = Algorithms::bfs(*this, ds, start_vertex);
+    distances = Algorithms::bfs(*this, ds, start_vertex, run_on_raw_neighbourhood);
     auto end = chrono::steady_clock::now();
 
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();

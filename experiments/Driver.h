@@ -44,7 +44,7 @@ private:
 
     void run_delete_experiment(TopologyInterface& ds, EdgeList& el);
 
-    void run_bfs_experiment(TopologyInterface& ds);
+    void run_bfs_experiment(TopologyInterface& ds, bool run_on_raw_neighbourhood);
 
     /**
      * Checks the BFS search result (distances of all vertices to the start vertex) against a gold standard result.

@@ -160,7 +160,7 @@ def generate_report():
 
 
 get_report_file(REMOTE_USER, REMOTE_URL, REMOTE_PATH, LOCAL_PATH)
-# merge_datasets()
+merge_datasets()
 
 global data
 data = generate_report()
