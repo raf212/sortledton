@@ -60,6 +60,8 @@ set(DATASET_CONVERTER_SRC
 
 add_executable(live_graph_two main.cpp ${SRC})
 add_executable(dataset_converter data-src/dataset-converter/main.cpp ${DATASET_CONVERTER_SRC})
+add_executable(bitset_analysis dataset_bitset_analyser.cpp ${SRC})
+
 
 set(TESTS
         tests/data-src/dataset-converter/DatasetConverterTests.cpp

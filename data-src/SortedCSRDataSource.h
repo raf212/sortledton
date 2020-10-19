@@ -18,6 +18,9 @@ class SortedCSRDataSource : DataSource {
 public:
     void read_from_binary_file(const string& path);
     size_t vertex_count() const { return adjacency_index.size() - 1; }
+    size_t neighbourhood_size(vertex_id_t v) const { return adjacency_index[v+1] - adjacency_index[v]; };
+    size_t get_min_neighbour(vertex_id_t v) const { return adjacency_lists[adjacency_index[v]]; };
+    size_t get_max_neighbour(vertex_id_t v) const { return adjacency_lists[adjacency_index[v+1] - 1]; };
 
     vector<size_t> adjacency_index;
     vector<dst_t> adjacency_lists;
