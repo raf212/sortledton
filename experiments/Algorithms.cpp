@@ -8,6 +8,7 @@
 #include <queue>
 
 #include <HashSetSimulatorAdjacencyList.h>
+#include <MallocAdjacencyLists.h>
 
 vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
   size_t vertices_traversed = 0;
@@ -76,15 +77,16 @@ uint Algorithms::traversed_vertices(TopologyInterface &ds, vector<uint> &distanc
 }
 
 vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
+  size_t vertices_traversed = 0;
+  vector<uint> distances(ds.vertex_count(), numeric_limits<uint>::max());
+  uint maxDistance = numeric_limits<uint>::max();
+
+
+  queue<vertex_id_t> work;
+  work.push(start_vertex);
+
   if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
-    size_t vertices_traversed = 0;
-
     uint emtpy = numeric_limits<uint>::max();
-
-    uint maxDistance = numeric_limits<uint>::max();
-    vector<uint> distances(ds.vertex_count(), numeric_limits<uint>::max());
-    queue<vertex_id_t> work;
-    work.push(start_vertex);
 
     while (!work.empty()) {
       vertex_id_t v = work.front();
@@ -92,8 +94,9 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
 
       vertices_traversed++;
 
-      dst_t* ns = (dst_t*) ds.raw_neighbourhood(v);
-      dst_t* end = ns + ns[0];
+      dst_t *ns = (dst_t *) ds.raw_neighbourhood(v);
+      dst_t *end = ns + ns[0] + 1;
+      ns++;
 
       while (ns < end) {
         if (*ns != emtpy) {
@@ -106,12 +109,55 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
         ns++;
       }
     }
-    return distances;
+  } else if (typeid(ds) == typeid(MallocAdjacencyLists)) {
+    while (!work.empty()) {
+      vertex_id_t v = work.front();
+      work.pop();
+
+      vertices_traversed++;
+
+      dst_t *ns = (dst_t*) ds.raw_neighbourhood(v);
+      dst_t *end = ns + ns[0] + 1;
+      ns++;
+
+      while (ns < end) {
+        dst_t n = *ns;
+        if (distances[n] == maxDistance) {
+          distances[n] = distances[v] + 1;
+          work.push(n);
+        }
+        ns++;
+      }
+    }
+  } else if (typeid(ds) == typeid(BlockedLinkedListAdjacencyLists)) {
+    while (!work.empty()) {
+      vertex_id_t v = work.front();
+      work.pop();
+
+      vertices_traversed++;
+
+      BlockHeader *block = (BlockHeader *) ds.raw_neighbourhood(v);
+      while (block != nullptr) {
+        auto data = block->data;
+        dst_t *end = block->data + block->size;
+
+        while (data < end) {
+          if (distances[*data] == maxDistance) {
+            distances[*data] = distances[v] + 1;
+            work.push(*data);
+          }
+          data++;
+        }
+        block = block->next;
+      }
+    }
   } else {
     throw NotImplemented();
   }
+  return distances;
+}
 
-  // Direct access version for CSR.
+// Direct access version for CSR.
 //    shared_ptr<CSR> csr = dynamic_pointer_cast<CSR>(ds);
 //    while (!work.empty()) {
 //      vertex_id_t v = work.front();
@@ -129,7 +175,6 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
 //        n++;
 //      }
 //    }
-}
 
 vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool raw_neighbourhood) {
   if (raw_neighbourhood) {
