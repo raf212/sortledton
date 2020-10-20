@@ -32,7 +32,7 @@ BlockMemoryPool::~BlockMemoryPool() {
 BlockMemoryPool::BlockMemoryPool(BlockMemoryPool &&other) noexcept:
         pools(std::move(other.pools)), size(other.size), block_size(other.block_size),
         free_list(std::move(other.free_list)), shuffle_free_list(other.shuffle_free_list),
-        grow_rate(other.grow_rate) {
+        grow_rate(other.grow_rate), align_memory(other.align_memory) {
   other.size = 0;
 }
 
@@ -50,14 +50,15 @@ BlockMemoryPool &BlockMemoryPool::operator=(BlockMemoryPool &&other) noexcept {
   free_list = std::move(other.free_list);
   shuffle_free_list = other.shuffle_free_list;
   grow_rate = other.grow_rate;
+  align_memory = other.align_memory;
 
   other.size = 0;
 
   return *this;
 }
 
-BlockMemoryPool::BlockMemoryPool(size_t size, size_t block_size, size_t grow_rate, bool shuffle_free_list)
- : grow_rate(grow_rate), block_size(block_size), shuffle_free_list(shuffle_free_list) {
+BlockMemoryPool::BlockMemoryPool(size_t size, size_t block_size, size_t grow_rate, bool shuffle_free_list, bool align_memory)
+ : grow_rate(grow_rate), block_size(block_size), shuffle_free_list(shuffle_free_list), align_memory(align_memory) {
   add_pool(size);
 }
 
@@ -68,18 +69,26 @@ void BlockMemoryPool::add_pool(size_t additional_blocks) {
   }
   pools.push_back(pool);
 
-  char* ptr = pool;
-  size_t sp = additional_blocks * block_size;
-  char* end = ptr + sp;
-  while (1) {
-    ptr = (char*) std::align(64, block_size, (void*&) ptr, sp);
-    sp = additional_blocks * block_size;
-    if (ptr + block_size < end) {
-      free_list.push_back(ptr);
-    } else {
-      break;
+  if (align_memory) {
+    char *ptr = pool;
+    size_t sp = additional_blocks * block_size;
+    char *end = ptr + sp;
+    while (1) {
+      ptr = (char *) std::align(64, block_size, (void *&) ptr, sp);
+      sp = additional_blocks * block_size;
+      if (ptr + block_size < end) {
+        free_list.push_back(ptr);
+      } else {
+        break;
+      }
+      ptr = ptr + block_size;
     }
-    ptr = ptr + block_size;
+  } else {
+    auto ptr = pool;
+    for (int i = 0; i < additional_blocks; i++) {
+      free_list.push_back(ptr);
+      ptr += block_size;
+    }
   }
 
   if (shuffle_free_list) {

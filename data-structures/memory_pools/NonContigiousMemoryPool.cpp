@@ -8,10 +8,10 @@
 
 NonContigiousMemoryPool::NonContigiousMemoryPool(size_t max_size) {
   for (int i = min_size; i <= max_size; i++) {
-    pools.emplace_back(500, 1L<<i, 500, true);
+    pools.emplace_back(500, 1L<<i, 500, true, false);
   }
   if (max_size <= min_size) {
-    pools.emplace_back(500, 1L<<min_size, 500, true);
+    pools.emplace_back(500, 1L<<min_size, 500, true, false);
   }
 }
 

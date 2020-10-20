@@ -49,14 +49,14 @@ public:
         uint i = 5;
         while ((1<<i) < block_size) {
           uint bs = 1 << i;
-          pools.emplace_back(1000, bs * sizeof(dst_t) + sizeof(BlockHeader), 500, true);
+          pools.emplace_back(1000, bs * sizeof(dst_t) + sizeof(BlockHeader), 500, true, true);
           pool_sizes.push_back(bs);
           i++;
         }
-        pools.emplace_back(1000, block_size * sizeof(dst_t) + sizeof(BlockHeader), 500, true);
+        pools.emplace_back(1000, block_size * sizeof(dst_t) + sizeof(BlockHeader), 500, true, true);
         pool_sizes.push_back(block_size);
       } else {
-        pools.emplace_back(max_edges / block_size + 1, block_size * sizeof(dst_t) + sizeof(BlockHeader), 500, true);
+        pools.emplace_back(max_edges / block_size + 1, block_size * sizeof(dst_t) + sizeof(BlockHeader), 500, true, true);
         pool_sizes.push_back(block_size);
       }
     };

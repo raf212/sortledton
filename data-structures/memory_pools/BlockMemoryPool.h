@@ -22,7 +22,7 @@ public:
      * @param block_size size of a block in bytes
      * @param grow_rate the number of blocks to add once the original number of blocks is full.
      */
-    BlockMemoryPool(size_t size, size_t block_size, size_t grow_rate,  bool shuffle_free_list);
+    BlockMemoryPool(size_t size, size_t block_size, size_t grow_rate,  bool shuffle_free_list, bool align_memory);
 
     BlockMemoryPool(const BlockMemoryPool&) = delete;
     BlockMemoryPool& operator=(const BlockMemoryPool&) = delete;
@@ -41,6 +41,7 @@ private:
     size_t grow_rate;
     size_t block_size;
     bool shuffle_free_list;
+    bool align_memory;
 
     deque<void*> free_list;
 
