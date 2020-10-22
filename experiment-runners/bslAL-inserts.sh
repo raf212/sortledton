@@ -1,31 +1,15 @@
-exe="numactl -l -C 1 /home/fuchs/graph-two/cmake-build-release-scyper15/live_graph_two"
+cd "$(dirname "$0")" || exit 1
 
-experiments="--experiments bfs,insert"
-repetitions="--repetitions 1"
-dataset_higgs="--dataset_base /space/fuchs/shared/graph-two-datasets/higgs/base.csr --dataset_insert /space/fuchs/shared/graph-two-datasets/higgs/insertions.edgeList"
-dataset_yahoo="--dataset_base /space/fuchs/shared/graph-two-datasets/yahoo-songs/base.csr --dataset_insert /space/fuchs/shared/graph-two-datasets/yahoo-songs/insertions.edgeList"
-dataset_bitcoin="--dataset_base /space/fuchs/shared/graph-two-datasets/soc-bitcoin/base.csr --dataset_insert /space/fuchs/shared/graph-two-datasets/soc-bitcoin/insertions.edgeList"
+. ./variables.sh
 
-for i in {1..10}
+prepare_experiment
+
+experiments="--experiments insert"
+repetitions="--repetitions 10"
+
+default_parameters="$experiments $repetitions --release_run --data_structures"
+
+for dataset in "$higgs_insert" "$bitcoin_insert" "$live_journal_insert" "$graph500_22_insert" "$twitter_insert"
 do
-  $exe $experiments $dataset_bitcoin $repetitions --data_structures "vectorAL(0)"
-  $exe $experiments $dataset_bitcoin $repetitions --data_structures "bslAL(32'0)"
-  $exe $experiments $dataset_bitcoin $repetitions --data_structures "bslAL(64'0)"
-  $exe $experiments $dataset_bitcoin $repetitions --data_structures "bslAL(128'0)"
-  $exe $experiments $dataset_bitcoin $repetitions --data_structures "bslAL(248'0)"
-  $exe $experiments $dataset_bitcoin $repetitions --data_structures "bslAL(512'0)"
-  
-  $exe $experiments $dataset_higgs $repetitions --data_structures "vectorAL(0)"
-  $exe $experiments $dataset_higgs $repetitions --data_structures "bslAL(32'0)"
-  $exe $experiments $dataset_higgs $repetitions --data_structures "bslAL(64'0)"
-  $exe $experiments $dataset_higgs $repetitions --data_structures "bslAL(128'0)"
-  $exe $experiments $dataset_higgs $repetitions --data_structures "bslAL(248'0)"
-  $exe $experiments $dataset_higgs $repetitions --data_structures "bslAL(512'0)"
-  
-  $exe $experiments $dataset_yahoo $repetitions --data_structures "vectorAL(0)"
-  $exe $experiments $dataset_yahoo $repetitions --data_structures "bslAL(32'0)"
-  $exe $experiments $dataset_yahoo $repetitions --data_structures "bslAL(64'0)"
-  $exe $experiments $dataset_yahoo $repetitions --data_structures "bslAL(128'0)"
-  $exe $experiments $dataset_yahoo $repetitions --data_structures "bslAL(248'0)"
-  $exe $experiments $dataset_yahoo $repetitions --data_structures "bslAL(512'0)"
+  $exe $dataset $default_parameters "bslAL(128'0),vectorAL(0)"
 done
