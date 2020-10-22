@@ -9,6 +9,7 @@
 
 #include <HashSetSimulatorAdjacencyList.h>
 #include <MallocAdjacencyLists.h>
+#include <CSR.h>
 
 vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
   size_t vertices_traversed = 0;
@@ -116,7 +117,7 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
 
       vertices_traversed++;
 
-      dst_t *ns = (dst_t*) ds.raw_neighbourhood(v);
+      dst_t *ns = (dst_t *) ds.raw_neighbourhood(v);
       dst_t *end = ns + ns[0] + 1;
       ns++;
 
@@ -151,30 +152,29 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
         block = block->next;
       }
     }
+  } else if (typeid(ds) == typeid(CSR)) {
+    CSR& csr = dynamic_cast<CSR&>(ds);
+    while (!work.empty()) {
+      vertex_id_t v = work.front();
+      work.pop();
+
+      vertices_traversed++;
+
+      auto n = &(csr.adjacency_lists[csr.adjacency_index[v]]);
+      auto end = &(csr.adjacency_lists[csr.adjacency_index[v + 1]]);
+      while (n < end) {
+        if (distances[*n] == maxDistance) {
+          distances[*n] = distances[v] + 1;
+          work.push(*n);
+        }
+        n++;
+      }
+    }
   } else {
     throw NotImplemented();
   }
   return distances;
 }
-
-// Direct access version for CSR.
-//    shared_ptr<CSR> csr = dynamic_pointer_cast<CSR>(ds);
-//    while (!work.empty()) {
-//      vertex_id_t v = work.front();
-//      work.pop();
-//
-//      vertices_traversed++;
-//
-//      auto n = &(csr->adjacency_lists[csr->adjacency_index[v]]);
-//      auto end = &(csr->adjacency_lists[csr->adjacency_index[v + 1]]);
-//      while (n < end) {
-//        if (distances[*n] == maxDistance) {
-//          distances[*n] = distances[v] + 1;
-//          work.push(*n);
-//        }
-//        n++;
-//      }
-//    }
 
 vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool raw_neighbourhood) {
   if (raw_neighbourhood) {
