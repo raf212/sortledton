@@ -25,6 +25,7 @@ public:
     ContigiousBlockIterator& getIter(TopologyInterface& ds);
     EdgeIterator& getSingleEdgeIter(TopologyInterface& ds);
     unordered_set<dst_t> get_neighbours(TopologyInterface& ds, vertex_id_t v);
+
 private:
     Config config;
     Reporter reporter;
@@ -66,8 +67,6 @@ private:
     void check_community_detection(vector<vertex_id_t> labels);
 
     void validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes);
-
-
 
     void print_graph(TopologyInterface& ds);
 

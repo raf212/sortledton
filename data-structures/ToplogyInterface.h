@@ -18,6 +18,7 @@ public:
     virtual void delete_vertex() = 0;
 
     virtual void insert_edge(edge_t edge) = 0;
+    virtual bool insert_safe(edge_t edge) = 0;
     virtual void delete_edge(edge_t edge) = 0;
 
     virtual void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) = 0;

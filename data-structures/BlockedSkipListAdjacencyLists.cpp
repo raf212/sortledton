@@ -13,6 +13,8 @@ void BlockedSkipListAdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIt
 
 void BlockedSkipListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
   adjacency_index.reserve(src.vertex_count());
+  vector<mutex> m(src.vertex_count());
+  vertex_mutices.swap(m);
 
   for (int i = 0; i < src.vertex_count(); i++) {
     auto start = src.adjacency_lists.data() + src.adjacency_index[i];
@@ -221,6 +223,12 @@ bool BlockedSkipListAdjacencyLists::has_edge(edge_t edge) {
 
   auto last = block->data + block->size;
   return find(block->data, last, edge.dst) != last;
+}
+
+bool BlockedSkipListAdjacencyLists::insert_safe(edge_t edge) {
+  vertex_mutices[edge.src].lock();
+  insert_edge(edge);
+  vertex_mutices[edge.src].unlock();
 }
 
 

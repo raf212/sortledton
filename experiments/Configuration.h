@@ -101,6 +101,8 @@ public:
 
     uint repetitions;
 
+
+    // TODO remove it turned out to be not beneficial and is not used
     /**
      * Configures the BlockedBatchedEdgeIterator to prefetch <prefetch_blocks> ahead.
      */
@@ -109,6 +111,8 @@ public:
     bool release = false;
 
     bool validate_datastructures = false;
+
+    uint insert_threads = 1;
 
     void initialize(int argc, char **argv);
 

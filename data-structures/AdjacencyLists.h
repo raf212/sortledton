@@ -22,6 +22,7 @@ public:
     void delete_vertex() override;
 
     void insert_edge(edge_t edge) override;
+    bool insert_safe(edge_t edge) override { throw NotImplemented(); };
     void delete_edge(edge_t edge) override;
 
     void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) override;

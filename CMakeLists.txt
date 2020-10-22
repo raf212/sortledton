@@ -57,8 +57,10 @@ set(DATASET_CONVERTER_SRC
         data-src/DataSource.cpp
         utils/utils.cpp)
 
-
+find_package (Threads)
 add_executable(live_graph_two main.cpp ${SRC})
+target_link_libraries (live_graph_two Threads::Threads)
+
 add_executable(dataset_converter data-src/dataset-converter/main.cpp ${DATASET_CONVERTER_SRC})
 add_executable(bitset_analysis dataset_bitset_analyser.cpp ${SRC})
 

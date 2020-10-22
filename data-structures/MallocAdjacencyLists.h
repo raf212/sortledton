@@ -24,6 +24,7 @@ public:
     void delete_vertex() override { throw NotImplemented(); };
 
     void insert_edge(edge_t edge) override { throw NotImplemented(); };
+    bool insert_safe(edge_t edge) override { throw NotImplemented(); };
 
     void delete_edge(edge_t edge) override { throw NotImplemented(); };
 

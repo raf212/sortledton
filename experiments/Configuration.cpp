@@ -25,6 +25,7 @@ void Config::initialize(int argc, char **argv) {
             {"repetitions", required_argument, 0, 'r'},
             {"release_run", no_argument, 0, 'l'},
             {"prefetch_blocks", required_argument, 0, 'p'},
+            {"insert_threads", required_argument, 0, 't'}
 
     };
 
@@ -34,6 +35,9 @@ void Config::initialize(int argc, char **argv) {
       break;
 
     switch (c) {
+      case 't':
+        insert_threads = stoi(optarg);
+        break;
       case 'p':
         prefetch_blocks = stoi(optarg);
         break;

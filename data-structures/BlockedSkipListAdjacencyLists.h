@@ -5,8 +5,9 @@
 #ifndef LIVE_GRAPH_TWO_BLOCKEDSKIPLISTADJACENCYLISTS_H
 #define LIVE_GRAPH_TWO_BLOCKEDSKIPLISTADJACENCYLISTS_H
 
-
+#include <atomic>
 #include <utils/NotImplemented.h>
+#include <mutex>
 #include "ToplogyInterface.h"
 #include "BlockedLinkedListAdjacencyLists.h"
 
@@ -29,6 +30,7 @@ public:
     void delete_vertex() override { throw NotImplemented(); };
 
     void insert_edge(edge_t edge) override;
+    bool insert_safe(edge_t edge) override;
 
     void delete_edge(edge_t edge) override { throw NotImplemented(); };
 
@@ -46,6 +48,7 @@ public:
 
 private:
     vector<SkipListHeader *> adjacency_index;
+    vector<mutex> vertex_mutices;
 
     bool unordered;
     size_t block_size;
