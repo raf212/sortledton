@@ -24,6 +24,7 @@ vertex_id_t BFSSourceSelector::get_source() {
 
     f << s_source << endl;
     f.close();
+    return source;
   } else {
     ifstream f(file_path);
 
