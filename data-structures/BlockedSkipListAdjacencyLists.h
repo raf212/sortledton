@@ -34,13 +34,13 @@ public:
 
     void delete_edge(edge_t edge) override { throw NotImplemented(); };
 
+    size_t neighbourhood_size(vertex_id_t src) override;
+
     void neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) override;
     void neighbourhood(vertex_id_t src, EdgeIterator &iter) override { throw NotImplemented(); };
     void* raw_neighbourhood(vertex_id_t src) override { return adjacency_index[src]; };
 
-    void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) override {
-      throw NotImplemented();
-    };
+    void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) override;
 
     bool has_edge(edge_t edge) override;
 
@@ -48,6 +48,7 @@ public:
 
 private:
     vector<SkipListHeader *> adjacency_index;
+    vector<size_t> neighbourhood_sizes;
     vector<mutex> vertex_mutices;
 
     bool unordered;

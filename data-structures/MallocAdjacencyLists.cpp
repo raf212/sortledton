@@ -98,4 +98,18 @@ size_t MallocAdjacencyLists::vertex_count() {
   }
 }
 
+size_t MallocAdjacencyLists::neighbourhood_size(vertex_id_t src) {
+  if (use_hash_index) {
+    auto ns = hash_index.find(src);
+    if (ns != hash_index.end()) {
+      return ns->second[0];
+    }
+  } else {
+    if (adjacency_index[src] != nullptr) {
+      return adjacency_index[src][0];
+    }
+  }
+  return 0;
+}
+
 MallocAdjacencyLists::~MallocAdjacencyLists() = default;

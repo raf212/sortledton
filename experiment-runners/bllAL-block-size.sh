@@ -1,32 +1,15 @@
-exe="numactl -l -C 1 /home/fuchs/graph-two/cmake-build-release-scyper15/live_graph_two"
+cd "$(dirname "$0")" || exit 1
 
-experiments="--experiments bfs,2-neighbour"
-repetitions="--repetitions 1"
-dataset_higgs="--dataset_base /space/fuchs/shared/graph-two-datasets/higgs/base.csr"
-dataset_yahoo="--dataset_base /space/fuchs/shared/graph-two-datasets/yahoo-songs/base.csr"
-dataset_bitcoin="--dataset_base /space/fuchs/shared/graph-two-datasets/soc-bitcoin/base.csr"
+. ./variables.sh
 
+prepare_experiment
 
-for i in {1..10}
+experiments="--experiments 2-neighbour,bfs"
+repetitions="--repetitions 10"
+
+default_parameters="$experiments $repetitions --release_run --data_structures"
+
+for dataset in "$higgs_base" "$bitcoin_base" "$twitter_base" "$live_journal_base" "$graph500_22_base" "$dimacs_base_u" "$graph500_23_base" "$graph500_24_base"
 do
-  $exe $experiments $dataset_bitcoin $repetitions --data_structures "mallocAL(0)"
-  $exe $experiments $dataset_bitcoin $repetitions --data_structures "bllAL(32'0)"
-  $exe $experiments $dataset_bitcoin $repetitions --data_structures "bllAL(64'0)"
-  $exe $experiments $dataset_bitcoin $repetitions --data_structures "bllAL(128'0)"
-  $exe $experiments $dataset_bitcoin $repetitions --data_structures "bllAL(248'0)"
-  $exe $experiments $dataset_bitcoin $repetitions --data_structures "bllAL(512'0)"
-  
-  $exe $experiments $dataset_higgs $repetitions --data_structures "mallocAL(0)"
-  $exe $experiments $dataset_higgs $repetitions --data_structures "bllAL(32'0)"
-  $exe $experiments $dataset_higgs $repetitions --data_structures "bllAL(64'0)"
-  $exe $experiments $dataset_higgs $repetitions --data_structures "bllAL(128'0)"
-  $exe $experiments $dataset_higgs $repetitions --data_structures "bllAL(248'0)"
-  $exe $experiments $dataset_higgs $repetitions --data_structures "bllAL(512'0)"
-  
-  $exe $experiments $dataset_yahoo $repetitions --data_structures "mallocAL(0)"
-  $exe $experiments $dataset_yahoo $repetitions --data_structures "bllAL(32'0)"
-  $exe $experiments $dataset_yahoo $repetitions --data_structures "bllAL(64'0)"
-  $exe $experiments $dataset_yahoo $repetitions --data_structures "bllAL(128'0)"
-  $exe $experiments $dataset_yahoo $repetitions --data_structures "bllAL(248'0)"
-  $exe $experiments $dataset_yahoo $repetitions --data_structures "bllAL(512'0)"
+  $exe $dataset $default_parameters "bllAL(516'0'adjust)"
 done

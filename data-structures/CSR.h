@@ -24,6 +24,8 @@ public:
 
     void delete_edge(edge_t edge) override { throw NotImplemented(); };
 
+    size_t neighbourhood_size(vertex_id_t src) override;
+
     void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) override;
     void neighbourhood(vertex_id_t src, EdgeIterator &iter) override { throw NotImplemented(); };
     // Simple implementation not possible because size is in index.

@@ -32,3 +32,7 @@ bool CSR::has_edge(edge_t edge) {
   dst_t* first = &adjacency_lists[adjacency_index[edge.src]];
   return find(first, last, edge.dst) != last;
 }
+
+size_t CSR::neighbourhood_size(vertex_id_t src) {
+  return adjacency_index[src + 1] - adjacency_index[src];
+}

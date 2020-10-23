@@ -13,6 +13,7 @@ void BlockedSkipListAdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIt
 
 void BlockedSkipListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
   adjacency_index.reserve(src.vertex_count());
+  neighbourhood_sizes.reserve(src.vertex_count());
   vector<mutex> m(src.vertex_count());
   vertex_mutices.swap(m);
 
@@ -28,6 +29,7 @@ void BlockedSkipListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
     SkipListHeader *head_block = write_to_blocks(shuffled_src.data(), shuffled_src.data() + shuffled_src.size());
 
     adjacency_index.push_back(head_block);
+    neighbourhood_sizes.push_back(shuffled_src.size());
   }
 }
 
@@ -133,6 +135,7 @@ void BlockedSkipListAdjacencyLists::insert_edge(edge_t edge) {
     }
 
     adjacency_index[edge.src] = first_block;
+    neighbourhood_sizes[edge.src] = 1;
   } else {
     vector<SkipListHeader *> blocks_per_level(levels);
     find_block(adjacency_list, edge.dst, blocks_per_level);
@@ -186,6 +189,8 @@ void BlockedSkipListAdjacencyLists::insert_edge(edge_t edge) {
       i->size++;
       i->min = std::min(edge.dst, i->min);
       i->max = std::max(edge.dst, i->max);
+
+      neighbourhood_sizes[edge.src] += 1;
     }
   }
 }
@@ -200,9 +205,10 @@ void BlockedSkipListAdjacencyLists::insert_edge(edge_t edge) {
  *
  * @param pHeader
  * @param element
- * @param blocks
+ * @param blocks vector with one entry for each level
  */
 SkipListHeader *
+
 BlockedSkipListAdjacencyLists::find_block(SkipListHeader *pHeader, dst_t element, vector<SkipListHeader *> &blocks) {
   for (int l = levels - 1; 0 <= l; l--) {
     while (pHeader->next_levels[l] != nullptr && pHeader->next_levels[l]->max < element) {
@@ -229,6 +235,45 @@ bool BlockedSkipListAdjacencyLists::insert_safe(edge_t edge) {
   vertex_mutices[edge.src].lock();
   insert_edge(edge);
   vertex_mutices[edge.src].unlock();
+  return true;
+}
+
+void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
+  out.clear();
+
+  auto s_a = neighbourhood_size(a);
+  auto s_b = neighbourhood_size(b);
+
+  if (s_b < s_a) {
+    swap(s_a, s_b);
+    swap(a, b);
+  }
+
+  int swip = 0;
+
+  out.resize(s_a);
+  auto out_iterator = out.begin();
+
+  auto ns_a = (SkipListHeader*) raw_neighbourhood(a);
+  auto ns_b = (SkipListHeader*) raw_neighbourhood(b);
+
+  vector<SkipListHeader*> forward_pointers(levels);
+  while (ns_a != nullptr) {
+    auto b_block = find_block(ns_b, ns_a->min, forward_pointers);
+
+    do {
+      out_iterator = set_intersection(ns_a->data, ns_a->data + ns_a->size,  b_block->data, b_block->data + b_block->size, out_iterator);
+      b_block = b_block->next_levels[0];
+    } while (b_block != nullptr && b_block->min <= ns_a->max);
+
+    // TODO optimization could start next find block from here but whatever for now
+    ns_a = ns_a->next_levels[0];
+  }
+  swip = 1;
+}
+
+size_t BlockedSkipListAdjacencyLists::neighbourhood_size(vertex_id_t src) {
+  return neighbourhood_sizes[src];
 }
 
 

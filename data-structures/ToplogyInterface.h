@@ -21,6 +21,8 @@ public:
     virtual bool insert_safe(edge_t edge) = 0;
     virtual void delete_edge(edge_t edge) = 0;
 
+    virtual size_t neighbourhood_size(vertex_id_t src) = 0;
+
     virtual void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) = 0;
     virtual void neighbourhood(vertex_id_t src, EdgeIterator& iter) = 0;
     virtual void* raw_neighbourhood(vertex_id_t src) = 0;
