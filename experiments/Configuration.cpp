@@ -144,7 +144,9 @@ const unordered_map<DataStructures, string> Config::DATA_STRUCTURE_MAPPING {
         {CSR_MALLOC_ADJACENCY_LIST, "csrMallocAL"},
         {BLOCKED_LINKED_LIST_AL, "bllAL"},
         {BLOCKED_SKIP_LIST_AL, "bslAL"},
-        {HASH_SET_SIMULATOR_AL, "hsAL"}
+        {HASH_SET_SIMULATOR_AL, "hsAL"},
+        {HASH_SET_AL, "rhAL"},
+
 };
 
 const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING {

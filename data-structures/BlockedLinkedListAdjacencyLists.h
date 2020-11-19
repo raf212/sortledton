@@ -13,7 +13,7 @@
 #include "ToplogyInterface.h"
 
 struct BlockHeader {
-    size_t size;
+    size_t size;  // TODO make smaller
     dst_t min;
     dst_t max;
     dst_t* data;

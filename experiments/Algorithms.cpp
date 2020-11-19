@@ -3,6 +3,7 @@
 //
 
 #include "Algorithms.h"
+#include "TwoNeighbour.h"
 
 #include <algorithm>
 #include <queue>
@@ -143,9 +144,10 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
         dst_t *end = block->data + block->size;
 
         while (data < end) {
-          if (distances[*data] == maxDistance) {
-            distances[*data] = distances[v] + 1;
-            work.push(*data);
+          dst_t n = *data;
+          if (distances[n] == maxDistance) {
+            distances[n] = distances[v] + 1;
+            work.push(n);
           }
           data++;
         }
@@ -183,5 +185,16 @@ vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t 
     return bfs_single_edge_interface(driver, ds, start_vertex);
   } else {
     return bfs_batched_interface(driver, ds, start_vertex);
+  }
+}
+
+unordered_map<vertex_id_t, size_t> Algorithms::neighbourhood_2(Driver& driver,
+        TopologyInterface &ds, const vector<vertex_id_t> &sources, bool raw_neighbourhood) {
+  if (raw_neighbourhood) {
+    return TwoNeighbour::neighbourhood_2_raw_neighbourhood(driver, ds, sources);
+  } else if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
+    throw NotImplemented();
+  } else {
+    return TwoNeighbour::neighbourhood_2_batched_interface(driver, ds, sources);
   }
 }

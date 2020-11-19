@@ -23,6 +23,11 @@ void BlockedLinkedListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
 
     BlockHeader *head_block = write_to_blocks(shuffled_src.data(), shuffled_src.data() + shuffled_src.size());
 
+    if (head_block != nullptr) {
+      assert((long) head_block % 64 == 0);
+      assert((sizeof(*head_block) + block_size * 4) % 64 == 0);
+    }
+
     adjacency_index.push_back(head_block);
   }
 }

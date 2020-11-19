@@ -20,11 +20,13 @@
 #include <map>
 #include <thread>
 #include <atomic>
+#include <data-structures/HashSetAdjacencyLists.h>
 #include "Driver.h"
 
 #include "BFSSourceSelector.h"
 #include "Algorithms.h"
 #include "TwoNeighbourSourceSelector.h"
+#include "TwoNeighbour.h"
 
 vector <vector<vertex_id_t>> Driver::select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
   vector <vector<vertex_id_t>> out;
@@ -139,12 +141,15 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       break;
     }
     case HASH_SET_SIMULATOR_AL: {
-      bool unordered = false;
       float fill_factor = 0.9;
       if (!ds_parameters.empty()) {
         fill_factor = stof(ds_parameters[0]);
       }
       data_structure = new HashSetSimulatorAdjacencyList(fill_factor);
+      break;
+    }
+    case HASH_SET_AL: {
+      data_structure = new HashSetAdjacencyLists();
       break;
     }
     default: {
@@ -161,10 +166,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   }
 
   if (config.experiments.find(NEIGHBOUR_2) != config.experiments.end()) {
-    if (run_on_raw_neighbourhood) {
-      throw NotImplemented();
-    }
-    run_neighbourhood_2_experiment(*data_structure, neighbourhood_2_sources);
+    run_neighbourhood_2_experiment(*data_structure, neighbourhood_2_sources, run_on_raw_neighbourhood);
   }
   if (config.experiments.find(BFS) != config.experiments.end()) {
     run_bfs_experiment(*data_structure, run_on_raw_neighbourhood);
@@ -298,14 +300,31 @@ void Driver::run_triangle_counting_experiment(TopologyInterface &ds) {
 
   vector <size_t> run_times;
   size_t triangles;
+  vector<dst_t> out;
   for (int rep = 0; rep < config.repetitions; rep++) {
     auto start = chrono::steady_clock::now();
 
     triangles = 0;
 
+    if (typeid(ds) == typeid(HashSetAdjacencyLists)) {
+      for (int a = 0; a < ds.vertex_count(); a++) {
+        auto a_neighbours = (robin_hood::unordered_flat_set<dst_t>*) ds.raw_neighbourhood(a);
+
+        for (auto b : *a_neighbours) {
+          if (a < b) {
+            ds.intersect_neighbourhood(a, b, out);
+            for (auto c : out) {
+              if (b < c) {
+                triangles += 1;
+              }
+            }
+          }
+        }
+      }
+    } else {
 //#pragma omp parallel
 //    {
-      vector<dst_t> out;
+
 
       ContigiousBlockIterator &a_neighbours = getIter(ds);
 
@@ -329,6 +348,7 @@ void Driver::run_triangle_counting_experiment(TopologyInterface &ds) {
           }
         }
       }
+    }
 //    }
     auto end = chrono::steady_clock::now();
 
@@ -351,51 +371,16 @@ void Driver::run_triangle_counting_experiment(TopologyInterface &ds) {
 }
 
 void Driver::run_neighbourhood_2_experiment(TopologyInterface &ds,
-                                            const vector <vector<vertex_id_t>> &sources) {
+                                            const vector <vector<vertex_id_t>> &sources,
+                                            bool run_raw_neighbourhood) {
   cout << "Running 2 neighbourhood experiment ";
   cout.flush();
 
   vector <size_t> run_times;
 
-  ContigiousBlockIterator &neighbour_neighbours = getIter(ds);
-  ContigiousBlockIterator &neighbours = getIter(ds);
-  ContigiousBlockIterator &neighbours_3 = getIter(ds);
   for (int rep = 0; rep < config.repetitions; rep++) {
-
     auto start = chrono::steady_clock::now();
-
-    unordered_map<vertex_id_t, size_t> neighbour_counts;
-    unordered_set<dst_t> visited;
-    visited.reserve(100000);
-    for (const auto &s : sources[rep]) {
-      visited.clear();
-
-      size_t count = 0;
-      ds.neighbourhood(s, neighbours);
-      while (neighbours.has_next()) {
-        auto &batch = neighbours.next();
-        for (const auto &n : batch) {
-          if (visited.find(n) == visited.end()) {
-            visited.insert(n);
-            count++;
-
-            ds.neighbourhood(n, neighbours_3);
-            while (neighbours_3.has_next()) {
-              auto &batch2 = neighbours_3.next();
-
-              for (const auto &nn : batch2) {
-                if (visited.find(nn) == visited.end()) {
-                  visited.insert(nn);
-                  count++;
-                }
-              }
-            }
-          }
-        }
-      }
-
-      neighbour_counts.insert(make_pair(s, count));
-    }
+    unordered_map<vertex_id_t, size_t> neighbour_counts = Algorithms::neighbourhood_2(*this, ds, sources[rep], run_raw_neighbourhood);
     auto end = chrono::steady_clock::now();
 
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
@@ -412,7 +397,6 @@ void Driver::run_neighbourhood_2_experiment(TopologyInterface &ds,
 
     cout << "Counted " << all_neighbours << endl;
 
-
 #ifdef DEBUG
     if (rep == 0) { // Gold standard only saves the result from rep==0 runs, they differ in the set of sources.
       check_neighbourhood_2(neighbour_counts);
@@ -422,7 +406,6 @@ void Driver::run_neighbourhood_2_experiment(TopologyInterface &ds,
 
   double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
   cout << endl << "2 neighbourhood counting run in average in " << average << " milliseconds " << endl;
-
 }
 
 EdgeList Driver::read_insert_dataset() {

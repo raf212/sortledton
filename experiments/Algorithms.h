@@ -15,6 +15,9 @@
 using namespace std;
 class Algorithms {
 public:
+
+    static unordered_map<vertex_id_t, size_t> neighbourhood_2(Driver& driver, TopologyInterface &ds, const vector<vertex_id_t> &sources, bool raw_neighbourhood);
+
     static vector<uint> bfs(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex, bool run_on_raw_neighbourhood);
     static vector<uint> bfs(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex) { return bfs(driver, ds, start_vertex, false); };
 
