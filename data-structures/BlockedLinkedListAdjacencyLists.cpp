@@ -25,7 +25,7 @@ void BlockedLinkedListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
 
     if (head_block != nullptr) {
       assert((long) head_block % 64 == 0);
-      assert((sizeof(*head_block) + block_size * 4) % 64 == 0);
+//      assert((sizeof(*head_block) + block_size * 4) % 64 == 0);
     }
 
     adjacency_index.push_back(head_block);
@@ -50,6 +50,9 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
         if (pool_sizes[i] <= data_size) {
           chosen_pool = i;
         }
+      }
+      if (chosen_pool + 1 < pools.size()) {
+        chosen_pool++;   // Choose the first pool which can fit all data
       }
       size_t block_capacity = pool_sizes[chosen_pool] * bulk_load_fill_rate;
 
@@ -82,6 +85,7 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
 
     // TODO debug code
     auto all_size = 0;
+    auto list_length = 0;
     auto i = first_block;
 
     while (i != nullptr) {
@@ -98,8 +102,17 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
       assert(*i->data == i->min);
       assert(*(i->data + i->size - 1) == i->max);
 
+      if (i->size != block_size) {
+        assert(i->next == nullptr );
+      }
+
+      list_length++;
       all_size += i->size;
       i = i->next;
+    }
+
+    if (size < block_size && 0 < size) {
+      assert(list_length == 1);
     }
 
     return first_block;
