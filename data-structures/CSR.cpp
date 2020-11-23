@@ -36,3 +36,7 @@ bool CSR::has_edge(edge_t edge) {
 size_t CSR::neighbourhood_size(vertex_id_t src) {
   return adjacency_index[src + 1] - adjacency_index[src];
 }
+
+void *CSR::raw_neighbourhood(vertex_id_t src) {
+  return &adjacency_lists[adjacency_index[src]];
+}

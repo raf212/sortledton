@@ -28,8 +28,7 @@ public:
 
     void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) override;
     void neighbourhood(vertex_id_t src, EdgeIterator &iter) override { throw NotImplemented(); };
-    // Simple implementation not possible because size is in index.
-    void* raw_neighbourhood(vertex_id_t src) override { throw NotImplemented(); };
+    void* raw_neighbourhood(vertex_id_t src) override;
 
     void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) override;
 

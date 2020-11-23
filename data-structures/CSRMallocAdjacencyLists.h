@@ -29,12 +29,11 @@ public:
 
     void delete_edge(edge_t edge) override { throw NotImplemented(); };
 
-    size_t neighbourhood_size(vertex_id_t src) override { throw NotImplemented(); };
+    size_t neighbourhood_size(vertex_id_t src) override;
 
     void neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) override;
     void neighbourhood(vertex_id_t src, EdgeIterator &iter) override { throw NotImplemented(); };
-    // Simple implementation not possible because size is in index.
-    void* raw_neighbourhood(vertex_id_t src) override { throw NotImplemented(); };
+    void* raw_neighbourhood(vertex_id_t src) override;
 
     void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) override;
 
@@ -42,7 +41,7 @@ public:
 
     void bulkload(const SortedCSRDataSource &src) override;
 
-private:
+
     size_t malloc_limit;
     vector<dst_t *> adjacency_index;
 

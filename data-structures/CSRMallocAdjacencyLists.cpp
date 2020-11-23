@@ -71,3 +71,11 @@ void CSRMallocAdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t
 
   intersect_edge_block(a_start, a_end, b_start, b_end, out);
 }
+
+void *CSRMallocAdjacencyLists::raw_neighbourhood(vertex_id_t src) {
+  return adjacency_index[2 * src];
+}
+
+size_t CSRMallocAdjacencyLists::neighbourhood_size(vertex_id_t src) {
+  return (size_t) adjacency_index[2 * src + 1];
+}
