@@ -163,9 +163,9 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
       if (tagged_pointer < 0) {
         tagged_pointer *= -1;
 
-        dst_t *ns = (dst_t *) tagged_pointer;
-        dst_t *end = ns + ns[0] + 1;
+        dst_t *ns = (dst_t *) tagged_pointer ;
         ns++;
+        dst_t *end = ns + ds.neighbourhood_size(v);
 
         while (ns < end) {
           dst_t n = *ns;

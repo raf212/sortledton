@@ -114,6 +114,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       bool unordered = false;
       size_t block_size = 128;
       bool adjust_pool_sizes = false;
+      bool size_in_index = false;
       if (!ds_parameters.empty()) {
         block_size = stoi(ds_parameters[0]);
         unordered = stoi(ds_parameters[1]);
@@ -121,11 +122,16 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
           cout << "Adjusting pool sizes activated" << endl;
           adjust_pool_sizes = true;
         }
+        if (ds_parameters[3] == "si") {
+          cout << "Size stored in index" << endl;
+          size_in_index = true;
+        }
       }
       data_structure = new BlockedLinkedListAdjacencyLists(block_size, unordered,
                                                            base.adjacency_lists.size() + inserts.edges.size() + 100,
                                                            base.vertex_count(),
-                                                           adjust_pool_sizes);
+                                                           adjust_pool_sizes,
+                                                           size_in_index);
       break;
     }
     case BLOCKED_SKIP_LIST_AL: {

@@ -10,7 +10,11 @@
 #include <cassert>
 
 void BlockedLinkedListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
-  adjacency_index.reserve(src.vertex_count());
+  if (size_in_index) {
+    adjacency_index.reserve(src.vertex_count() * 2);
+  } else {
+    adjacency_index.reserve(src.vertex_count());
+  }
 
   for (int i = 0; i < src.vertex_count(); i++) {
     auto start = src.adjacency_lists.data() + src.adjacency_index[i];
@@ -29,6 +33,9 @@ void BlockedLinkedListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
     }
 
     adjacency_index.push_back(head_block);
+    if (size_in_index) {
+      adjacency_index.push_back((BlockHeader *) shuffled_src.size());
+    }
   }
 }
 
@@ -128,7 +135,7 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
 }
 
 void BlockedLinkedListAdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) {
-  static_cast<BlockedBatchedEdgeIterator &>(iter).initialize(adjacency_index[src]);
+  throw NotImplemented();
 }
 
 void BlockedLinkedListAdjacencyLists::insert_edge(edge_t edge) {
@@ -204,14 +211,7 @@ void BlockedLinkedListAdjacencyLists::insert_edge(edge_t edge) {
 }
 
 bool BlockedLinkedListAdjacencyLists::has_edge(edge_t e) {
-  auto i = adjacency_index[e.src];
-
-  while (i->next != nullptr && i->max < e.dst) {
-    i = i->next;
-  }
-
-  auto last = i->data + i->size;
-  return find(i->data, last, e.dst) != last;
+  throw NotImplemented();
 }
 
 uint BlockedLinkedListAdjacencyLists::round_up_power_of_two(uint v) {
@@ -223,4 +223,33 @@ uint BlockedLinkedListAdjacencyLists::round_up_power_of_two(uint v) {
     v |= v >> 16;
     v++;
     return v;
+}
+
+size_t BlockedLinkedListAdjacencyLists::neighbourhood_size(vertex_id_t src) {
+  if (size_in_index) {
+    return (size_t) adjacency_index[src * 2 + 1];
+  } else {
+    long tagged_pointer = (long) adjacency_index[src];
+    if (tagged_pointer < 0) {
+      return (size_t) ((dst_t*) (-1 * tagged_pointer))[0];
+    } else {
+      throw NotImplemented();
+    }
+  }
+}
+
+void *BlockedLinkedListAdjacencyLists::raw_neighbourhood(vertex_id_t src) {
+  if (size_in_index) {
+    return adjacency_index[src * 2];
+  } else {
+    return adjacency_index[src];
+  }
+}
+
+size_t BlockedLinkedListAdjacencyLists::vertex_count() {
+  if (size_in_index) {
+    return adjacency_index.size() / 2;
+  } else {
+    return adjacency_index.size();
+  }
 }

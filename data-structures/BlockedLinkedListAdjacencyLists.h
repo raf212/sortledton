@@ -35,8 +35,8 @@ public:
      * @param max_edges the size of the underlying pool as the amount of dst_t that should be hold in total during this execution.
      * @param adjust_size if true, there will be one block pool for each size up to <block_size> and bulkloading will choose the best fit. That's the smallest that fits all vertices or the largest size.
      */
-    BlockedLinkedListAdjacencyLists(size_t block_size, bool unordered, size_t max_edges, size_t max_vertices, bool adjust_size) :
-    block_size(block_size), unordered(unordered) {
+    BlockedLinkedListAdjacencyLists(size_t block_size, bool unordered, size_t max_edges, size_t max_vertices, bool adjust_size, bool size_in_index):
+    block_size(block_size), unordered(unordered), size_in_index(size_in_index) {
       if (block_size % 2 != 0) {
         throw ConfigurationError("We rely on the block to be an even number.");
       }
@@ -61,7 +61,7 @@ public:
       }
     };
 
-    size_t vertex_count() override { return adjacency_index.size(); };
+    size_t vertex_count() override;
 
     vertex_id_t insert_vertex() override { throw NotImplemented(); };
 
@@ -72,11 +72,11 @@ public:
 
     void delete_edge(edge_t edge) override { throw NotImplemented(); };
 
-    size_t neighbourhood_size(vertex_id_t src) override { throw NotImplemented(); };
+    size_t neighbourhood_size(vertex_id_t src) override;
 
     void neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) override;
     void neighbourhood(vertex_id_t src, EdgeIterator &iter) override { throw NotImplemented(); };
-    void* raw_neighbourhood(vertex_id_t src) override { return adjacency_index[src]; };
+    void* raw_neighbourhood(vertex_id_t src) override;
 
     void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) override {
       throw NotImplemented();
@@ -90,6 +90,7 @@ private:
     vector<BlockHeader *> adjacency_index;
 
     bool unordered;
+    bool size_in_index;
     size_t block_size;
     const float bulk_load_fill_rate = 1.0;
 
