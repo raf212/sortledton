@@ -37,7 +37,8 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
   if (size == 0) {
     return nullptr;
   } else if (size < block_size) {  // Fits into one block
-    dst_t *adjacency_list = (dst_t *) malloc((size + 1) * sizeof(dst_t));
+    uint nearest_block_size = round_up_power_of_two(size);
+    dst_t* adjacency_list = (dst_t *) malloc((nearest_block_size + 1) * sizeof(dst_t));
 
     adjacency_list[0] = size;
     memcpy((void *) &adjacency_list[1], (void *) start, size * sizeof(dst_t));
@@ -211,4 +212,15 @@ bool BlockedLinkedListAdjacencyLists::has_edge(edge_t e) {
 
   auto last = i->data + i->size;
   return find(i->data, last, e.dst) != last;
+}
+
+uint BlockedLinkedListAdjacencyLists::round_up_power_of_two(uint v) {
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v++;
+    return v;
 }
