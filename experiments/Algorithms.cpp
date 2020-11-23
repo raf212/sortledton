@@ -11,6 +11,7 @@
 #include <HashSetSimulatorAdjacencyList.h>
 #include <MallocAdjacencyLists.h>
 #include <CSR.h>
+#include <CSRMallocAdjacencyLists.h>
 
 vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
   size_t vertices_traversed = 0;
@@ -131,27 +132,65 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
         ns++;
       }
     }
-  } else if (typeid(ds) == typeid(BlockedLinkedListAdjacencyLists)) {
+  } else if (typeid(ds) == typeid(CSRMallocAdjacencyLists)) {
     while (!work.empty()) {
       vertex_id_t v = work.front();
       work.pop();
 
       vertices_traversed++;
 
-      BlockHeader *block = (BlockHeader *) ds.raw_neighbourhood(v);
-      while (block != nullptr) {
-        auto data = block->data;
-        dst_t *end = block->data + block->size;
+      auto n =  (dst_t*) ds.raw_neighbourhood(v);
+      auto end = n + ds.neighbourhood_size(v);
+      while (n < end) {
+        if (distances[*n] == maxDistance) {
+          distances[*n] = distances[v] + 1;
+          work.push(*n);
+        }
+        n++;
+      }
+    }
 
-        while (data < end) {
-          dst_t n = *data;
+  }
+  else if (typeid(ds) == typeid(BlockedLinkedListAdjacencyLists)) {
+    while (!work.empty()) {
+      vertex_id_t v = work.front();
+      work.pop();
+
+      vertices_traversed++;
+
+      long tagged_pointer = (long) ds.raw_neighbourhood(v);
+
+      if (tagged_pointer < 0) {
+        tagged_pointer *= -1;
+
+        dst_t *ns = (dst_t *) tagged_pointer;
+        dst_t *end = ns + ns[0] + 1;
+        ns++;
+
+        while (ns < end) {
+          dst_t n = *ns;
           if (distances[n] == maxDistance) {
             distances[n] = distances[v] + 1;
             work.push(n);
           }
-          data++;
+          ns++;
         }
-        block = block->next;
+      } else {
+        BlockHeader* block = (BlockHeader*) tagged_pointer;
+        while (block != nullptr) {
+          auto data = block->data;
+          dst_t *end = block->data + block->size;
+
+          while (data < end) {
+            dst_t n = *data;
+            if (distances[n] == maxDistance) {
+              distances[n] = distances[v] + 1;
+              work.push(n);
+            }
+            data++;
+          }
+          block = block->next;
+        }
       }
     }
   } else if (typeid(ds) == typeid(CSR)) {
@@ -162,8 +201,8 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
 
       vertices_traversed++;
 
-      auto n = &(csr.adjacency_lists[csr.adjacency_index[v]]);
-      auto end = &(csr.adjacency_lists[csr.adjacency_index[v + 1]]);
+      auto n = (dst_t*) ds.raw_neighbourhood(v);  //&(csr.adjacency_lists[csr.adjacency_index[v]]);
+      auto end = n + ds.neighbourhood_size(v); //&(csr.adjacency_lists[csr.adjacency_index[v + 1]]);
       while (n < end) {
         if (distances[*n] == maxDistance) {
           distances[*n] = distances[v] + 1;

@@ -24,7 +24,7 @@ void BlockedLinkedListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
     BlockHeader *head_block = write_to_blocks(shuffled_src.data(), shuffled_src.data() + shuffled_src.size());
 
     if (head_block != nullptr) {
-      assert((long) head_block % 64 == 0);
+//      assert((long) head_block % 64 == 0);
 //      assert((sizeof(*head_block) + block_size * 4) % 64 == 0);
     }
 
@@ -36,11 +36,18 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
   auto size = end - start;
   if (size == 0) {
     return nullptr;
+  } else if (size < block_size) {  // Fits into one block
+    dst_t *adjacency_list = (dst_t *) malloc((size + 1) * sizeof(dst_t));
+
+    adjacency_list[0] = size;
+    memcpy((void *) &adjacency_list[1], (void *) start, size * sizeof(dst_t));
+
+    long tagged_pointer = (long) adjacency_list * -1;
+
+    return (BlockHeader*) tagged_pointer;
   } else {
     BlockHeader *first_block = nullptr;
     BlockHeader *last_block = nullptr;
-
-
 
     while (start < end) {
       size_t data_size = end - start;
@@ -56,7 +63,7 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
       }
       size_t block_capacity = pool_sizes[chosen_pool] * bulk_load_fill_rate;
 
-      BlockHeader *block = (BlockHeader *) pools[chosen_pool].get_block();
+      BlockHeader *block = (BlockHeader *) malloc(pool_sizes[chosen_pool] * sizeof(dst_t) + sizeof(BlockHeader));
       block->data = (dst_t*) ((char*) block + sizeof(BlockHeader));
       block->next = nullptr;
 
