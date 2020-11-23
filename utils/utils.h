@@ -58,4 +58,6 @@ unordered_set<V> get_values_from_multimap(unordered_multimap<K, V> map, K key) {
   return r;
 };
 
+uint round_up_power_of_two(uint v);
+
 #endif //LIVE_GRAPH_TWO_UTILS_H

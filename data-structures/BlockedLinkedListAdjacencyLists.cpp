@@ -214,17 +214,6 @@ bool BlockedLinkedListAdjacencyLists::has_edge(edge_t e) {
   throw NotImplemented();
 }
 
-uint BlockedLinkedListAdjacencyLists::round_up_power_of_two(uint v) {
-    v--;
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    v |= v >> 8;
-    v |= v >> 16;
-    v++;
-    return v;
-}
-
 size_t BlockedLinkedListAdjacencyLists::neighbourhood_size(vertex_id_t src) {
   if (size_in_index) {
     return (size_t) adjacency_index[src * 2 + 1];

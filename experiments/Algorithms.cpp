@@ -12,6 +12,7 @@
 #include <MallocAdjacencyLists.h>
 #include <CSR.h>
 #include <CSRMallocAdjacencyLists.h>
+#include <BlockedSkipListAdjacencyLists.h>
 
 vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
   size_t vertices_traversed = 0;
@@ -193,6 +194,46 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
         }
       }
     }
+  } else if (typeid(ds) == typeid(BlockedSkipListAdjacencyLists)) {
+    auto block_size = dynamic_cast<BlockedSkipListAdjacencyLists&>(ds).get_block_size();
+    while (!work.empty()) {
+      vertex_id_t v = work.front();
+      work.pop();
+
+      vertices_traversed++;
+
+      if (ds.neighbourhood_size(v) <= block_size) {
+        dst_t *ns = (dst_t *) ds.raw_neighbourhood(v);
+        dst_t *end = ns + ds.neighbourhood_size(v);
+
+        while (ns < end) {
+          dst_t n = *ns;
+          if (distances[n] == maxDistance) {
+            distances[n] = distances[v] + 1;
+            work.push(n);
+          }
+          ns++;
+        }
+      } else {
+        BlockHeader* block = (BlockHeader*) ds.raw_neighbourhood(v);
+        while (block != nullptr) {
+          auto data = block->data;
+          dst_t *end = block->data + block->size;
+
+          while (data < end) {
+            dst_t n = *data;
+            if (distances[n] == maxDistance) {
+              distances[n] = distances[v] + 1;
+              work.push(n);
+            }
+            data++;
+          }
+          block = block->next;
+        }
+      }
+    }
+
+
   } else if (typeid(ds) == typeid(CSR)) {
     CSR& csr = dynamic_cast<CSR&>(ds);
     while (!work.empty()) {

@@ -27,3 +27,12 @@ void BlockedBatchedEdgeIterator::prefetch(BlockHeader * block) {
   __builtin_prefetch((void*) block, 0, 3);
 
 }
+
+void BlockedBatchedEdgeIterator::initialize(dst_t *data, size_t size) {
+  current_block = &single_block_buffer;
+  current_block->data = data;
+  current_block->size = size;
+  current_block->next = nullptr;
+  current_block->min = -1;
+  current_block->max = -1;
+}

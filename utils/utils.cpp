@@ -60,3 +60,14 @@ void intersect_edge_block(dst_t *start_a, dst_t *end_a, dst_t *start_b, dst_t *e
   auto out_end = set_intersection(start_a, end_a, start_b, end_b, out.begin());
   out.resize(out_end - out.begin());
 }
+
+uint round_up_power_of_two(uint v) {
+  v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  v++;
+  return v;
+}

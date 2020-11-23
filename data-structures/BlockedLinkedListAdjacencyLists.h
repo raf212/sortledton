@@ -98,8 +98,6 @@ private:
     vector<uint> pool_sizes;
 
     BlockHeader* write_to_blocks(const dst_t* start, const dst_t* end);
-
-    uint round_up_power_of_two(uint v);
 };
 
 

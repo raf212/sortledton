@@ -18,6 +18,7 @@ public:
     BlockedBatchedEdgeIterator() : batch(nullptr, 0) {};
 
     void initialize(BlockHeader* head);
+    void initialize(dst_t* data, size_t size);
 
     bool has_next() override;
 
@@ -25,6 +26,7 @@ public:
 
 private:
     BlockHeader* current_block;
+    BlockHeader single_block_buffer;
     ContiguousEdgeBatch batch;
 
     void prefetch(BlockHeader* h);
