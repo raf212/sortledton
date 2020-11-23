@@ -132,9 +132,9 @@ void BlockedLinkedListAdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdge
 }
 
 void BlockedLinkedListAdjacencyLists::insert_edge(edge_t edge) {
-  if (unordered) {
-    throw NotImplemented();
-  }
+
+    throw NotImplemented(); // Does not work for new 1 block sized lists
+
   if (pools.size() != 1) {
     throw NotImplemented("Cannot insert new edges because capacity is not saved yet.");
   }

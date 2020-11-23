@@ -1,66 +1,15 @@
-#!/usr/bin/env bash
+cd "$(dirname "$0")" || exit 1
 
-exe="numactl -l -C 1 /home/fuchs/graph-two/cmake-build-release-scyper15/live_graph_two"
+. ./variables.sh
 
-experiments="--experiments bfs,2-neighbour"
-experiments_no_triangle="--experiments bfs,2-neighbour"
-dataset_higgs="--dataset_base /space/fuchs/shared/graph-two-datasets/higgs/base.csr"
-dataset_yahoo="--dataset_base /space/fuchs/shared/graph-two-datasets/yahoo-songs/base.csr"
-dataset_bitcoin="--dataset_base /space/fuchs/shared/graph-two-datasets/soc-bitcoin/base.csr"
-repetitions="--repetitions 1"
+prepare_experiment
 
-for i in {1..10}
+experiments="--experiments bfs"
+repetitions="--repetitions 10"
+
+default_parameters="$experiments $repetitions --release_run --data_structures"
+
+for dataset in "$live_journal_base" #"$higgs_base" "$bitcoin_base" "$live_journal_base" "$graph500_22_base" "$graph500_23_base" "$graph500_24_base" "$twitter_base"
 do
-# Higgs dataset
-$exe $experiments --data_structures csr  $dataset_higgs $repetitions
-
-$exe $experiments --data_structures csrMallocAL\(0\'0\)  $dataset_higgs $repetitions
-$exe $experiments_no_triangle --data_structures csrMallocAL\(0\'1\)  $dataset_higgs $repetitions
-$exe $experiments --data_structures csrMallocAL\(32\'0\)  $dataset_higgs $repetitions
-$exe $experiments --data_structures csrMallocAL\(64\'0\)  $dataset_higgs $repetitions
-$exe $experiments --data_structures csrMallocAL\(128\'0\)  $dataset_higgs $repetitions
-$exe $experiments --data_structures csrMallocAL\(10000000\'0\)  $dataset_higgs $repetitions
-$exe $experiments_no_triangle --data_structures csrMallocAL\(10000000\'1\)  $dataset_higgs $repetitions
-
-$exe $experiments_no_triangle --data_structures mallocAL\(1\)  $dataset_higgs $repetitions
-$exe $experiments --data_structures mallocAL\(0\)  $dataset_higgs $repetitions
-
-$exe $experiments_no_triangle --data_structures vectorAL\(0\) $dataset_higgs $repetitions
-$exe $experiments_no_triangle --data_structures vectorAL\(1\) $dataset_higgs $repetitions
-
-
-# Yahoo dataset
-$exe $experiments --data_structures csr  $dataset_yahoo $repetitions
-
-$exe $experiments --data_structures csrMallocAL\(0\'0\)  $dataset_yahoo $repetitions
-$exe $experiments_no_triangle --data_structures csrMallocAL\(0\'1\)  $dataset_yahoo $repetitions
-$exe $experiments --data_structures csrMallocAL\(32\'0\)  $dataset_yahoo $repetitions
-$exe $experiments --data_structures csrMallocAL\(64\'0\)  $dataset_yahoo $repetitions
-$exe $experiments --data_structures csrMallocAL\(128\'0\)  $dataset_yahoo $repetitions
-$exe $experiments --data_structures csrMallocAL\(10000000\'0\)  $dataset_yahoo $repetitions
-$exe $experiments_no_triangle --data_structures csrMallocAL\(10000000\'1\)  $dataset_yahoo $repetitions
-
-$exe $experiments_no_triangle --data_structures mallocAL\(1\)  $dataset_yahoo $repetitions
-$exe $experiments --data_structures mallocAL\(0\)  $dataset_yahoo $repetitions
-
-$exe $experiments_no_triangle --data_structures vectorAL\(0\) $dataset_yahoo $repetitions
-$exe $experiments_no_triangle --data_structures vectorAL\(1\) $dataset_yahoo $repetitions
-
-
-# Bitcoin dataset
-$exe $experiments --data_structures csr  $dataset_bitcoin $repetitions
-
-$exe $experiments --data_structures csrMallocAL\(0\'0\)  $dataset_bitcoin $repetitions
-$exe $experiments_no_triangle --data_structures csrMallocAL\(0\'1\)  $dataset_bitcoin $repetitions
-$exe $experiments --data_structures csrMallocAL\(32\'0\)  $dataset_bitcoin $repetitions
-$exe $experiments --data_structures csrMallocAL\(64\'0\)  $dataset_bitcoin $repetitions
-$exe $experiments --data_structures csrMallocAL\(128\'0\)  $dataset_bitcoin $repetitions
-$exe $experiments --data_structures csrMallocAL\(10000000\'0\)  $dataset_bitcoin $repetitions
-$exe $experiments_no_triangle --data_structures csrMallocAL\(10000000\'1\)  $dataset_bitcoin $repetitions
-
-$exe $experiments_no_triangle --data_structures mallocAL\(1\)  $dataset_bitcoin $repetitions
-$exe $experiments --data_structures mallocAL\(0\)  $dataset_bitcoin $repetitions
-
-$exe $experiments_no_triangle --data_structures vectorAL\(0\) $dataset_bitcoin $repetitions
-$exe $experiments_no_triangle --data_structures vectorAL\(1\) $dataset_bitcoin $repetitions
+  $exe $dataset $default_parameters "bllAL(256'0'adjust'raw),bllAL(512'0'adjust'raw),csrMallocAL(512'0'raw),csrMallocAL(1000000'0'raw),csrMallocAL(0'0'raw),mallocAL(0'0'raw),csr(0'raw)"
 done
