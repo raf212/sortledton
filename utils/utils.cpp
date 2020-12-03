@@ -55,10 +55,8 @@ string string_join(const string &join, const vector<string> &list) {
 }
 
 void intersect_edge_block(dst_t *start_a, dst_t *end_a, dst_t *start_b, dst_t *end_b, vector<dst_t> &out) {
-  out.resize(std::min(end_a - start_a, end_b - start_b));
-
-  auto out_end = set_intersection(start_a, end_a, start_b, end_b, out.begin());
-  out.resize(out_end - out.begin());
+  out.clear();
+  set_intersection(start_a, end_a, start_b, end_b, back_inserter(out));
 }
 
 uint round_up_power_of_two(uint v) {

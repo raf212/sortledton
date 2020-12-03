@@ -202,67 +202,71 @@ bool BlockedSkipListAdjacencyLists::insert_safe(edge_t edge) {
 }
 
 void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
-  out.clear();
-
   auto s_a = neighbourhood_size(a);
   auto s_b = neighbourhood_size(b);
+
+  if (s_a == 0 || s_b == 0) {
+    out.clear();
+    return;
+  }
 
   if (s_b < s_a) {
     swap(s_a, s_b);
     swap(a, b);
   }
 
-  out.resize(s_a);
-  auto out_iterator = out.begin();
+  if (get_set_type(a) == SINGLE_BLOCK && get_set_type(b) == SINGLE_BLOCK) {
+    auto start_a = (dst_t *) raw_neighbourhood(a);
+    auto end_a = start_a + neighbourhood_size(a);
+    auto start_b = (dst_t *) raw_neighbourhood(b);
+    auto end_b = start_b + neighbourhood_size(b);
 
+    intersect_edge_block(start_a, end_a, start_b, end_b, out);
+  } else if (get_set_type(a) == SINGLE_BLOCK) {
+    out.clear();
+    auto out_iterator = back_inserter(out);
 
-  SkipListHeader temp_a;
-  SkipListHeader temp_b;
+    auto start_a = (dst_t *) raw_neighbourhood(a);
+    auto end_a = start_a + neighbourhood_size(a);
+    SkipListHeader *ns_b = (SkipListHeader *) raw_neighbourhood(b);
 
-  SkipListHeader *ns_a = nullptr;
-  SkipListHeader *ns_b = nullptr;
+    vector<SkipListHeader *> forward_pointers(levels);
 
-  if (0 < s_a) {
-    switch (get_set_type(a)) {
-      case SINGLE_BLOCK: {
-        temp_a = skip_list_header_for_single_block(a);
-        ns_a = &temp_a;
-        break;
-      }
-      case SKIP_LIST:
-        ns_a = (SkipListHeader *) raw_neighbourhood(a);
-        break;
-    }
-  }
-
-  if (0 < s_b) {
-    switch (get_set_type(b)) {
-      case SINGLE_BLOCK: {
-        temp_b = skip_list_header_for_single_block(b);
-        ns_b = &temp_b;
-        break;
-      }
-      case SKIP_LIST:
-        ns_b = (SkipListHeader *) raw_neighbourhood(b);
-        break;
-    }
-  }
-
-  vector<SkipListHeader *> forward_pointers(levels);
-  while (ns_a != nullptr) {
     SkipListHeader *b_block = ns_b;
     if (ns_b->next != nullptr) {
-      find_block(ns_b, ns_a->min, forward_pointers);
+      find_block(ns_b, *start_a, forward_pointers);
     }
 
     do {
-      out_iterator = set_intersection(ns_a->data, ns_a->data + ns_a->size, b_block->data, b_block->data + b_block->size,
+      out_iterator = set_intersection(start_a, end_a, b_block->data,
+                                      b_block->data + b_block->size,
                                       out_iterator);
-      b_block = (SkipListHeader*) b_block->next;
-    } while (b_block != nullptr && b_block->min <= ns_a->max);
+      b_block = (SkipListHeader *) b_block->next;
+    } while (b_block != nullptr && b_block->min <= *(end_a - 1));
+  } else {
+    out.clear();
+    auto out_iterator = back_inserter(out);
 
-    // TODO optimization could start next find block from here but whatever for now
-    ns_a = (SkipListHeader *) ns_a->next;
+    SkipListHeader *ns_a = (SkipListHeader *) raw_neighbourhood(a);
+    SkipListHeader *ns_b = (SkipListHeader *) raw_neighbourhood(b);
+
+    vector<SkipListHeader *> forward_pointers(levels);
+    while (ns_a != nullptr) {
+      SkipListHeader *b_block = ns_b;
+      if (ns_b->next != nullptr) {
+        find_block(ns_b, ns_a->min, forward_pointers);
+      }
+
+      do {
+        out_iterator = set_intersection(ns_a->data, ns_a->data + ns_a->size, b_block->data,
+                                        b_block->data + b_block->size,
+                                        out_iterator);
+        b_block = (SkipListHeader *) b_block->next;
+      } while (b_block != nullptr && b_block->min <= ns_a->max);
+
+      // TODO optimization could start next find block from here but whatever for now
+      ns_a = (SkipListHeader *) ns_a->next;
+    }
   }
 }
 
@@ -325,7 +329,7 @@ SkipListHeader BlockedSkipListAdjacencyLists::skip_list_header_for_single_block(
 }
 
 void BlockedSkipListAdjacencyLists::insert_empty(edge_t edge) {
-  auto block = (dst_t*) malloc(2 * sizeof(dst_t));
+  auto block = (dst_t *) malloc(2 * sizeof(dst_t));
   block[0] = edge.dst;
 
   adjacency_index[2 * edge.src] = block;
@@ -335,10 +339,11 @@ void BlockedSkipListAdjacencyLists::insert_empty(edge_t edge) {
 void BlockedSkipListAdjacencyLists::insert_single_block(edge_t edge) {
   auto size = neighbourhood_size(edge.src);
   auto block_capacity = round_up_power_of_two(size);
-  auto block = (dst_t*) raw_neighbourhood(edge.src);
+  auto block = (dst_t *) raw_neighbourhood(edge.src);
 
   if (size == block_capacity) {  // Block full
-    if (size == block_size) {    // Block should be split into 2 skip list blocks, we do this in two steps, convert to SkipListHeader and then by recursion split into two.
+    if (size ==
+        block_size) {    // Block should be split into 2 skip list blocks, we do this in two steps, convert to SkipListHeader and then by recursion split into two.
       SkipListHeader *new_block = (SkipListHeader *) malloc(memory_block_size());
       new_block->data = (dst_t *) ((char *) new_block + skip_list_header_size());
       new_block->size = size;
@@ -350,7 +355,7 @@ void BlockedSkipListAdjacencyLists::insert_single_block(edge_t edge) {
 
       new_block->next = nullptr;
       for (int l = 0; l < levels; l++) {
-          new_block->next_levels[l] = nullptr;
+        new_block->next_levels[l] = nullptr;
       }
 
       adjacency_index[edge.src * 2] = new_block;
@@ -359,12 +364,12 @@ void BlockedSkipListAdjacencyLists::insert_single_block(edge_t edge) {
 
       return insert_skip_list(edge); // recursive call of depth 2, inefficient could be done with one time less copying.
     } else { // Block full: we double size and copy.
-      auto block = (dst_t*) raw_neighbourhood(edge.src);
-      dst_t* new_block = (dst_t*) malloc(size * 2 * sizeof(dst_t));
+      auto block = (dst_t *) raw_neighbourhood(edge.src);
+      dst_t *new_block = (dst_t *) malloc(size * 2 * sizeof(dst_t));
 
       auto *old_data = block;
       auto *new_data = new_block;
-      while(*old_data < edge.dst && old_data < block + size) {
+      while (*old_data < edge.dst && old_data < block + size) {
         *new_data = *old_data;
         old_data++;
         new_data++;
@@ -381,7 +386,7 @@ void BlockedSkipListAdjacencyLists::insert_single_block(edge_t edge) {
 
       free(block);
       adjacency_index[edge.src * 2] = new_block;
-      adjacency_index[edge.src * 2 + 1] = (void*) (size + 1);
+      adjacency_index[edge.src * 2 + 1] = (void *) (size + 1);
     }
   } else {  // Insert into block by shifting
     auto data = block + size - 1;
@@ -398,7 +403,7 @@ void BlockedSkipListAdjacencyLists::insert_single_block(edge_t edge) {
 }
 
 void BlockedSkipListAdjacencyLists::insert_skip_list(edge_t edge) {
-  SkipListHeader* adjacency_list = (SkipListHeader*) raw_neighbourhood(edge.src);
+  SkipListHeader *adjacency_list = (SkipListHeader *) raw_neighbourhood(edge.src);
 
   vector<SkipListHeader *> blocks_per_level(levels);
   find_block(adjacency_list, edge.dst, blocks_per_level);
