@@ -20,6 +20,7 @@ public:
 
     static vector<uint> bfs(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex, bool run_on_raw_neighbourhood);
     static vector<uint> bfs(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex) { return bfs(driver, ds, start_vertex, false); };
+    static vector<float> page_rank(Driver& driver, TopologyInterface& ds, bool run_on_raw_neighbourhood);
 
     static uint traversed_vertices(TopologyInterface& ds, vector<uint>& vector);
 

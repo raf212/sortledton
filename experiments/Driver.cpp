@@ -189,6 +189,9 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     }
     run_community_detection(*data_structure);
   }
+  if(config.experiments.find(PR) != config.experiments.end()) {
+    run_page_rank_experiment(*data_structure, run_on_raw_neighbourhood);
+  }
   if (config.experiments.find(INSERT) != config.experiments.end()) {
     if (run_on_raw_neighbourhood) {
       throw NotImplemented();
@@ -201,6 +204,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     }
     run_delete_experiment(*data_structure, deletes);
   }
+
 
   if (config.validate_datastructures) {
     validate_graph_structure(*data_structure, base, inserts, deletes);
@@ -789,3 +793,73 @@ void Driver::print_graph(TopologyInterface &ds) {
     }
   }
 }
+
+void Driver::run_page_rank_experiment(TopologyInterface& ds, bool run_on_raw_neighbourhood) {
+  cout << "Running PR experiment ";
+  cout.flush();
+
+  vector <float> scores;
+
+  vector <size_t> run_times;
+  for (int rep = 0; rep < config.repetitions; rep++) {
+    // BFS
+    auto start = chrono::steady_clock::now();
+    scores = Algorithms::page_rank(*this, ds, run_on_raw_neighbourhood);
+    auto end = chrono::steady_clock::now();
+
+    size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
+
+    run_times.push_back(microseconds);
+    reporter.add_repetition(PR, rep, microseconds);
+
+
+    cout << ".";
+    cout.flush();
+
+#ifdef DEBUG
+    check_page_rank(scores);
+#endif
+  }
+
+  double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
+  cout << endl << "PR run in average in " << average << " milliseconds " << endl;
+}
+
+void Driver::check_page_rank(vector<float> scores) {
+    cout << "Validating Page Rank experiment" << endl;
+    string inserts = "base";
+
+    const string gold_standard_file =
+            config.gold_standard_directory + "/pr_" + config.base.get_name() + ".goldStandard";
+    if (!file_exists(gold_standard_file)) {
+      cout << "Writing new gold standard for: " << gold_standard_file << endl;
+      ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
+
+      if (!f.good()) {
+        assert(false);
+      }
+
+      size_t size = scores.size();
+      f.write((char *) &size, sizeof(size));
+
+      for (float s : scores) {
+        f.write((char *) &s, sizeof(s));
+      }
+      f.close();
+    } else {
+      ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
+
+      size_t size;
+      f.read((char *) &size, sizeof(size));
+      assert(size == scores.size());
+
+      float e;
+      for (float d : scores) {
+        f.read((char *) &e, sizeof(d));
+        assert(d == e);
+      }
+
+      f.close();
+    }
+  }
+

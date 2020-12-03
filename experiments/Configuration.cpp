@@ -149,10 +149,11 @@ const unordered_map<DataStructures, string> Config::DATA_STRUCTURE_MAPPING {
 
 };
 
-const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING {
+const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING{
         {INSERT, "insert"},
         {DELETE, "delete"},
-        {BFS, "bfs"},
+        {BFS,    "bfs"},
+        {PR, "pr"},
         {TRIANGLE_COUNTING, "triangle"},
         {NEIGHBOUR_2, "2-neighbour"},
         {COMMUNITY_DETECTION, "community"}

@@ -4,6 +4,7 @@
 
 #include "Algorithms.h"
 #include "TwoNeighbour.h"
+#include "PageRank.h"
 
 #include <algorithm>
 #include <queue>
@@ -276,5 +277,15 @@ unordered_map<vertex_id_t, size_t> Algorithms::neighbourhood_2(Driver& driver,
     throw NotImplemented();
   } else {
     return TwoNeighbour::neighbourhood_2_batched_interface(driver, ds, sources);
+  }
+}
+
+vector<float> Algorithms::page_rank(Driver& driver, TopologyInterface &ds, bool run_on_raw_neighbourhood) {
+  if (run_on_raw_neighbourhood) {
+    throw NotImplemented();
+  } else if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
+    throw NotImplemented();
+  } else {
+    return PageRank::page_rank_batched_interface(driver, ds, 5, 1e-4);
   }
 }

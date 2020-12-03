@@ -55,6 +55,10 @@ private:
      */
     void check_bfs(vertex_id_t start_vertex, vector<uint>& distances, bool validate_inserts);
 
+    void run_page_rank_experiment(TopologyInterface& ds, bool run_on_raw_neighbourhood);
+
+    void check_page_rank(vector<float> scores);
+
     // TODO remove shared pointer from everything to avoid shared counter overhead
     void run_triangle_counting_experiment(TopologyInterface& ds);
     void check_triangle_counting(size_t count);

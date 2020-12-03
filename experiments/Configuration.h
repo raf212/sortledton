@@ -47,6 +47,7 @@ enum Experiments {
     DELETE,
     TRIANGLE_COUNTING,
     BFS,
+    PR,
     NEIGHBOUR_2,
     COMMUNITY_DETECTION
 };
