@@ -281,11 +281,14 @@ unordered_map<vertex_id_t, size_t> Algorithms::neighbourhood_2(Driver& driver,
 }
 
 vector<float> Algorithms::page_rank(Driver& driver, TopologyInterface &ds, bool run_on_raw_neighbourhood) {
+  const int max_iters = 5;
+  const float epsilon = 1e-4;
+
   if (run_on_raw_neighbourhood) {
-    throw NotImplemented();
+    return PageRank::page_rank_raw_neighbourhood(driver, ds, max_iters, epsilon);
   } else if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
     throw NotImplemented();
   } else {
-    return PageRank::page_rank_batched_interface(driver, ds, 5, 1e-4);
+    return PageRank::page_rank_batched_interface(driver, ds, max_iters, epsilon);
   }
 }

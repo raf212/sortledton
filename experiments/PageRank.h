@@ -17,6 +17,7 @@ class PageRank {
 
 public:
     static vector<float> page_rank_batched_interface(Driver& driver, TopologyInterface& ds, int max_iters, double epsilon = 0);
+    static vector<float> page_rank_raw_neighbourhood(Driver& driver, TopologyInterface& ds, int max_iters, double epsilon = 0);
 
 };
 

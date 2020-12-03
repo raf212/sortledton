@@ -825,7 +825,7 @@ void Driver::run_page_rank_experiment(TopologyInterface& ds, bool run_on_raw_nei
   cout << endl << "PR run in average in " << average << " milliseconds " << endl;
 }
 
-void Driver::check_page_rank(vector<float> scores) {
+void Driver::check_page_rank(vector<float>& scores) {
     cout << "Validating Page Rank experiment" << endl;
     string inserts = "base";
 
@@ -856,7 +856,7 @@ void Driver::check_page_rank(vector<float> scores) {
       float e;
       for (float d : scores) {
         f.read((char *) &e, sizeof(d));
-        assert(d == e);
+        assert(fabs(d - e) < 1e-4);  // TODO move PR precission to Configuration
       }
 
       f.close();

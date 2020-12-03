@@ -57,7 +57,7 @@ private:
 
     void run_page_rank_experiment(TopologyInterface& ds, bool run_on_raw_neighbourhood);
 
-    void check_page_rank(vector<float> scores);
+    void check_page_rank(vector<float>& scores);
 
     // TODO remove shared pointer from everything to avoid shared counter overhead
     void run_triangle_counting_experiment(TopologyInterface& ds);
