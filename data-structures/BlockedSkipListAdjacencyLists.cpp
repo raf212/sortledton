@@ -225,26 +225,60 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
     out.clear();
     auto out_iterator = back_inserter(out);
 
+
     auto start_a = (dst_t *) raw_neighbourhood(a);
     auto end_a = start_a + neighbourhood_size(a);
     SkipListHeader *ns_b = (SkipListHeader *) raw_neighbourhood(b);
 
-    while (start_a < end_a && ns_b != nullptr) {
-      auto start_b = ns_b->data;
-      auto end_b = start_b + ns_b->size;
+    if (32 * s_a < s_b ) {
+      vector<SkipListHeader*> l(levels);
+      auto b_block = find_block(ns_b, *start_a, l);
+      if (b_block->max < *start_a) {
+        assert(b_block->next == nullptr);
+      } else {
+        while (start_a < end_a) {
+          auto start_b = b_block->data;
+          auto end_b = start_b + b_block->size;
 
-      while (start_a < end_a && start_b < end_b) {
-        if (*start_a == *start_b) {
-          *out_iterator = *start_a;
-          start_a++;
-          start_b++;
-        } else if (*start_a < *start_b) {
-          start_a++;
-        } else {
-          start_b++;
+          while (start_a < end_a && start_b < end_b) {
+            if (*start_a == *start_b) {
+              *out_iterator = *start_a;
+              start_a++;
+              start_b++;
+            } else if (*start_a < *start_b) {
+              start_a++;
+            } else {
+              start_b++;
+            }
+          }
+
+          if (start_a < end_a) {
+            b_block = find_block(ns_b, *start_a, l);
+            if (b_block->max < *start_a) {
+              assert(b_block->next == nullptr);
+              break;
+            }
+          }
         }
       }
-      ns_b = (SkipListHeader*) ns_b->next;
+    } else {
+      while (start_a < end_a && ns_b != nullptr) {
+        auto start_b = ns_b->data;
+        auto end_b = start_b + ns_b->size;
+
+        while (start_a < end_a && start_b < end_b) {
+          if (*start_a == *start_b) {
+            *out_iterator = *start_a;
+            start_a++;
+            start_b++;
+          } else if (*start_a < *start_b) {
+            start_a++;
+          } else {
+            start_b++;
+          }
+        }
+        ns_b = (SkipListHeader *) ns_b->next;
+      }
     }
     call_single++;
 
