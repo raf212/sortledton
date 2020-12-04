@@ -289,35 +289,77 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
     SkipListHeader *ns_a = (SkipListHeader *) raw_neighbourhood(a);
     SkipListHeader *ns_b = (SkipListHeader *) raw_neighbourhood(b);
 
-    auto start_a = ns_a->data;
-    auto end_a = ns_a->data + ns_a->size;
-    auto start_b = ns_b->data;
-    auto end_b = ns_b->data + ns_b->size;
+    if (32 * s_a < s_b) {
+      vector<SkipListHeader*> l(levels);
+      auto start_a = ns_a->data;
+      auto end_a = ns_a->data + ns_a->size;
 
-    while (ns_a != nullptr && ns_b != nullptr) {
-      while (start_a < end_a && start_b < end_b) {
-        if (*start_a == *start_b) {
-          *out_iterator = *start_a;
-          start_a++;
-          start_b++;
-        } else if (*start_a < *start_b) {
-          start_a++;
-        } else {
-          start_b++;
+      auto b_block = find_block(ns_b, *start_a, l);
+      auto start_b = b_block->data;
+      auto end_b = start_b + b_block->size;
+      if (b_block->max < *start_a) {
+        assert(b_block->next == nullptr);
+      } else {
+        while (ns_a != nullptr) {
+          while (start_a < end_a && start_b < end_b) {
+            if (*start_a == *start_b) {
+              *out_iterator = *start_a;
+              start_a++;
+              start_b++;
+            } else if (*start_a < *start_b) {
+              start_a++;
+            } else {
+              start_b++;
+            }
+          }
+
+          if (start_a < end_a) {
+            b_block = find_block(ns_b, *start_a, l);
+            start_b = b_block->data;
+            end_b = start_b + b_block->size;
+            if (b_block->max < *start_a) {
+              assert(b_block->next == nullptr);
+              break;
+            }
+          } else {
+            ns_a = (SkipListHeader*) ns_a->next;
+            if (ns_a != nullptr) {
+              start_a = ns_a->data;
+              end_a = ns_a->data + ns_a->size;
+            }
+          }
         }
       }
-
-      if (start_a == end_a) {
-        ns_a = (SkipListHeader*) ns_a->next;
-        if (ns_a != nullptr) {
-          start_a = ns_a->data;
-          end_a = ns_a->data + ns_a->size;
+    } else {
+      auto start_a = ns_a->data;
+      auto end_a = ns_a->data + ns_a->size;
+      auto start_b = ns_b->data;
+      auto end_b = ns_b->data + ns_b->size;
+      while (ns_a != nullptr && ns_b != nullptr) {
+        while (start_a < end_a && start_b < end_b) {
+          if (*start_a == *start_b) {
+            *out_iterator = *start_a;
+            start_a++;
+            start_b++;
+          } else if (*start_a < *start_b) {
+            start_a++;
+          } else {
+            start_b++;
+          }
         }
-      } else {
-        ns_b = (SkipListHeader*) ns_b->next;
-        if (ns_b != nullptr) {
-          start_b = ns_b->data;
-          end_b = ns_b->data + ns_b->size;
+
+        if (start_a == end_a) {
+          ns_a = (SkipListHeader *) ns_a->next;
+          if (ns_a != nullptr) {
+            start_a = ns_a->data;
+            end_a = ns_a->data + ns_a->size;
+          }
+        } else {
+          ns_b = (SkipListHeader *) ns_b->next;
+          if (ns_b != nullptr) {
+            start_b = ns_b->data;
+            end_b = ns_b->data + ns_b->size;
+          }
         }
       }
     }
