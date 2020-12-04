@@ -54,40 +54,38 @@ void MallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
 }
 
 void MallocAdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
-  if (unordered) {
-    throw NotImplemented("Intersection of unordered list is not implemented.");
-  }
+  throw NotImplemented();
 
-  dst_t* a_start;
-  dst_t* b_start;
-
-  dst_t* a_end;
-  dst_t* b_end;
-  if (use_hash_index) {
-    auto a_e = hash_index.find(a);
-    auto b_e = hash_index.find(b);
-
-    if (a_e == hash_index.end() || b_e == hash_index.end()) {
-      out.resize(0);
-      return;
-    } else{
-      a_start = a_e->second + 1;
-      b_start = b_e->second + 1;
-
-      a_end = a_start + (size_t) *a_e->second;
-      b_end = b_start + (size_t) *b_e->second;
-    }
-
-  } else {
-    a_start = adjacency_index[a] + 1;
-    b_start = adjacency_index[b] + 1;
-
-    a_end = a_start + (size_t) *adjacency_index[a];
-    b_end = b_start + (size_t) *adjacency_index[b];
-  }
-
-
-  intersect_edge_block(a_start, a_end, b_start, b_end, out);
+//  dst_t* a_start;
+//  dst_t* b_start;
+//
+//  dst_t* a_end;
+//  dst_t* b_end;
+//  if (use_hash_index) {
+//    auto a_e = hash_index.find(a);
+//    auto b_e = hash_index.find(b);
+//
+//    if (a_e == hash_index.end() || b_e == hash_index.end()) {
+//      out.resize(0);
+//      return;
+//    } else{
+//      a_start = a_e->second + 1;
+//      b_start = b_e->second + 1;
+//
+//      a_end = a_start + (size_t) *a_e->second;
+//      b_end = b_start + (size_t) *b_e->second;
+//    }
+//
+//  } else {
+//    a_start = adjacency_index[a] + 1;
+//    b_start = adjacency_index[b] + 1;
+//
+//    a_end = a_start + (size_t) *adjacency_index[a];
+//    b_end = b_start + (size_t) *adjacency_index[b];
+//  }
+//
+//
+//  intersect_edge_block(a_start, a_end, b_start, b_end, out);
 }
 
 size_t MallocAdjacencyLists::vertex_count() {

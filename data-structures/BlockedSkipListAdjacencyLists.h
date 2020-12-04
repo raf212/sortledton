@@ -22,6 +22,10 @@ enum AdjacencySetType {
 
 class BlockedSkipListAdjacencyLists : public TopologyInterface {
 public:
+    size_t call_single_single = 0;
+    size_t call_single = 0;
+    size_t call_skip = 0;
+
     BlockedSkipListAdjacencyLists(size_t block_size, size_t levels, bool unordered,
             size_t max_edges, size_t max_vertices);
 
@@ -69,6 +73,7 @@ private:
     size_t get_height();
 
     SkipListHeader* find_block(SkipListHeader *pHeader, dst_t element, vector<SkipListHeader*> &blocks);
+    SkipListHeader combine_levels(const vector<SkipListHeader*>& forward_pointers);
 
     size_t skip_list_header_size() const;
 

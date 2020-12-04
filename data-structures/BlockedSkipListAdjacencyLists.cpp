@@ -160,9 +160,7 @@ void BlockedSkipListAdjacencyLists::insert_edge(edge_t edge) {
  * @param element
  * @param blocks vector with one entry for each level
  */
-SkipListHeader *
-
-BlockedSkipListAdjacencyLists::find_block(SkipListHeader *pHeader, dst_t element, vector<SkipListHeader *> &blocks) {
+SkipListHeader * BlockedSkipListAdjacencyLists::find_block(SkipListHeader *pHeader, dst_t element, vector<SkipListHeader *> &blocks) {
   for (int l = levels - 1; 0 <= l; l--) {
     while (pHeader->next_levels[l] != nullptr && pHeader->next_levels[l]->max < element) {
       pHeader = pHeader->next_levels[l];
@@ -216,6 +214,7 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
   }
 
   if (get_set_type(a) == SINGLE_BLOCK && get_set_type(b) == SINGLE_BLOCK) {
+    call_single_single++;
     auto start_a = (dst_t *) raw_neighbourhood(a);
     auto end_a = start_a + neighbourhood_size(a);
     auto start_b = (dst_t *) raw_neighbourhood(b);
@@ -230,19 +229,25 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
     auto end_a = start_a + neighbourhood_size(a);
     SkipListHeader *ns_b = (SkipListHeader *) raw_neighbourhood(b);
 
-    vector<SkipListHeader *> forward_pointers(levels);
+    while (start_a < end_a && ns_b != nullptr) {
+      auto start_b = ns_b->data;
+      auto end_b = start_b + ns_b->size;
 
-    SkipListHeader *b_block = ns_b;
-    if (ns_b->next != nullptr) {
-      find_block(ns_b, *start_a, forward_pointers);
+      while (start_a < end_a && start_b < end_b) {
+        if (*start_a == *start_b) {
+          *out_iterator = *start_a;
+          start_a++;
+          start_b++;
+        } else if (*start_a < *start_b) {
+          start_a++;
+        } else {
+          start_b++;
+        }
+      }
+      ns_b = (SkipListHeader*) ns_b->next;
     }
+    call_single++;
 
-    do {
-      out_iterator = set_intersection(start_a, end_a, b_block->data,
-                                      b_block->data + b_block->size,
-                                      out_iterator);
-      b_block = (SkipListHeader *) b_block->next;
-    } while (b_block != nullptr && b_block->min <= *(end_a - 1));
   } else {
     out.clear();
     auto out_iterator = back_inserter(out);
@@ -250,24 +255,55 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
     SkipListHeader *ns_a = (SkipListHeader *) raw_neighbourhood(a);
     SkipListHeader *ns_b = (SkipListHeader *) raw_neighbourhood(b);
 
-    vector<SkipListHeader *> forward_pointers(levels);
-    while (ns_a != nullptr) {
-      SkipListHeader *b_block = ns_b;
-      if (ns_b->next != nullptr) {
-        find_block(ns_b, ns_a->min, forward_pointers);
+    auto start_a = ns_a->data;
+    auto end_a = ns_a->data + ns_a->size;
+    auto start_b = ns_b->data;
+    auto end_b = ns_b->data + ns_b->size;
+
+    while (ns_a != nullptr && ns_b != nullptr) {
+      while (start_a < end_a && start_b < end_b) {
+        if (*start_a == *start_b) {
+          *out_iterator = *start_a;
+          start_a++;
+          start_b++;
+        } else if (*start_a < *start_b) {
+          start_a++;
+        } else {
+          start_b++;
+        }
       }
 
-      do {
-        out_iterator = set_intersection(ns_a->data, ns_a->data + ns_a->size, b_block->data,
-                                        b_block->data + b_block->size,
-                                        out_iterator);
-        b_block = (SkipListHeader *) b_block->next;
-      } while (b_block != nullptr && b_block->min <= ns_a->max);
-
-      // TODO optimization could start next find block from here but whatever for now
-      ns_a = (SkipListHeader *) ns_a->next;
+      if (start_a == end_a) {
+        ns_a = (SkipListHeader*) ns_a->next;
+        if (ns_a != nullptr) {
+          start_a = ns_a->data;
+          end_a = ns_a->data + ns_a->size;
+        }
+      } else {
+        ns_b = (SkipListHeader*) ns_b->next;
+        if (ns_b != nullptr) {
+          start_b = ns_b->data;
+          end_b = ns_b->data + ns_b->size;
+        }
+      }
     }
   }
+}
+
+SkipListHeader BlockedSkipListAdjacencyLists::combine_levels(const vector<SkipListHeader*>& forward_pointers) {
+  SkipListHeader combinedHeader = *forward_pointers[0];
+
+  for (auto l = 0; l < levels; l++) {
+    if (forward_pointers[0]->next_levels[l] == nullptr) {
+      combinedHeader.next_levels[l] = forward_pointers[l]->next_levels[l];
+    } else {
+      combinedHeader.next_levels[l] = forward_pointers[0]->next_levels[l];
+    }
+    if (combinedHeader.next_levels[l] == nullptr) {
+      combinedHeader.next_levels[l] = forward_pointers[l]->next_levels[l];
+    }
+  }
+  return combinedHeader;
 }
 
 size_t BlockedSkipListAdjacencyLists::neighbourhood_size(vertex_id_t src) {

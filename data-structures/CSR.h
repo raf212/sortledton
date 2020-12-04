@@ -11,6 +11,7 @@
 
 class CSR : public TopologyInterface {
 public:
+    size_t total = 0;
     CSR() = default;
 
     size_t vertex_count() override { return adjacency_index.size() - 1; }

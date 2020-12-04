@@ -24,7 +24,9 @@ void CSR::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &o
   auto end_a = &adjacency_lists[0] + adjacency_index[a+1];
   auto end_b = &adjacency_lists[0] + adjacency_index[b+1];
 
-  intersect_edge_block(start_a, end_a, start_b, end_b, out);
+  out.clear();
+  set_intersection(start_a, end_a, start_b, end_b, back_inserter(out));
+  total++;
 }
 
 bool CSR::has_edge(edge_t edge) {
