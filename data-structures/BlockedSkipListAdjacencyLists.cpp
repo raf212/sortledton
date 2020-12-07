@@ -26,7 +26,6 @@
 }
 
 
-
 void BlockedSkipListAdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) {
   switch (get_set_type(src)) {
     case SKIP_LIST:
@@ -267,6 +266,7 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
 
     intersect(start_a, end_a, start_b, end_b, out_iterator)
   } else if (get_set_type(a) == SINGLE_BLOCK) {
+    call_single++;
     auto out_iterator = back_inserter(out);
 
     auto start_a = (dst_t *) raw_neighbourhood(a);
@@ -284,7 +284,10 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
         auto start_b = b_block->data;
         auto end_b = start_b + b_block->size;
 
-        intersect(start_a, end_a, start_b, end_b, out_iterator)
+        if (binary_search(start_b, end_b, *start_a)) {
+          *out_iterator = *start_a;
+        }
+        start_a++;
       }
     } else {
       while (start_a < end_a && ns_b != nullptr) {
@@ -296,41 +299,33 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
         ns_b = (SkipListHeader *) ns_b->next;
       }
     }
-    call_single++;
   } else {
+    call_skip++;
     auto out_iterator = back_inserter(out);
 
     SkipListHeader *ns_a = (SkipListHeader *) raw_neighbourhood(a);
     SkipListHeader *ns_b = (SkipListHeader *) raw_neighbourhood(b);
 
     if (32 * s_a < s_b) {
-      auto start_a = ns_a->data;
-      auto end_a = ns_a->data + ns_a->size;
-
-      auto b_block = find_block1(ns_b, *start_a);
-      if (b_block == nullptr) {
-        return;
-      }
-      auto start_b = b_block->data;
-      auto end_b = start_b + b_block->size;
-
       while (ns_a != nullptr) {
-        intersect(start_a, end_a, start_b, end_b, out_iterator)
+        auto start_a = ns_a->data;
+        auto end_a = ns_a->data + ns_a->size;
 
-        if (start_a < end_a) {
-          b_block = find_block1(ns_b, *start_a);
+        while (start_a < end_a) {
+          auto b_block = find_block1(ns_b, *start_a);
           if (b_block == nullptr) {
-            break;
+            return;
           }
-          start_b = b_block->data;
-          end_b = start_b + b_block->size;
-        } else {
-          ns_a = (SkipListHeader *) ns_a->next;
-          if (ns_a != nullptr) {
-            start_a = ns_a->data;
-            end_a = ns_a->data + ns_a->size;
+          auto start_b = b_block->data;
+          auto end_b = start_b + b_block->size;
+
+          if (binary_search(start_b, end_b, *start_a)) {
+            *out_iterator = *start_a;
           }
+          start_a++;
         }
+
+        ns_a = (SkipListHeader *) ns_a->next;
       }
     } else {
       auto start_a = ns_a->data;
@@ -355,8 +350,8 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
         }
       }
     }
-    call_skip++;
   }
+
 }
 
 size_t BlockedSkipListAdjacencyLists::neighbourhood_size(vertex_id_t src) {
