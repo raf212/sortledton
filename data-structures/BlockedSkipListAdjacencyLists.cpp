@@ -267,11 +267,13 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
         auto end_b = start_b + ns_b->size;
 
         while (start_a < end_a && start_b < end_b) {
-          if (*start_a == *start_b) {
-            *out_iterator = *start_a;
+          auto a = *start_a;
+          auto b = *start_b;
+          if (a == b) {
+            *out_iterator = a;
             start_a++;
             start_b++;
-          } else if (*start_a < *start_b) {
+          } else if (a < b) {
             start_a++;
           } else {
             start_b++;
@@ -337,11 +339,13 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
       auto end_b = ns_b->data + ns_b->size;
       while (ns_a != nullptr && ns_b != nullptr) {
         while (start_a < end_a && start_b < end_b) {
-          if (*start_a == *start_b) {
-            *out_iterator = *start_a;
+          auto a = *start_a;
+          auto b = *start_b;
+          if (a == b) {
+            *out_iterator = a;
             start_a++;
             start_b++;
-          } else if (*start_a < *start_b) {
+          } else if (a < b) {
             start_a++;
           } else {
             start_b++;
