@@ -192,6 +192,15 @@ BlockedSkipListAdjacencyLists::find_block(SkipListHeader *pHeader, dst_t element
   return blocks[0];
 }
 
+/**
+ * Finds the block which contains element if element is in the list.
+ *
+ * Does not keep track of the "path" of elements leading there as this is not necessary for intersections.
+ *
+ * @param pHeader
+ * @param element
+ * @return the block potentially containing element or nullptr if element is bigger than all elements in the list.
+ */
 SkipListHeader *
 BlockedSkipListAdjacencyLists::find_block1(SkipListHeader *pHeader, dst_t element) {
   for (int l = levels - 1; 0 <= l; l--) {
@@ -348,22 +357,6 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
   }
 }
 
-SkipListHeader BlockedSkipListAdjacencyLists::combine_levels(const vector<SkipListHeader *> &forward_pointers) {
-  SkipListHeader combinedHeader = *forward_pointers[0];
-
-  for (auto l = 0; l < levels; l++) {
-    if (forward_pointers[0]->next_levels[l] == nullptr) {
-      combinedHeader.next_levels[l] = forward_pointers[l]->next_levels[l];
-    } else {
-      combinedHeader.next_levels[l] = forward_pointers[0]->next_levels[l];
-    }
-    if (combinedHeader.next_levels[l] == nullptr) {
-      combinedHeader.next_levels[l] = forward_pointers[l]->next_levels[l];
-    }
-  }
-  return combinedHeader;
-}
-
 size_t BlockedSkipListAdjacencyLists::neighbourhood_size(vertex_id_t src) {
   return (size_t) adjacency_index[2 * src + 1];
 }
@@ -403,23 +396,6 @@ AdjacencySetType BlockedSkipListAdjacencyLists::get_set_type(vertex_id_t v) {
   } else {
     return SKIP_LIST;
   }
-}
-
-SkipListHeader BlockedSkipListAdjacencyLists::skip_list_header_for_single_block(vertex_id_t v) {
-  SkipListHeader header{};
-  if (neighbourhood_size(v) == 0) {
-    header.data = nullptr;
-    return header;
-  }
-  header.data = (dst_t *) raw_neighbourhood(v);
-  header.size = neighbourhood_size(v);
-  header.next = nullptr;
-
-  header.min = header.data[0];
-  header.max = header.data[header.size - 1];
-
-  return header;
-
 }
 
 void BlockedSkipListAdjacencyLists::insert_empty(edge_t edge) {

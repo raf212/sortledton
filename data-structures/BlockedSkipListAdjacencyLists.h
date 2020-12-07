@@ -74,13 +74,10 @@ private:
 
     SkipListHeader* find_block(SkipListHeader *pHeader, dst_t element, vector<SkipListHeader*> &blocks);
     SkipListHeader* find_block1(SkipListHeader *pHeader, dst_t element);
-    SkipListHeader combine_levels(const vector<SkipListHeader*>& forward_pointers);
 
     size_t skip_list_header_size() const;
 
     AdjacencySetType get_set_type(vertex_id_t v);
-
-    SkipListHeader skip_list_header_for_single_block(vertex_id_t v);
 
     void insert_empty(edge_t edge);
     void insert_single_block(edge_t edge);
