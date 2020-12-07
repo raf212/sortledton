@@ -12,11 +12,13 @@
 #define unlikely(x)     __builtin_expect((x),0)
 
 #define intersect(start_a, end_a, start_b, end_b, out) while (start_a < end_a && start_b < end_b) { \
-  if (*start_a == *start_b) {\
+  const dst_t a = *start_a;                                                                        \
+  const dst_t b = *start_b; \
+  if (a == b) {\
     *out_iterator = *start_a;\
     start_a++;\
     start_b++;\
-  } else if (*start_a < *start_b) {\
+  } else if (a < b) {\
     start_a++;\
   } else {\
     start_b++;\
