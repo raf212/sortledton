@@ -73,6 +73,7 @@ private:
     size_t get_height();
 
     SkipListHeader* find_block(SkipListHeader *pHeader, dst_t element, vector<SkipListHeader*> &blocks);
+    SkipListHeader* find_block1(SkipListHeader *pHeader, dst_t element);
     SkipListHeader combine_levels(const vector<SkipListHeader*>& forward_pointers);
 
     size_t skip_list_header_size() const;

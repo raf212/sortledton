@@ -8,6 +8,23 @@
 #include "BlockedSkipListAdjacencyLists.h"
 #include "adjacency-lists/BlockedBatchedEdgeIterator.h"
 
+#define likely(x)       __builtin_expect((x),1)
+#define unlikely(x)     __builtin_expect((x),0)
+
+#define intersect(start_a, end_a, start_b, end_b, out) while (start_a < end_a && start_b < end_b) { \
+  if (*start_a == *start_b) {\
+    *out_iterator = *start_a;\
+    start_a++;\
+    start_b++;\
+  } else if (*start_a < *start_b) {\
+    start_a++;\
+  } else {\
+    start_b++;\
+  }\
+}
+
+
+
 void BlockedSkipListAdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) {
   switch (get_set_type(src)) {
     case SKIP_LIST:
@@ -160,7 +177,8 @@ void BlockedSkipListAdjacencyLists::insert_edge(edge_t edge) {
  * @param element
  * @param blocks vector with one entry for each level
  */
-SkipListHeader * BlockedSkipListAdjacencyLists::find_block(SkipListHeader *pHeader, dst_t element, vector<SkipListHeader *> &blocks) {
+SkipListHeader *
+BlockedSkipListAdjacencyLists::find_block(SkipListHeader *pHeader, dst_t element, vector<SkipListHeader *> &blocks) {
   for (int l = levels - 1; 0 <= l; l--) {
     while (pHeader->next_levels[l] != nullptr && pHeader->next_levels[l]->max < element) {
       pHeader = pHeader->next_levels[l];
@@ -172,6 +190,20 @@ SkipListHeader * BlockedSkipListAdjacencyLists::find_block(SkipListHeader *pHead
     }
   }
   return blocks[0];
+}
+
+SkipListHeader *
+BlockedSkipListAdjacencyLists::find_block1(SkipListHeader *pHeader, dst_t element) {
+  for (int l = levels - 1; 0 <= l; l--) {
+    while (pHeader->next_levels[l] != nullptr && pHeader->next_levels[l]->max < element) {
+      pHeader = pHeader->next_levels[l];
+    }
+  }
+  if (pHeader->max < element) {
+    return pHeader->next_levels[0];
+  } else {
+    return pHeader;
+  }
 }
 
 bool BlockedSkipListAdjacencyLists::has_edge(edge_t edge) {
@@ -203,8 +235,9 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
   auto s_a = neighbourhood_size(a);
   auto s_b = neighbourhood_size(b);
 
+  out.clear();
+
   if (s_a == 0 || s_b == 0) {
-    out.clear();
     return;
   }
 
@@ -215,120 +248,76 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
 
   if (get_set_type(a) == SINGLE_BLOCK && get_set_type(b) == SINGLE_BLOCK) {
     call_single_single++;
+    auto out_iterator = back_inserter(out);
     auto start_a = (dst_t *) raw_neighbourhood(a);
     auto end_a = start_a + neighbourhood_size(a);
     auto start_b = (dst_t *) raw_neighbourhood(b);
     auto end_b = start_b + neighbourhood_size(b);
 
-    intersect_edge_block(start_a, end_a, start_b, end_b, out);
+    intersect(start_a, end_a, start_b, end_b, out_iterator)
   } else if (get_set_type(a) == SINGLE_BLOCK) {
-    out.clear();
     auto out_iterator = back_inserter(out);
-
 
     auto start_a = (dst_t *) raw_neighbourhood(a);
     auto end_a = start_a + neighbourhood_size(a);
+
     SkipListHeader *ns_b = (SkipListHeader *) raw_neighbourhood(b);
 
-    if (32 * s_a < s_b ) {
-      vector<SkipListHeader*> l(levels);
-      auto b_block = find_block(ns_b, *start_a, l);
-      if (b_block->max < *start_a) {
-        assert(b_block->next == nullptr);
-      } else {
-        while (start_a < end_a) {
-          auto start_b = b_block->data;
-          auto end_b = start_b + b_block->size;
-
-          while (start_a < end_a && start_b < end_b) {
-            if (*start_a == *start_b) {
-              *out_iterator = *start_a;
-              start_a++;
-              start_b++;
-            } else if (*start_a < *start_b) {
-              start_a++;
-            } else {
-              start_b++;
-            }
-          }
-
-          if (start_a < end_a) {
-            b_block = find_block(ns_b, *start_a, l);
-            if (b_block->max < *start_a) {
-              assert(b_block->next == nullptr);
-              break;
-            }
-          }
+    if (32 * s_a < s_b) {
+      while (start_a < end_a) {
+        auto b_block = find_block1(ns_b, *start_a);
+        if (b_block == nullptr) {
+          return;
         }
+
+        auto start_b = b_block->data;
+        auto end_b = start_b + b_block->size;
+
+        intersect(start_a, end_a, start_b, end_b, out_iterator)
       }
     } else {
       while (start_a < end_a && ns_b != nullptr) {
         auto start_b = ns_b->data;
         auto end_b = start_b + ns_b->size;
 
-        while (start_a < end_a && start_b < end_b) {
-          auto a = *start_a;
-          auto b = *start_b;
-          if (a == b) {
-            *out_iterator = a;
-            start_a++;
-            start_b++;
-          } else if (a < b) {
-            start_a++;
-          } else {
-            start_b++;
-          }
-        }
+        intersect(start_a, end_a, start_b, end_b, out_iterator)
+
         ns_b = (SkipListHeader *) ns_b->next;
       }
     }
     call_single++;
-
   } else {
-    out.clear();
     auto out_iterator = back_inserter(out);
 
     SkipListHeader *ns_a = (SkipListHeader *) raw_neighbourhood(a);
     SkipListHeader *ns_b = (SkipListHeader *) raw_neighbourhood(b);
 
     if (32 * s_a < s_b) {
-      vector<SkipListHeader*> l(levels);
       auto start_a = ns_a->data;
       auto end_a = ns_a->data + ns_a->size;
 
-      auto b_block = find_block(ns_b, *start_a, l);
+      auto b_block = find_block1(ns_b, *start_a);
+      if (b_block == nullptr) {
+        return;
+      }
       auto start_b = b_block->data;
       auto end_b = start_b + b_block->size;
-      if (b_block->max < *start_a) {
-        assert(b_block->next == nullptr);
-      } else {
-        while (ns_a != nullptr) {
-          while (start_a < end_a && start_b < end_b) {
-            if (*start_a == *start_b) {
-              *out_iterator = *start_a;
-              start_a++;
-              start_b++;
-            } else if (*start_a < *start_b) {
-              start_a++;
-            } else {
-              start_b++;
-            }
-          }
 
-          if (start_a < end_a) {
-            b_block = find_block(ns_b, *start_a, l);
-            start_b = b_block->data;
-            end_b = start_b + b_block->size;
-            if (b_block->max < *start_a) {
-              assert(b_block->next == nullptr);
-              break;
-            }
-          } else {
-            ns_a = (SkipListHeader*) ns_a->next;
-            if (ns_a != nullptr) {
-              start_a = ns_a->data;
-              end_a = ns_a->data + ns_a->size;
-            }
+      while (ns_a != nullptr) {
+        intersect(start_a, end_a, start_b, end_b, out_iterator)
+
+        if (start_a < end_a) {
+          b_block = find_block1(ns_b, *start_a);
+          if (b_block == nullptr) {
+            break;
+          }
+          start_b = b_block->data;
+          end_b = start_b + b_block->size;
+        } else {
+          ns_a = (SkipListHeader *) ns_a->next;
+          if (ns_a != nullptr) {
+            start_a = ns_a->data;
+            end_a = ns_a->data + ns_a->size;
           }
         }
       }
@@ -338,19 +327,7 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
       auto start_b = ns_b->data;
       auto end_b = ns_b->data + ns_b->size;
       while (ns_a != nullptr && ns_b != nullptr) {
-        while (start_a < end_a && start_b < end_b) {
-          auto a = *start_a;
-          auto b = *start_b;
-          if (a == b) {
-            *out_iterator = a;
-            start_a++;
-            start_b++;
-          } else if (a < b) {
-            start_a++;
-          } else {
-            start_b++;
-          }
-        }
+        intersect(start_a, end_a, start_b, end_b, out_iterator)
 
         if (start_a == end_a) {
           ns_a = (SkipListHeader *) ns_a->next;
@@ -367,10 +344,11 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
         }
       }
     }
+    call_skip++;
   }
 }
 
-SkipListHeader BlockedSkipListAdjacencyLists::combine_levels(const vector<SkipListHeader*>& forward_pointers) {
+SkipListHeader BlockedSkipListAdjacencyLists::combine_levels(const vector<SkipListHeader *> &forward_pointers) {
   SkipListHeader combinedHeader = *forward_pointers[0];
 
   for (auto l = 0; l < levels; l++) {
