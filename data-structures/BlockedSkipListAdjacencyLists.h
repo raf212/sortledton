@@ -82,6 +82,8 @@ private:
     void insert_empty(edge_t edge);
     void insert_single_block(edge_t edge);
     void insert_skip_list(edge_t edge);
+
+    void report_storage_size();
 };
 
 

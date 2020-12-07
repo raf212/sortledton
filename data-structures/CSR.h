@@ -37,6 +37,8 @@ public:
 
     void bulkload(const SortedCSRDataSource &src) override;
 
+    void report_storage_size() override;
+
     vector<size_t> adjacency_index;
     vector<dst_t> adjacency_lists;
 };

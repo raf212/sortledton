@@ -39,6 +39,8 @@ public:
 
     void bulkload(const SortedCSRDataSource &src) override;
 
+    void report_storage_size() override { throw NotImplemented(); };
+
 private:
     vector<dst_t *> adjacency_index;
     NonContigiousMemoryPool pool{15};

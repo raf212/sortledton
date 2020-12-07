@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <utils/utils.h>
 #include <iostream>
+#include <iomanip>
 #include "CSR.h"
 
 void CSR::bulkload(const SortedCSRDataSource &src) {
@@ -68,4 +69,14 @@ size_t CSR::neighbourhood_size(vertex_id_t src) {
 
 void *CSR::raw_neighbourhood(vertex_id_t src) {
   return &adjacency_lists[adjacency_index[src]];
+}
+
+void CSR::report_storage_size() {
+  size_t edges = + sizeof(dst_t) * adjacency_lists.size();
+  size_t vertices = sizeof(size_t) * adjacency_index.size();
+
+  cout << setw(10) << "Vertices: " << right << setw(20) <<  vertices << endl;
+  cout << setw(10) << "Edges: " << right << setw(20) <<  edges << endl;
+  cout << endl;
+  cout << setw(10) << "Total: " << right << setw(20) <<  edges + vertices << endl;
 }

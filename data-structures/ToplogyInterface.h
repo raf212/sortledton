@@ -31,6 +31,8 @@ public:
     virtual bool has_edge(edge_t edge) = 0;
 
     virtual void bulkload(const SortedCSRDataSource& src) = 0;
+
+    virtual void report_storage_size() = 0;
 };
 
 

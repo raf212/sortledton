@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cassert>
 #include <data-structures/adjacency-lists/VectorBatchedEdgeIterator.h>
+#include <iomanip>
 #include "BlockedSkipListAdjacencyLists.h"
 #include "adjacency-lists/BlockedBatchedEdgeIterator.h"
 
@@ -531,6 +532,30 @@ void BlockedSkipListAdjacencyLists::insert_skip_list(edge_t edge) {
 
 size_t BlockedSkipListAdjacencyLists::get_block_size() {
   return block_size;
+}
+
+void BlockedSkipListAdjacencyLists::report_storage_size() {
+  size_t vertices = sizeof(SkipListHeader*) * adjacency_index.size();
+
+
+  size_t edges = 0;
+  for (auto v = 0; v < vertex_count(); v++) {
+    if (get_set_type(v) == SINGLE_BLOCK) {
+      edges += neighbourhood_size(v) * sizeof(dst_t);
+    } else {
+      SkipListHeader* ns = (SkipListHeader*) raw_neighbourhood(v);
+
+      while(ns != nullptr) {
+        edges += memory_block_size();
+        ns = (SkipListHeader*) ns->next;
+      }
+    }
+  }
+
+  cout << setw(10) << "Vertices: " << right << setw(20) << vertices << endl;
+  cout << setw(10) << "Edges: " <<  right << setw(20) <<edges << endl;
+  cout << endl;
+  cout << setw(10) << "Total: " << right << setw(20) << edges + vertices << endl;
 }
 
 

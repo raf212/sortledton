@@ -86,6 +86,8 @@ public:
 
     void bulkload(const SortedCSRDataSource &src) override;
 
+    void report_storage_size() override { throw NotImplemented(); };
+
 private:
     vector<BlockHeader *> adjacency_index;
 

@@ -12,6 +12,8 @@ class VectorAdjacencyLists : public AdjacencyLists {
 public:
     explicit VectorAdjacencyLists(bool unordered) : unordered(unordered) {}
 
+    void report_storage_size() override { throw NotImplemented(); };
+
 protected:
     unique_ptr<AdjacencyList> construct_adjacency_list(vector<dst_t>::const_iterator begin,
             vector<dst_t>::const_iterator end) override;

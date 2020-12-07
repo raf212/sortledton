@@ -41,6 +41,7 @@ public:
 
     void bulkload(const SortedCSRDataSource &src) override;
 
+    void report_storage_size() override { throw NotImplemented(); };
 
     size_t malloc_limit;
     vector<dst_t *> adjacency_index;

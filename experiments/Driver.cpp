@@ -6,6 +6,7 @@
 #include <iostream>
 #include <chrono>
 #include <random>
+#include <iomanip>
 
 #include <data-structures/CSR.h>
 #include <data-structures/VectorAdjacencyLists.h>
@@ -77,9 +78,11 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   reporter.set_data_structure(ds, ds_parameters);
 
   TopologyInterface *data_structure;
+  string ds_name;
   switch (ds) {
     case CSR_DS: {
       data_structure = new CSR();
+      ds_name = "CSR";
       break;
     }
     case VECTOR_ADJACENCY_LIST: {
@@ -88,6 +91,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         unordered = stoi(ds_parameters[0]);
       }
       data_structure = new VectorAdjacencyLists(unordered);
+      ds_name = "vectorAL";
       break;
     }
     case MALLOC_ADJACENCY_LIST: {
@@ -98,6 +102,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         use_hash_index = stoi(ds_parameters[1]);
       }
       data_structure = new MallocAdjacencyLists(unordered, use_hash_index);
+      ds_name = "mallocAL";
       break;
     }
     case CSR_MALLOC_ADJACENCY_LIST: {
@@ -108,6 +113,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         unordered = stoi(ds_parameters[1]);
       }
       data_structure = new CSRMallocAdjacencyLists(malloc_limit, unordered);
+      ds_name = "csrMallocAL";
       break;
     }
     case BLOCKED_LINKED_LIST_AL: {
@@ -132,6 +138,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
                                                            base.vertex_count(),
                                                            adjust_pool_sizes,
                                                            size_in_index);
+      ds_name = "bllAL";
       break;
     }
     case BLOCKED_SKIP_LIST_AL: {
@@ -144,6 +151,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       data_structure = new BlockedSkipListAdjacencyLists(block_size, 6, unordered,
                                                          base.adjacency_lists.size() + inserts.edges.size() + 100,
                                                          base.vertex_count());
+      ds_name = "blsAL";
       break;
     }
     case HASH_SET_SIMULATOR_AL: {
@@ -152,10 +160,12 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         fill_factor = stof(ds_parameters[0]);
       }
       data_structure = new HashSetSimulatorAdjacencyList(fill_factor);
+      ds_name = "hssAL";
       break;
     }
     case HASH_SET_AL: {
       data_structure = new HashSetAdjacencyLists();
+      ds_name = "hsAL";
       break;
     }
     default: {
@@ -203,6 +213,10 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       throw NotImplemented();
     }
     run_delete_experiment(*data_structure, deletes);
+  }
+
+  if (config.experiments.find(STORAGE) != config.experiments.end()) {
+    show_storage_sizes(ds_name, *data_structure);
   }
 
 
@@ -337,7 +351,6 @@ void Driver::run_triangle_counting_experiment(TopologyInterface &ds) {
 
 
       ContigiousBlockIterator &a_neighbours = getIter(ds);
-
 
 //#pragma omp for reduction(+ : triangles) schedule(dynamic, 64)
       for (int a = 0; a < ds.vertex_count(); a++) {
@@ -862,4 +875,9 @@ void Driver::check_page_rank(vector<float>& scores) {
       f.close();
     }
   }
+
+void Driver::show_storage_sizes(string ds_name, TopologyInterface& ds) {
+  cout << "Storage size of " << setw (10) << ds_name << endl;
+  ds.report_storage_size();
+}
 

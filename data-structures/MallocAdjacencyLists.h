@@ -40,6 +40,8 @@ public:
 
     void bulkload(const SortedCSRDataSource &src) override;
 
+    void report_storage_size() override { throw NotImplemented(); };
+
 private:
     vector<dst_t *> adjacency_index;
     robin_hood::unordered_map<vertex_id_t, dst_t*> hash_index;

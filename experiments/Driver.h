@@ -79,6 +79,9 @@ private:
 
     vector<BlockedBatchedEdgeIterator> blockIterators;
     vector<FilteredVectorIterator> filteredBlockIterators;
+
+    void show_storage_sizes(string ds_name, TopologyInterface& ds);
+
 };
 
 

@@ -46,6 +46,8 @@ public:
 
     void bulkload(const SortedCSRDataSource &src) override;
 
+    void report_storage_size() override { throw NotImplemented(); };
+
 private:
     vector<robin_hood::unordered_flat_set<dst_t>*> adjacency_index;
 };
