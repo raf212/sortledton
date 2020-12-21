@@ -14,10 +14,11 @@
 
 struct BlockHeader {
     size_t size;  // TODO make smaller
-    dst_t min;
-    dst_t max;
-    dst_t* data;
-    BlockHeader* next;
+    dst_t min;    // TODO remove, this is not needed because the the first entry is the smallest.
+    dst_t max;    // Needed because this would need one additional memory load for each block. Keep it.
+    dst_t* data;  // TODO remove, only needed for convenience or for variable length headers. I could check if it's cheaper to have variable length headers indeed.
+                  // It should be.
+    BlockHeader* next;  // TODO remove first level from skip list then.
 };
 
 /**

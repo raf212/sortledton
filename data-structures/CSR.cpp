@@ -75,8 +75,8 @@ void CSR::report_storage_size() {
   size_t edges = + sizeof(dst_t) * adjacency_lists.size();
   size_t vertices = sizeof(size_t) * adjacency_index.size();
 
-  cout << setw(10) << "Vertices: " << right << setw(20) <<  vertices << endl;
-  cout << setw(10) << "Edges: " << right << setw(20) <<  edges << endl;
+  cout << setw(30) << "Vertices: " << right << setw(20) <<  vertices / 1000000 << endl;
+  cout << setw(30) << "Edges: " << right << setw(20) <<  edges / 1000000 << endl;
   cout << endl;
-  cout << setw(10) << "Total: " << right << setw(20) <<  edges + vertices << endl;
+  cout << setw(30) << "Total: " << right << setw(20) <<  (edges + vertices) / 1000000<< endl;
 }

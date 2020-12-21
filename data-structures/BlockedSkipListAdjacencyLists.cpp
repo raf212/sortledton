@@ -535,27 +535,48 @@ size_t BlockedSkipListAdjacencyLists::get_block_size() {
 }
 
 void BlockedSkipListAdjacencyLists::report_storage_size() {
-  size_t vertices = sizeof(SkipListHeader*) * adjacency_index.size();
+  size_t vertices = sizeof(SkipListHeader *) * adjacency_index.size();
 
+  // All numbers in bytes
+  size_t edges_single_block = 0;           // Edges in single block actual storage needs.
+  size_t edges_single_block_strictly = 0;  // Edges in single block minus storage overhead for having blocks with the sizes of power of twos only.
+  size_t edges_multi_block = 0;            // Edges in multi blocks but not the header.
+  size_t edges_multi_block_header = 0;     // Only the header of multi blocks.
+  size_t edges_multi_block_strictly = 0;   // Strictly needed storage for edges in multi blocks, so without the storage overhead of using a fixed size.
 
-  size_t edges = 0;
   for (auto v = 0; v < vertex_count(); v++) {
     if (get_set_type(v) == SINGLE_BLOCK) {
-      edges += neighbourhood_size(v) * sizeof(dst_t);
+      edges_single_block_strictly += neighbourhood_size(v) * sizeof(dst_t);
+      edges_single_block += round_up_power_of_two(neighbourhood_size(v)) * sizeof(dst_t);
     } else {
-      SkipListHeader* ns = (SkipListHeader*) raw_neighbourhood(v);
+      SkipListHeader *ns = (SkipListHeader *) raw_neighbourhood(v);
 
-      while(ns != nullptr) {
-        edges += memory_block_size();
-        ns = (SkipListHeader*) ns->next;
+      while (ns != nullptr) {
+        edges_multi_block += block_size * sizeof(dst_t);
+        edges_multi_block_header += sizeof(BlockHeader) + levels * sizeof(SkipListHeader *);
+        edges_multi_block_strictly += ns->size * sizeof(dst_t);
+        ns = (SkipListHeader *) ns->next;
       }
     }
   }
+  // Total size of all edges
+  size_t edges = edges_single_block + edges_multi_block + edges_multi_block_header;
 
-  cout << setw(10) << "Vertices: " << right << setw(20) << vertices << endl;
-  cout << setw(10) << "Edges: " <<  right << setw(20) <<edges << endl;
+  cout << "All metrics in MB" << endl;
+  cout << setw(30) << "Vertices: " << right << setw(20) << vertices / 1000000 << endl;
   cout << endl;
-  cout << setw(10) << "Total: " << right << setw(20) << edges + vertices << endl;
+
+  cout << setw(30) << "Single block: " << right << setw(20) << edges_single_block / 1000000 << endl;
+  cout << setw(30) << "Single block overhead: " << right << setw(20)
+       << (edges_single_block - edges_single_block_strictly) / 1000000 << endl;
+  cout << setw(30) << "Multi block header: " << right << setw(20) << edges_multi_block_header / 1000000 << endl;
+  cout << setw(30) << "Edge multi block: " << right << setw(20) << edges_multi_block / 1000000 << endl;
+  cout << setw(30) << "Multi block overhead: " << right << setw(20)
+       << (edges_multi_block - edges_multi_block_strictly) / 1000000 << endl;
+
+  cout << setw(30) << "Edges: " << right << setw(20) << edges / 1000000 << endl;
+  cout << endl;
+  cout << setw(30) << "Total: " << right << setw(20) << (edges + vertices) / 1000000 << endl;
 }
 
 
