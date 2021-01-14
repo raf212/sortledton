@@ -41,6 +41,6 @@ void AdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) {
 }
 
 bool AdjacencyLists::has_edge(edge_t e) {
-  adjacency_index[e.src]->has_neighbour(e.dst);
+  return adjacency_index[e.src]->has_neighbour(e.dst);
 }
 

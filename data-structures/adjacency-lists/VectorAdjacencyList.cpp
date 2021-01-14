@@ -3,6 +3,7 @@
 //
 
 #include <algorithm>
+#include <stdexcept>
 #include "VectorAdjacencyList.h"
 
 void VectorAdjacencyList::initialize_iterator(BatchedEdgeIterator& iterator) {
