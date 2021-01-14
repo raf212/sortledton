@@ -40,16 +40,16 @@ void SnapshotTransaction::register_precondition(unique_ptr<Precondition> c) {
   for (vertex_id_t l : c->requires_vertex_locks()) {
     locks_to_aquire.push_back(l);
   }
-//  preconditions.push_back(std::move(c));
+  preconditions.push_back(c.release());
 }
 
 bool SnapshotTransaction::assert_preconditions() {
-//  for (auto & p: preconditions) {
-//    if (!p->assert_it(ds, version)) {
-//      return false; // TODO should be handled with exceptions to allow for error messages?
-//    }
-//  }
-//  return true;
+  for (auto p: preconditions) {
+    if (!p->assert_it(ds, version)) {
+      return false; // TODO should be handled with exceptions to allow for error messages?
+    }
+  }
+  return true;
 }
 
 void SnapshotTransaction::aquire_locks() {
@@ -108,4 +108,10 @@ void SnapshotTransaction::report_storage_size() {
 
 version_t SnapshotTransaction::get_version() {
   return version;
+}
+
+SnapshotTransaction::~SnapshotTransaction() {
+  for (auto p : preconditions) {
+    delete p;
+  }
 }

@@ -3,3 +3,7 @@
 //
 
 #include "Precondition.h"
+
+Precondition::~Precondition() {
+
+}

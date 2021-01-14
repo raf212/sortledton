@@ -10,6 +10,8 @@
 
 class Precondition {
 public:
+    virtual ~Precondition();
+
     virtual bool assert_it(VersionedTopologyInterface& ds, version_t version) = 0;
     virtual vector<vertex_id_t> requires_vertex_locks() = 0;
 };

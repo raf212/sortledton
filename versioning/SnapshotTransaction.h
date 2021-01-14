@@ -6,13 +6,16 @@
 #define LIVE_GRAPH_TWO_SNAPSHOTTRANSACTION_H
 
 #include <memory>
+#include <vector>
 
 #include "Transaction.h"
 #include "IllegalOperation.h"
+#include "VertexExistsPrecondition.h"
 
 class SnapshotTransaction : Transaction {
 public:
     SnapshotTransaction(version_t version, VersionedTopologyInterface& ds);
+    ~SnapshotTransaction();
 
     void register_precondition(unique_ptr<Precondition> c);
 
@@ -52,7 +55,7 @@ private:
     void release_locks();
     bool assert_preconditions();
 
-//    vector<unique_ptr<Precondition>> preconditions = vector<unique_ptr<Precondition>>();  // TODO add preconditions again
+    vector<Precondition*> preconditions {};   // TODO add preconditions again
     vector<vertex_id_t> locks_to_aquire {};
     vector<vertex_id_t> vertices_to_delete {};
     vector<vertex_id_t> vertices_to_insert {};
