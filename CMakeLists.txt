@@ -10,6 +10,11 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
 include_directories(.)
 include_directories(data-structures)
 
+set(TESTS
+        tests/data-src/dataset-converter/DatasetConverterTests.cpp
+        tests/data-src/Asserts.h
+        tests/data-src/Asserts.cpp tests/data-structures/HashSetSimulatorAdjacencyList.cpp experiments/TwoNeighbour.cpp experiments/TwoNeighbour.h)
+
 # TODO make glob
 set(SRC
         data-structures/ToplogyInterface.cpp
@@ -50,7 +55,20 @@ set(SRC
         utils/robin_hood.h
         experiments/TwoNeighbour.cpp
         experiments/TwoNeighbour.h
-        data-structures/adjacency-lists/ContigiousBlockIterator.h data-structures/BlockedSkipListAdjacencyLists.cpp data-structures/BlockedSkipListAdjacencyLists.h data-structures/memory_pools/NonContigiousMemoryPool.cpp data-structures/memory_pools/NonContigiousMemoryPool.h experiments/BFSSourceSelector.cpp experiments/BFSSourceSelector.h experiments/Algorithms.cpp experiments/Algorithms.h experiments/TwoNeighbourSourceSelector.cpp experiments/TwoNeighbourSourceSelector.h data-structures/HashSetSimulatorAdjacencyList.cpp data-structures/HashSetSimulatorAdjacencyList.h data-structures/adjacency-lists/FilteredVectorIterator.cpp data-structures/adjacency-lists/FilteredVectorIterator.h data-structures/adjacency-lists/EdgeIterator.cpp data-structures/adjacency-lists/EdgeIterator.h data-structures/HashSetAdjacencyLists.cpp data-structures/HashSetAdjacencyLists.h experiments/PageRank.cpp experiments/PageRank.h)
+        data-structures/adjacency-lists/ContigiousBlockIterator.h data-structures/BlockedSkipListAdjacencyLists.cpp data-structures/BlockedSkipListAdjacencyLists.h data-structures/memory_pools/NonContigiousMemoryPool.cpp data-structures/memory_pools/NonContigiousMemoryPool.h experiments/BFSSourceSelector.cpp experiments/BFSSourceSelector.h experiments/Algorithms.cpp experiments/Algorithms.h experiments/TwoNeighbourSourceSelector.cpp experiments/TwoNeighbourSourceSelector.h data-structures/HashSetSimulatorAdjacencyList.cpp data-structures/HashSetSimulatorAdjacencyList.h data-structures/adjacency-lists/FilteredVectorIterator.cpp data-structures/adjacency-lists/FilteredVectorIterator.h data-structures/adjacency-lists/EdgeIterator.cpp data-structures/adjacency-lists/EdgeIterator.h data-structures/HashSetAdjacencyLists.cpp data-structures/HashSetAdjacencyLists.h experiments/PageRank.cpp experiments/PageRank.h
+        data_types.cpp
+        versioning/VersionChainEntry.cpp versioning/VersionChainEntry.h
+        versioning/SizeVersionChainEntry.cpp versioning/SizeVersionChainEntry.h
+        versioning/VersionedTopologyInterface.cpp versioning/VersionedTopologyInterface.h
+        versioning/VersioningBlockedSkipListAdjacencyList.cpp versioning/VersioningBlockedSkipListAdjacencyList.h
+        versioning/Precondition.cpp versioning/Precondition.h
+        versioning/IllegalOperation.cpp versioning/IllegalOperation.h
+        versioning/Transaction.cpp versioning/Transaction.h
+        versioning/SnapshotTransaction.cpp versioning/SnapshotTransaction.h
+        versioning/ReadOnlyTransaction.cpp versioning/ReadOnlyTransaction.h
+        versioning/SerializableUpdateTransaction.cpp versioning/SerializableUpdateTransaction.h
+        versioning/TransactionManager.cpp versioning/TransactionManager.h
+        )
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp
@@ -59,19 +77,16 @@ set(DATASET_CONVERTER_SRC
         data-src/DataSource.cpp
         utils/utils.cpp)
 
-find_package (Threads)
-add_executable(live_graph_two main.cpp ${SRC})
-target_link_libraries (live_graph_two Threads::Threads)
 
 add_executable(dataset_converter data-src/dataset-converter/main.cpp ${DATASET_CONVERTER_SRC})
 add_executable(bitset_analysis dataset_bitset_analyser.cpp ${SRC})
 target_link_libraries (bitset_analysis Threads::Threads)
 
-set(TESTS
-        tests/data-src/dataset-converter/DatasetConverterTests.cpp
-        tests/data-src/Asserts.h
-        tests/data-src/Asserts.cpp tests/data-structures/HashSetSimulatorAdjacencyList.cpp experiments/TwoNeighbour.cpp experiments/TwoNeighbour.h)
 
 add_executable(Google_Tests_run ${TESTS} ${DATASET_CONVERTER_SRC} ${SRC})
 
 target_link_libraries(Google_Tests_run gtest gtest_main gmock)
+
+find_package (Threads)
+add_executable(live_graph_two main.cpp ${SRC})
+target_link_libraries (live_graph_two Threads::Threads)

@@ -1,0 +1,65 @@
+//
+// Created by per on 23.12.20.
+//
+
+#ifndef LIVE_GRAPH_TWO_SNAPSHOTTRANSACTION_H
+#define LIVE_GRAPH_TWO_SNAPSHOTTRANSACTION_H
+
+#include <memory>
+
+#include "Transaction.h"
+#include "IllegalOperation.h"
+
+class SnapshotTransaction : Transaction {
+public:
+    SnapshotTransaction(version_t version, VersionedTopologyInterface& ds);
+
+    void register_precondition(unique_ptr<Precondition> c);
+
+    bool execute();
+
+    size_t vertex_count() override;
+
+    void insert_vertex(vertex_id_t v) override;
+    void delete_vertex(vertex_id_t v) override;
+
+    void insert_edge(edge_t edge) override;
+    void delete_edge(edge_t edge) override;
+
+    size_t neighbourhood_size(vertex_id_t src) override;
+
+    void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) override { throw NotImplemented(); };
+
+    void neighbourhood(vertex_id_t src, EdgeIterator& iter) override { throw NotImplemented(); };
+
+    void* raw_neighbourhood(vertex_id_t src) override;
+
+    void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) override;
+
+    bool has_edge(edge_t edge) override;
+
+    void bulkload(const SortedCSRDataSource& src) override { throw IllegalOperation(); };
+
+    void report_storage_size() override;
+
+    version_t get_version();
+protected:
+    const version_t version;
+    VersionedTopologyInterface& ds;
+
+private:
+    void aquire_locks();
+    void release_locks();
+    bool assert_preconditions();
+
+//    vector<unique_ptr<Precondition>> preconditions = vector<unique_ptr<Precondition>>();  // TODO add preconditions again
+    vector<vertex_id_t> locks_to_aquire {};
+    vector<vertex_id_t> vertices_to_delete {};
+    vector<vertex_id_t> vertices_to_insert {};
+    vector<edge_t> edges_to_delete {};
+    vector<edge_t> edges_to_insert {};
+
+};
+
+
+#endif //LIVE_GRAPH_TWO_SNAPSHOTTRANSACTION_H
