@@ -10,7 +10,7 @@
 #include <data-structures/ToplogyInterface.h>
 #include "Precondition.h"
 
-class Transaction : TopologyInterface {
+class Transaction : public TopologyInterface {
     virtual void insert_vertex(vertex_id_t v) = 0;
     virtual void delete_vertex(vertex_id_t v) = 0;
 

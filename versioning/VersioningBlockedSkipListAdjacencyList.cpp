@@ -590,6 +590,7 @@ size_t VersioningBlockedSkipListAdjacencyList::get_block_size() {
 }
 
 void VersioningBlockedSkipListAdjacencyList::report_storage_size() {
+  throw NotImplemented();
 //  size_t vertices = sizeof(SkipListHeader *) * adjacency_index.size();
 //
 //  // All numbers in bytes
@@ -634,4 +635,10 @@ void VersioningBlockedSkipListAdjacencyList::report_storage_size() {
 //  cout << setw(30) << "Total: " << right << setw(20) << (edges + vertices) / 1000000 << endl;
 }
 
+void VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock(vertex_id_t vertex_lock) {
+  vertex_mutices[vertex_lock].lock();
+}
 
+void VersioningBlockedSkipListAdjacencyList::release_vertex_lock(vertex_id_t v) {
+  vertex_mutices[v].unlock();
+}

@@ -19,9 +19,9 @@
 class TransactionManager {
 
 public:
-    SerializableUpdateTransaction getWriteOnlyUpdateTransaction(VersionedTopologyInterface& ti);
-    ReadOnlyTransaction getReadOnlyTransaction(VersionedTopologyInterface& ti);
-    SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface& ti);
+    SerializableUpdateTransaction getWriteOnlyUpdateTransaction(VersionedTopologyInterface* ti);
+    ReadOnlyTransaction getReadOnlyTransaction(VersionedTopologyInterface* ti);
+    SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti);
 
     void transactionCompleted(SnapshotTransaction& transaction);
 

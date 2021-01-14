@@ -39,7 +39,8 @@ enum DataStructures {
     BLOCKED_LINKED_LIST_AL,
     BLOCKED_SKIP_LIST_AL,
     HASH_SET_SIMULATOR_AL,
-    HASH_SET_AL
+    HASH_SET_AL,
+    VERSIONED
 };
 
 enum Experiments {

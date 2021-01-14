@@ -29,7 +29,7 @@ public:
     virtual bool has_edge_version(edge_t edge, version_t version) = 0;
 
     virtual void aquire_vertex_lock(vertex_id_t vertex_lock) = 0;
-    virtual void release_vertex_lock(vertex_id_t &v) = 0;
+    virtual void release_vertex_lock(vertex_id_t v) = 0;
 
     virtual void report_storage_size() = 0;
 

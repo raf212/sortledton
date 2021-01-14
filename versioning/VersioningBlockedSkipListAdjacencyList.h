@@ -8,6 +8,7 @@
 
 #include <mutex>
 #include <random>
+#include <utils/NotImplemented.h>
 #include "VersionedTopologyInterface.h"
 
 #define SIZE_VERSION_MASK (1L << 63)
@@ -23,30 +24,30 @@ struct VSkipListHeader {
     VSkipListHeader* next_levels[];  // a fixed number of pointers for all levels.
 };
 
-class VersioningBlockedSkipListAdjacencyList : VersionedTopologyInterface {
+class VersioningBlockedSkipListAdjacencyList : public VersionedTopologyInterface {
 
 public:
     VersioningBlockedSkipListAdjacencyList(size_t block_size, size_t levels);
 
-    virtual size_t vertex_count_version(version_t version) = 0;
+    size_t vertex_count_version(version_t version) override;
 
-    virtual void insert_vertex_version(vertex_id_t v, version_t version) = 0;
-    virtual void delete_vertex_version(vertex_id_t v, version_t version) = 0;
+    void insert_vertex_version(vertex_id_t v, version_t version) override { throw NotImplemented(); };
+    void delete_vertex_version(vertex_id_t v, version_t version) override { throw NotImplemented(); };
 
     void insert_edge_version(edge_t edge, version_t version) override;
-    virtual void delete_edge_version(edge_t edge, version_t version) = 0;
+    void delete_edge_version(edge_t edge, version_t version) override { throw NotImplemented(); };
 
     size_t neighbourhood_size_version(vertex_id_t src, version_t version) override;
 
-    virtual void* raw_neighbourhood_version(vertex_id_t src, version_t version) = 0;
+    void* raw_neighbourhood_version(vertex_id_t src, version_t version) override;
     void intersect_neighbourhood_version(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) override;
 
     bool has_edge_version(edge_t edge, version_t version) override;
 
-    virtual void aquire_vertex_lock(vertex_id_t vertex_lock) = 0;
-    virtual void release_vertex_lock(vertex_id_t &v) = 0;
+    void aquire_vertex_lock(vertex_id_t vertex_lock) override;
+    void release_vertex_lock(vertex_id_t v) override;
 
-    virtual void report_storage_size() = 0;
+    void report_storage_size() override;
 
     void bulkload(const SortedCSRDataSource &src);
 

@@ -146,7 +146,7 @@ const unordered_map<DataStructures, string> Config::DATA_STRUCTURE_MAPPING {
         {BLOCKED_SKIP_LIST_AL, "bslAL"},
         {HASH_SET_SIMULATOR_AL, "hsAL"},
         {HASH_SET_AL, "rhAL"},
-
+        {VERSIONED, "v"}
 };
 
 const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING{

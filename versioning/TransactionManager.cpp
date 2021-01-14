@@ -4,7 +4,7 @@
 
 #include "TransactionManager.h"
 
-SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface &ti) {
+SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface* ti) {
   lock_guard<mutex> l(global_lock);
   version_t v = version.fetch_add(1);
 
@@ -16,11 +16,11 @@ SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopology
   return SnapshotTransaction(v, ti);
 }
 
-ReadOnlyTransaction TransactionManager::getReadOnlyTransaction(VersionedTopologyInterface &ti) {
+ReadOnlyTransaction TransactionManager::getReadOnlyTransaction(VersionedTopologyInterface* ti) {
   return ReadOnlyTransaction(getSnapshotTransaction(ti));
 }
 
-SerializableUpdateTransaction TransactionManager::getWriteOnlyUpdateTransaction(VersionedTopologyInterface &ti) {
+SerializableUpdateTransaction TransactionManager::getWriteOnlyUpdateTransaction(VersionedTopologyInterface* ti) {
   return SerializableUpdateTransaction(getSnapshotTransaction(ti));
 }
 

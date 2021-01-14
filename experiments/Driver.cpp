@@ -22,6 +22,9 @@
 #include <thread>
 #include <atomic>
 #include <data-structures/HashSetAdjacencyLists.h>
+#include <versioning/SnapshotTransaction.h>
+#include <versioning/TransactionManager.h>
+#include <versioning/VersioningBlockedSkipListAdjacencyList.h>
 #include "Driver.h"
 
 #include "BFSSourceSelector.h"
@@ -79,6 +82,11 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
 
   TopologyInterface *data_structure;
   string ds_name;
+
+  TransactionManager tm;
+  VersionedTopologyInterface *versioned_data_structure;
+  SnapshotTransaction transaction(0, nullptr);
+
   switch (ds) {
     case CSR_DS: {
       data_structure = new CSR();
@@ -152,6 +160,17 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
                                                          base.adjacency_lists.size() + inserts.edges.size() + 100,
                                                          base.vertex_count());
       ds_name = "blsAL";
+      break;
+    }
+    case VERSIONED: {
+      size_t block_size = 128;
+      if (!ds_parameters.empty()) {  // TODO better parameter sanitization
+        block_size = stoi(ds_parameters[0]);
+      }
+      versioned_data_structure = new VersioningBlockedSkipListAdjacencyList(block_size, 6);
+      transaction = tm.getSnapshotTransaction(versioned_data_structure);
+      data_structure = &transaction;
+      ds_name = "versioned";
       break;
     }
     case HASH_SET_SIMULATOR_AL: {
