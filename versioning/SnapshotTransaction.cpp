@@ -32,15 +32,15 @@ bool SnapshotTransaction::execute() {
       try {
         ds->insert_edge_version(e, version);  // TODO should follow if not exists
         i++;
-        if (i % 10 == 0) {
-//        cout << ".";
-//        cout.flush();
+        if (i % 1000 == 0) {
+        cout << ".";
+        cout.flush();
         }
       } catch (MultipleVersionException& e) {
         // NOP
       }
     }
-    cout << "done inserting" << endl;
+    cout << endl<< "done inserting" << endl;
     release_locks();
     return true;
   } else {

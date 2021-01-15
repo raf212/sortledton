@@ -478,12 +478,13 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
       new_block->data = get_data_pointer(new_block);
       new_block->size = size;
 
-      memcpy((void *) get_data_pointer(new_block), (void *) block, size * sizeof(dst_t));
+      auto data = block + 1;
+      memcpy((void *) get_data_pointer(new_block), (void *) data, size * sizeof(dst_t));
 
-      if (is_versioned(block[size - 2])) {
-        new_block->max = make_unversioned(block[size - 2]);
+      if (is_versioned(data[size - 2])) {
+        new_block->max = make_unversioned(data[size - 2]);
       } else {
-        new_block->max = block[size - 1];
+        new_block->max = data[size - 1];
       }
 
       for (int l = 0; l < levels; l++) {
@@ -558,6 +559,9 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     auto *new_block = (VSkipListHeader *) malloc(memory_block_size());
     new_block->data = get_data_pointer(new_block);
 
+
+    memcpy((void *) get_data_pointer(new_block), (void *) (data + split), (i->size - split) * sizeof(dst_t));
+
     new_block->size = i->size - split;
     i->size = split;
 
@@ -570,8 +574,6 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     } else {
       i->max = data[split - 1];
     }
-
-    memcpy((void *) get_data_pointer(new_block), (void *) (data + split), split * sizeof(dst_t));
 
     auto height = get_height();
     for (int l = 1; l < levels; l++) {

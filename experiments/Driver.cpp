@@ -597,9 +597,16 @@ unordered_set<dst_t> Driver::get_neighbours(TopologyInterface &ds, vertex_id_t v
 
 void Driver::check_insert(TopologyInterface &ds, EdgeList &el) {
   cout << "checking inserts" << endl;
+  auto i = 0;
   for (auto e : el.edges) {
+    i++;
+    if (i % 1000 == 0) {
+      cout << ".";
+    }
     assert(ds.has_edge(e));
   }
+
+  cout << "Done checking if each edge exists running bfs" << endl;
 
   BFSSourceSelector ss(*this, config.base, ds);
   vertex_id_t start_vertex = ss.get_source();
