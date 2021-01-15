@@ -569,7 +569,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     memcpy((void *) get_data_pointer(new_block), (void *) (data + split), split * sizeof(dst_t));
 
     auto height = get_height();
-    for (int l = 0; l < levels; l++) {
+    for (int l = 1; l < levels; l++) {
       if (l < height) {
         new_block->next_levels[l] = blocks_per_level[l]->next_levels[l];
         blocks_per_level[l]->next_levels[l] = new_block;

@@ -3,6 +3,7 @@
 //
 
 #include "SnapshotTransaction.h"
+#include <iostream>
 
 SnapshotTransaction::SnapshotTransaction(version_t version, VersionedTopologyInterface* ds)
   : version(version), ds(ds) {
@@ -24,9 +25,16 @@ bool SnapshotTransaction::execute() {
     for (auto e : edges_to_delete) {
       ds->delete_edge_version(e, version);   // TODO should follow if exists
     }
+    auto i = 0;
     for (auto e : edges_to_insert) {
       ds->insert_edge_version(e, version);  // TODO should follow if not exists
+      i++;
+      if(i % 10 == 0) {
+        cout << ".";
+        cout.flush();
+      }
     }
+    cout << "done inserting" << endl;
     release_locks();
     return true;
   } else {
