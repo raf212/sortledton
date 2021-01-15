@@ -22,10 +22,12 @@ dst_t make_versioned(dst_t e);
 
 dst_t make_unversioned(dst_t e);
 
-// version timestamp if the first bit is set there are further versions, if the second bit is set this version is a deletion.
+// version timestamp if the second bit is set there are further versions, if the third bit is set this version is a deletion.
+// it is important that the first bit is never set
+// TODO change this around, a first bit set indicates a version. while an unset first bit indicates that is not a version.
 typedef uint32_t version_t;
-#define MORE_VERSION_MASK (1 << 31)
-#define DELETION_MASK (1 << 30)
+#define MORE_VERSION_MASK (1 << 30)
+#define DELETION_MASK (1 << 29)
 
 bool more_versions_existing(version_t v);
 

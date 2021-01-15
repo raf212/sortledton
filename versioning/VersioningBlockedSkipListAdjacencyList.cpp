@@ -258,7 +258,7 @@ dst_t *VersioningBlockedSkipListAdjacencyList::find_upper_bound(dst_t *start, ds
  */
 bool VersioningBlockedSkipListAdjacencyList::traverse_version_chain(edge_t edge, version_t required_version,
                                                                     version_t inline_version) {
-  if (timestamp(inline_version) < required_version) { // We want the newest version
+  if (timestamp(inline_version) <= required_version) { // We want the newest version
     if (is_deletion(inline_version)) { // Latest change was a deletion.
       return false;
     } else {
@@ -549,12 +549,16 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
   // Handle a full block
   if (block_size <= i->size + 1 ) {
     auto data = get_data_pointer(i);
-    const auto split = block_size / 2;
+    auto split = block_size / 2;
+
+    if (is_versioned(data[split - 1])) { // Keep the versioned edge together with its version.
+      split -= 1;
+    }
 
     auto *new_block = (VSkipListHeader *) malloc(memory_block_size());
     new_block->data = get_data_pointer(new_block);
 
-    new_block->size = split;
+    new_block->size = i->size - split;
     i->size = split;
 
     new_block->next_levels[0] = i->next_levels[0];
