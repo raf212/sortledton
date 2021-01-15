@@ -11,11 +11,18 @@
 #include <utils/NotImplemented.h>
 #include "VersionedTopologyInterface.h"
 
+// The mask indicating if a size entry in the index is versioned.
 #define SIZE_VERSION_MASK (1L << 63)
+// The 2nd bit of the adjacency set pointer in the index is used to indicate the VAdjacencySetType.
+// Set means the edge set is of type VSINGLE_BLOCK, unset means it is of type VSKIP_LIST
+#define EDGE_SET_TYPE_MASK (1L << 62)
 
+/**
+ * The types of adjacency sets used.
+ */
 enum VAdjacencySetType {
-    VSKIP_LIST,
-    VSINGLE_BLOCK
+    VSKIP_LIST,    // A blocked skip list defined in VSkipListHeader
+    VSINGLE_BLOCK  // An array of edges prepended by the number of edges and versions in their.
 };
 
 struct VSkipListHeader {

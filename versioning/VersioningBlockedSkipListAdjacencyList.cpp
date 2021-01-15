@@ -64,7 +64,7 @@ void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start
     block[0] = size;
     memcpy((void *) (block + 1), (void *) start, size * sizeof(dst_t));
 
-    return block;
+    return (void*) ((uint64_t) block | EDGE_SET_TYPE_MASK);
   } else {
     VSkipListHeader *first_block = nullptr;
     VSkipListHeader *last_block = nullptr;
@@ -419,7 +419,7 @@ size_t VersioningBlockedSkipListAdjacencyList::vertex_count_version(version_t ve
 
 void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_version(vertex_id_t src, version_t version) {
   // TODO vertex versions not supported yet.
-  return adjacency_index[2 * src];
+  return (void*) ((uint64_t) adjacency_index[2 * src] & ~EDGE_SET_TYPE_MASK);
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::memory_block_size() {
@@ -435,7 +435,7 @@ size_t VersioningBlockedSkipListAdjacencyList::skip_list_header_size() const {
 }
 
 VAdjacencySetType VersioningBlockedSkipListAdjacencyList::get_set_type(vertex_id_t v, version_t version) {
-  if (neighbourhood_size_version(v, version) <= block_size) {
+  if ((uint64_t) adjacency_index[v * 2] & EDGE_SET_TYPE_MASK) {
     return VSINGLE_BLOCK;
   } else {
     return VSKIP_LIST;
@@ -448,7 +448,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_empty(edge_t edge, version_t
   block[1] = make_versioned(edge.dst);
   block[2] = inline_version(false, false, version);
 
-  adjacency_index[2 * edge.src] = block;
+  adjacency_index[2 * edge.src] = (void*) ((uint64_t) block | EDGE_SET_TYPE_MASK);
 
   update_adjacency_size(edge.src, false, version);
 }
@@ -512,7 +512,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
              sizeof(dst_t) * (size - pos_to_insert));
 
       free(block);
-      adjacency_index[edge.src * 2] = new_block;
+      adjacency_index[edge.src * 2] = (void*) ((uint64_t) new_block | EDGE_SET_TYPE_MASK);
       update_adjacency_size(edge.src, false, version);
     }
   }
