@@ -127,7 +127,7 @@ dst_t *VersioningBlockedSkipListAdjacencyList::get_data_pointer(VSkipListHeader 
 }
 
 void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version) {
-  void *adjacency_list = raw_neighbourhood_version(edge.src, version);
+   void *adjacency_list = raw_neighbourhood_version(edge.src, version);
 
   // Insert to empty list
   if (adjacency_list == nullptr) {
@@ -470,6 +470,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
 
   if (size < block_capacity - 1) {  // If block is not too full; -1 for enough space to insert new edge and version, insert into block by shifting
     insert_by_shift(block + 1, block + 1 + size, edge.dst, version);
+    block[0] = size + 2;
     update_adjacency_size(edge.src, false, version);
   } else {  // else resize block or add skip list
     if (block_capacity == block_size) {    // Block should be split into 2 skip list blocks, we do this in two steps, convert to SkipListHeader and then by recursion split into two.
@@ -599,8 +600,8 @@ void VersioningBlockedSkipListAdjacencyList::insert_by_shift(dst_t* start, dst_t
     *(i + 2) = *i;
   }
 
-  start[pos_to_insert - start] = make_versioned(dst);
-  start[pos_to_insert - start + 1] = inline_version(false, false, version);
+  *pos_to_insert = make_versioned(dst);
+  *(pos_to_insert + 1) = inline_version(false, false, version);
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::get_block_size() {
