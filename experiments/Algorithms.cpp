@@ -14,6 +14,8 @@
 #include <CSR.h>
 #include <CSRMallocAdjacencyLists.h>
 #include <BlockedSkipListAdjacencyLists.h>
+#include <versioning/SnapshotTransaction.h>
+#include <versioning/VersioningBlockedSkipListAdjacencyList.h>
 
 vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
   size_t vertices_traversed = 0;
@@ -195,7 +197,75 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
         }
       }
     }
-  } else if (typeid(ds) == typeid(BlockedSkipListAdjacencyLists)) {
+  } else if (typeid(ds) == typeid(SnapshotTransaction)) {
+    auto transaction = dynamic_cast<SnapshotTransaction&>(ds);
+    auto trans_timestamp = transaction.get_version();
+//    auto block_size = dynamic_cast<BlockedSkipListAdjacencyLists&>(ds).get_block_size();
+    auto block_size = 128;  // TODO find nice way to do this
+    while (!work.empty()) {
+      vertex_id_t v = work.front();
+      work.pop();
+
+      vertices_traversed++;
+
+      auto ns_size = ds.neighbourhood_size(v);
+      if (0 < ns_size && ns_size <= block_size) {  // TODO we need to check the type here, not the neighbourhood size because if there are many versions, we have a skip list although the neighbourhood is small
+        dst_t *ns = (dst_t *) ds.raw_neighbourhood(v);
+        uint32_t size = ns[0];
+        ns++;
+        dst_t *end = ns + size;
+
+        while (ns < end) {
+          dst_t n = *ns;
+          bool deleted = false;
+          if (is_versioned(n)) {
+            n = make_unversioned(n);
+            ns++;  //  Now points to the version.
+            auto version = (version_t) *ns;
+            if (trans_timestamp < timestamp(version)) {
+              deleted = !is_deletion(version);
+            } else {
+              deleted = is_deletion(version);
+            }
+          }
+          if (!deleted && distances[n] == maxDistance) {
+            distances[n] = distances[v] + 1;
+            work.push(n);
+          }
+          ns++;
+        }
+      } else {
+        VSkipListHeader* block = (VSkipListHeader*) ds.raw_neighbourhood(v);
+        while (block != nullptr) {
+          auto data = block->data;
+          dst_t *end = block->data + block->size;
+
+          while (data < end) {
+            dst_t n = *data;
+            bool deleted = false;
+            if (is_versioned(n)) {
+              // TODO jump over versions
+              n = make_unversioned(n);
+              data++;  // Now points to the version.
+              auto version = (version_t) *data;
+              if (trans_timestamp < timestamp(version)) {
+                deleted = !is_deletion(version);
+              } else {
+                deleted = is_deletion(version);
+              }
+            }
+            if (!deleted && distances[n] == maxDistance) {
+              distances[n] = distances[v] + 1;
+              work.push(n);
+            }
+            data++;
+          }
+          block = block->next_levels[0];
+        }
+      }
+    }
+  }
+  else if (typeid(ds) == typeid(BlockedSkipListAdjacencyLists)) {
     auto block_size = dynamic_cast<BlockedSkipListAdjacencyLists&>(ds).get_block_size();
     while (!work.empty()) {
       vertex_id_t v = work.front();
@@ -204,6 +274,7 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
       vertices_traversed++;
 
       if (ds.neighbourhood_size(v) <= block_size) {
+        // TODO why is there no problem if ns is a nullptr, could it be that neighbourhood size returns incorrect values here?
         dst_t *ns = (dst_t *) ds.raw_neighbourhood(v);
         dst_t *end = ns + ds.neighbourhood_size(v);
 
@@ -233,8 +304,6 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
         }
       }
     }
-
-
   } else if (typeid(ds) == typeid(CSR)) {
     CSR& csr = dynamic_cast<CSR&>(ds);
     while (!work.empty()) {

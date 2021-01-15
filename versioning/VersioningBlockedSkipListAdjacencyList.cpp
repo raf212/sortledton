@@ -59,9 +59,10 @@ void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start
     return nullptr;
   } else if (size <= block_size) {
     size_t block_size = round_up_power_of_two(size);
-    dst_t *block = (dst_t *) malloc(block_size * sizeof(dst_t));
+    dst_t *block = (dst_t *) malloc((block_size + 1) * sizeof(dst_t));
 
-    memcpy((void *) block, (void *) start, size * sizeof(dst_t));
+    block[0] = end - start;
+    memcpy((void *) (block + 1), (void *) start, size * sizeof(dst_t));
 
     return block;
   } else {
@@ -80,21 +81,23 @@ void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start
       }
       last_block = block;
 
+      block->data = get_data_pointer(block);
       block->size = block_fill < end - start ? block_fill : end - start;
 
       dst_t *block_data = get_data_pointer(block);
       memcpy((void *) block_data, (void *) start, block->size * sizeof(dst_t));
 
-      block->max = *(block_data + block->size - 1);
+      block->max = block_data[block->size - 1];
 
       start += block->size;
     }
+    last_block->next_levels[0] = nullptr;
 
     auto i = first_block;
     vector<VSkipListHeader *> level_blocks(levels, first_block);
     while (i != nullptr) {
       auto height = get_height();
-      for (int l = 0; l < levels; l++) {
+      for (int l = 1; l < levels; l++) {
         i->next_levels[l] = nullptr;
         if (i != first_block && l < height) {
           level_blocks[l]->next_levels[l] = i;
@@ -104,12 +107,23 @@ void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start
       i = i->next_levels[0];
     }
 
+    auto b = first_block;
+    auto a_size = 0;
+    while (b != nullptr) {
+      for (auto i = 0; i < b->size; i ++) {
+        a_size++;
+      }
+      b = b->next_levels[0];
+    }
+    assert(a_size == size);
+
+
     return first_block;
   }
 }
 
 dst_t *VersioningBlockedSkipListAdjacencyList::get_data_pointer(VSkipListHeader *header) const {
-  return (dst_t *) header + skip_list_header_size();
+  return (dst_t *) ((char*) header + skip_list_header_size());
 }
 
 void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version) {
@@ -455,6 +469,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
     if (block_capacity ==
         block_size) {    // Block should be split into 2 skip list blocks, we do this in two steps, convert to SkipListHeader and then by recursion split into two.
       VSkipListHeader *new_block = (VSkipListHeader *) malloc(memory_block_size());
+      new_block->data = get_data_pointer(new_block);
       new_block->size = size;
 
       memcpy((void *) get_data_pointer(new_block), (void *) block, size * sizeof(dst_t));
@@ -534,6 +549,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     const auto split = block_size / 2;
 
     auto *new_block = (VSkipListHeader *) malloc(memory_block_size());
+    new_block->data = get_data_pointer(new_block);
 
     new_block->size = split;
     i->size = split;
