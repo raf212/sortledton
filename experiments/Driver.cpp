@@ -321,6 +321,9 @@ void Driver::run_insert_experiment(TopologyInterface &ds, EdgeList &el) {
       t.join();
     }
   }
+  if (typeid(ds) == typeid(SnapshotTransaction)) {
+    dynamic_cast<SnapshotTransaction&>(ds).execute();
+  }
   auto end = chrono::steady_clock::now();
 
   size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
