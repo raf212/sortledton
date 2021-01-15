@@ -32,6 +32,10 @@ struct VSkipListHeader {
     VSkipListHeader* next_levels[];  // a fixed number of pointers for all levels.
 };
 
+class MultipleVersionException : exception {
+
+};
+
 class VersioningBlockedSkipListAdjacencyList : public VersionedTopologyInterface {
 
 public:

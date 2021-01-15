@@ -221,7 +221,7 @@ bool VersioningBlockedSkipListAdjacencyList::has_edge_version(edge_t edge, versi
   } else if (!is_versioned(*pos)) {
     return *pos == edge.dst;
   } else {
-    return make_unversioned(*pos) == edge.dst && traverse_version_chain(edge, version, *(pos++));
+    return make_unversioned(*pos) == edge.dst && traverse_version_chain(edge, version, *(pos + 1));
   }
 }
 
@@ -271,7 +271,7 @@ bool VersioningBlockedSkipListAdjacencyList::traverse_version_chain(edge_t edge,
       return false;
     }
   } else {  // We want an old version and there are multiple versions.
-    throw NotImplemented();  // TODO multiple versions not yet supported.
+    throw MultipleVersionException();  // TODO multiple versions not yet supported
   }
 }
 

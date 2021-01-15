@@ -2,6 +2,8 @@
 // Created by per on 23.12.20.
 //
 
+#include <versioning/VersioningBlockedSkipListAdjacencyList.h>
+
 #include "SnapshotTransaction.h"
 #include <iostream>
 
@@ -27,11 +29,15 @@ bool SnapshotTransaction::execute() {
     }
     auto i = 0;
     for (auto e : edges_to_insert) {
-      ds->insert_edge_version(e, version);  // TODO should follow if not exists
-      i++;
-      if(i % 10 == 0) {
-        cout << ".";
-        cout.flush();
+      try {
+        ds->insert_edge_version(e, version);  // TODO should follow if not exists
+        i++;
+        if (i % 10 == 0) {
+//        cout << ".";
+//        cout.flush();
+        }
+      } catch (MultipleVersionException& e) {
+        // NOP
       }
     }
     cout << "done inserting" << endl;
