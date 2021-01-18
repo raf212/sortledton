@@ -200,6 +200,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     run_on_raw_neighbourhood = true;
   }
 
+  bool inserts_run = false;
   for (auto e : config.experiments) {
     switch (e.first) {
       case (NEIGHBOUR_2): {
@@ -224,7 +225,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
             ds_to_use = &transaction_to_use;
           }
         }
-        run_bfs_experiment(*ds_to_use, run_on_raw_neighbourhood, aquire_locks);
+        run_bfs_experiment(*ds_to_use, run_on_raw_neighbourhood, aquire_locks, inserts_run);
         break;
       }
       case (TRIANGLE_COUNTING): {
@@ -251,9 +252,10 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
           throw NotImplemented();
         }
         run_insert_experiment(*data_structure, inserts);
+        inserts_run = true;
         break;
       }
-      case (INSERT_TRANSACTIONS): {
+      case (INSERT_TRANSACTIONS): {  // TODO exclude inserts and inserts_transaction to run in the same run.
         if (run_on_raw_neighbourhood) {
           throw NotImplemented();
         }
@@ -262,6 +264,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
           continue;
         }
         run_insert_experiment_one_by_one(tm, versioned_data_structure, inserts);
+        inserts_run = true;
         break;
       }
       case (DELETE): {
@@ -286,7 +289,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
 }
 
 void
-Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool aquire_locks) {
+Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool aquire_locks, bool after_inserts) {
   BFSSourceSelector ss(*this, config.base, ds);
   vertex_id_t start_vertex = ss.get_source();
 
@@ -312,7 +315,11 @@ Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood,
     cout.flush();
 
 #ifdef DEBUG
-    check_bfs(start_vertex, distances, false);
+    version_t version = FIRST_VERSION;
+    if (typeid(ds) == typeid(SnapshotTransaction)) {
+      version = dynamic_cast<SnapshotTransaction&>(ds).get_version();
+    }
+    check_bfs(start_vertex, distances, after_inserts, version);
 #endif
   }
 
@@ -589,11 +596,14 @@ EdgeIterator &Driver::getSingleEdgeIter(TopologyInterface &ds) {
   }
 }
 
-void Driver::check_bfs(vertex_id_t start_vertex, vector<uint> &distances, bool validate_inserts) {
+void Driver::check_bfs(vertex_id_t start_vertex, vector<uint> &distances, bool validate_inserts, version_t version) {
   cout << "Validating bfs experiment" << endl;
   string inserts = "base";
   if (validate_inserts) {
     inserts = "inserts";
+  }
+  if (version != FIRST_VERSION) {
+    inserts = to_string(version);
   }
   const string gold_standard_file =
           config.gold_standard_directory + "/bfs_" + config.base.get_name() + "_" + to_string(start_vertex) + "_" +
@@ -710,8 +720,13 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el) {
   vertex_id_t start_vertex = ss.get_source();
 
   // TODO fix check for versioned interface, needs that BFS decision on adjacency set type is based on the type not the size.
-  auto distances = Algorithms::bfs(*this, ds, start_vertex);
-  check_bfs(start_vertex, distances, true);
+  vector<uint> distances;
+  if (typeid(ds) == typeid(SnapshotTransaction)) {
+    distances = Algorithms::bfs(*this, ds, start_vertex, true, false);
+  } else {
+    distances = Algorithms::bfs(*this, ds, start_vertex);
+  }
+  check_bfs(start_vertex, distances, true, FIRST_VERSION);
 }
 
 void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts) {
