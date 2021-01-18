@@ -5,15 +5,23 @@
 #ifndef LIVE_GRAPH_TWO_SIZEVERSIONCHAINENTRY_H
 #define LIVE_GRAPH_TWO_SIZEVERSIONCHAINENTRY_H
 
+#include <data_types.h>
 
-#include "VersionChainEntry.h"
-
-class SizeVersionChainEntry : VersionChainEntry {
+class SizeVersionChainEntry {
 public:
+    SizeVersionChainEntry* next;
+    version_t version;
     uint32_t current_size;
-    SizeVersionChainEntry* traverse(version_t version) override;
 
-    SizeVersionChainEntry(version_t version, uint32_t current_size, bool deletion, SizeVersionChainEntry* next);
+    SizeVersionChainEntry(version_t version, uint32_t current_size, SizeVersionChainEntry* next);
+
+    /**
+     * Traverses a given version chain until it finds the correct version.
+     *
+     * @param version version to read.
+     * @return a pointer to the entry for version
+     */
+    SizeVersionChainEntry* traverse(version_t version);
 };
 
 

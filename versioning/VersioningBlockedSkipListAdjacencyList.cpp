@@ -525,13 +525,18 @@ void VersioningBlockedSkipListAdjacencyList::update_adjacency_size(vertex_id_t v
     update = -1;
   }
 
+  // TODO GC needed for performant support of the one by one adding.
   if (size_is_versioned(v)) {
     auto chain = (SizeVersionChainEntry *) (s & ~SIZE_VERSION_MASK);
-    chain = new SizeVersionChainEntry(version, chain->current_size + update, deletion, chain);
-    adjacency_index[2 * v + 1] = (void *) ((uint64_t) chain | SIZE_VERSION_MASK);
+    if (chain->version == version) {
+      chain->current_size += update;
+    } else {
+      chain = new SizeVersionChainEntry(version, chain->current_size + update, chain);
+      adjacency_index[2 * v + 1] = (void *) ((uint64_t) chain | SIZE_VERSION_MASK);
+    }
   } else {
-    auto chain = new SizeVersionChainEntry(version, s + update, deletion,
-                                           new SizeVersionChainEntry(FIRST_VERSION, s, false, nullptr));
+    auto chain = new SizeVersionChainEntry(version, s + update,
+                                           new SizeVersionChainEntry(FIRST_VERSION, s, nullptr));
     adjacency_index[2 * v + 1] = (void *) ((uint64_t) chain | SIZE_VERSION_MASK);
   }
 }

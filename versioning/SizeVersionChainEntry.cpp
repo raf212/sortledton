@@ -5,11 +5,13 @@
 #include "SizeVersionChainEntry.h"
 
 SizeVersionChainEntry *SizeVersionChainEntry::traverse(version_t version) {
-  return (SizeVersionChainEntry*) VersionChainEntry::traverse(version);
+  while (this->next != nullptr && this->version > version) {
+    return this->traverse(version);
+  }
+  return this;
 }
 
-SizeVersionChainEntry::SizeVersionChainEntry(version_t version, uint32_t current_size, bool deletion,
-                                             SizeVersionChainEntry *next)
-                                             : VersionChainEntry(version, deletion, next), current_size(current_size) {
+SizeVersionChainEntry::SizeVersionChainEntry(version_t version, uint32_t current_size, SizeVersionChainEntry *next)
+                                             : version(version), next(next), current_size(current_size) {
 
 }
