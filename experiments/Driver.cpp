@@ -209,22 +209,26 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       }
       case (BFS): {
         bool aquire_locks = false;
-        version_t version = FIRST_VERSION;
+        version_t version = typeid(*data_structure) == typeid(SnapshotTransaction)?
+                dynamic_cast<SnapshotTransaction*>(data_structure)->get_version() : FIRST_VERSION;
         if (!e.second.empty()) {
           aquire_locks = stoi(e.second[0]);
           version = stoi(e.second[1]);
         }
+
         SnapshotTransaction transaction_to_use(FIRST_VERSION, nullptr);
         auto ds_to_use = data_structure;
-        if (version != FIRST_VERSION) {
-          if (typeid(ds) != typeid(SnapshotTransaction)) {
-            cout << "Skipping BFS experiment with version " << version << " and data structure " << typeid(ds).name() << endl;
-            continue;
-          } else {
-            transaction_to_use = tm.getSnapshotTransaction(versioned_data_structure, version);
-            ds_to_use = &transaction_to_use;
-          }
+
+        if (version != FIRST_VERSION && typeid(*data_structure) != typeid(SnapshotTransaction)) {
+          cout << "Skipping BFS experiment with version " << version << " and data structure " << ds_name << endl;
+          continue;
         }
+        if (typeid(*data_structure) == typeid(SnapshotTransaction)) {
+          cout << "Running BFS experiment on version " << version << endl;
+          transaction_to_use = tm.getSnapshotTransaction(versioned_data_structure, version);
+          ds_to_use = &transaction_to_use;
+        }
+
         run_bfs_experiment(*ds_to_use, run_on_raw_neighbourhood, aquire_locks, inserts_run);
         break;
       }
@@ -248,17 +252,11 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         break;
       }
       case (INSERT): {
-        if (run_on_raw_neighbourhood) {
-          throw NotImplemented();
-        }
         run_insert_experiment(*data_structure, inserts);
         inserts_run = true;
         break;
       }
       case (INSERT_TRANSACTIONS): {
-        if (run_on_raw_neighbourhood) {
-          throw NotImplemented();
-        }
         if (typeid(ds) != typeid(SnapshotTransaction)) {
           cout << "Skipping experiment insert transactions for data structure " << ds_name << endl;
           continue;
@@ -281,6 +279,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       default:
         throw ConfigurationError("Unknown experiment type");
     }
+    cout << endl;
   }
 
   if (config.validate_datastructures) {
@@ -289,7 +288,8 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
 }
 
 void
-Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool aquire_locks, bool after_inserts) {
+Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool aquire_locks,
+                           bool after_inserts) {
   BFSSourceSelector ss(*this, config.base, ds);
   vertex_id_t start_vertex = ss.get_source();
 
@@ -315,11 +315,11 @@ Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood,
     cout.flush();
 
 #ifdef DEBUG
-    version_t version = FIRST_VERSION;
+    version_t version = after_inserts ? 1 : FIRST_VERSION;
     if (typeid(ds) == typeid(SnapshotTransaction)) {
-      version = dynamic_cast<SnapshotTransaction&>(ds).get_version();
+      version = after_inserts ? dynamic_cast<SnapshotTransaction &>(ds).get_version() : FIRST_VERSION;
     }
-    check_bfs(start_vertex, distances, after_inserts, version);
+    check_bfs(start_vertex, distances, version);
 #endif
   }
 
@@ -327,7 +327,7 @@ Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood,
   cout << "Traversed vertices " << traversed_vertices << " from " << ds.vertex_count() << " "
        << (float) traversed_vertices / (float) ds.vertex_count() * 100 << "%" << endl;
   double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
-  cout << endl << "BFS run in average in " << average << " milliseconds " << endl;
+  cout << "BFS run in average in " << average << " milliseconds " << endl;
 }
 
 void Driver::load_base_dataset(TopologyInterface &ds, SortedCSRDataSource &base) {
@@ -349,7 +349,8 @@ void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &
   }
 }
 
-void run_inserts_in_transactions(EdgeList &el, atomic_uint &insert_position, TransactionManager& tm, VersionedTopologyInterface* ds) {
+void run_inserts_in_transactions(EdgeList &el, atomic_uint &insert_position, TransactionManager &tm,
+                                 VersionedTopologyInterface *ds) {
   const int batch_size = 500;
 
   const int total_work = el.edges.size();
@@ -403,7 +404,7 @@ void Driver::run_insert_experiment(TopologyInterface &ds, EdgeList &el) {
 #endif
 }
 
-void Driver::run_insert_experiment_one_by_one(TransactionManager& tm, VersionedTopologyInterface* ds , EdgeList &el) {
+void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedTopologyInterface *ds, EdgeList &el) {
   cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
   uint threads = config.insert_threads;
 
@@ -596,13 +597,15 @@ EdgeIterator &Driver::getSingleEdgeIter(TopologyInterface &ds) {
   }
 }
 
-void Driver::check_bfs(vertex_id_t start_vertex, vector<uint> &distances, bool validate_inserts, version_t version) {
+void Driver::check_bfs(vertex_id_t start_vertex, vector<uint> &distances, version_t version) {
   cout << "Validating bfs experiment" << endl;
   string inserts = "base";
-  if (validate_inserts) {
+
+  if (version == FIRST_VERSION) {
+    inserts = "base";
+  } else if (version == 1) {
     inserts = "inserts";
-  }
-  if (version != FIRST_VERSION) {
+  } else {
     inserts = to_string(version);
   }
   const string gold_standard_file =
@@ -704,17 +707,14 @@ unordered_set<dst_t> Driver::get_neighbours(TopologyInterface &ds, vertex_id_t v
 }
 
 void Driver::check_insert(TopologyInterface &ds, EdgeList &el) {
-  cout << "checking inserts" << endl;
   auto i = 0;
   for (auto e : el.edges) {
     i++;
-    if (i % 1000 == 0) {
-      cout << ".";
-    }
+//    if (i % 1000 == 0) {
+//      cout << ".";
+//    }
     assert(ds.has_edge(e));
   }
-
-  cout << "Done checking if each edge exists running bfs" << endl;
 
   BFSSourceSelector ss(*this, config.base, ds);
   vertex_id_t start_vertex = ss.get_source();
@@ -726,7 +726,7 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el) {
   } else {
     distances = Algorithms::bfs(*this, ds, start_vertex);
   }
-  check_bfs(start_vertex, distances, true, FIRST_VERSION);
+  check_bfs(start_vertex, distances, 1);
 }
 
 void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts) {

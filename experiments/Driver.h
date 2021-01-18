@@ -54,10 +54,9 @@ private:
      * Checks the BFS search result (distances of all vertices to the start vertex) against a gold standard result.
      * @param start_vertex
      * @param distances
-     * @param validate_inserts set to true if called after insertion experiments to validate it, influences the gold standard set picked.
-     * @param if this is unequal to the FIRST_VERSION chooses a gold standard for this specific version, it then ignores validate_inserts
+     * @param version 0 for base version without inserts, 1 for version after all inserts, all others for that specific version.
      */
-    void check_bfs(vertex_id_t start_vertex, vector<uint>& distances, bool validate_inserts, version_t version);
+    void check_bfs(vertex_id_t start_vertex, vector<uint>& distances, version_t version);
 
     void run_page_rank_experiment(TopologyInterface& ds, bool run_on_raw_neighbourhood);
 

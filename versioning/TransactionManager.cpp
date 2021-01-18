@@ -40,6 +40,6 @@ void TransactionManager::transactionCompleted(const Transaction &transaction) {
 }
 
 SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, version_t v) {
-  cerr << "Warning: creating snapshot transaction with custom version, this is not save in connection with GC, use only if you know what you are doing." << endl;
+//  cerr << "Warning: creating snapshot transaction with custom version, this is not save in connection with GC, use only if you know what you are doing." << endl;
   return SnapshotTransaction(v, ti);
 }

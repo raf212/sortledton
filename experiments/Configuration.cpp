@@ -140,7 +140,7 @@ vector<pair<Experiments, vector<string>>> Config::parse_experiments(string arg) 
       parameters = string_split('\'', e.substr(parameters_start + 1, e.find(')') - (parameters_start + 1)));
     }
 
-    auto mapping = map.find(e);
+    auto mapping = map.find(experiment_name);
     if (mapping == map.end()) {
       throw ConfigurationError("Unknown experiment " + e);
     } else {

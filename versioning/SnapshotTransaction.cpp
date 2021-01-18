@@ -40,7 +40,7 @@ bool SnapshotTransaction::execute() {
 //         NOP
 //      }
     }
-    cout << endl<< "done inserting" << endl;
+//    cout << endl<< "done inserting" << endl;
     release_locks();
     return true;
   } else {
