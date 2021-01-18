@@ -11,17 +11,11 @@
 #include <cstring>
 #include <cassert>
 #include <data-structures/adjacency-lists/VectorBatchedEdgeIterator.h>
-#include <iomanip>
 #include "BlockedSkipListAdjacencyLists.h"
-#include "adjacency-lists/BlockedBatchedEdgeIterator.h"
 #include "SizeVersionChainEntry.h"
-//#include "TransactionManager.h"
-#define FIRST_VERSION 0
-// TODO include instead
 
-#define likely(x)       __builtin_expect((x),1)
-#define unlikely(x)     __builtin_expect((x),0)
 
+// TODO not rewritten to handle versions.
 #define intersect(start_a, end_a, start_b, end_b, out) while (start_a < end_a && start_b < end_b) { \
   const dst_t a = *start_a;                                                                        \
   const dst_t b = *start_b; \

@@ -29,16 +29,16 @@ bool SnapshotTransaction::execute() {
     }
     auto i = 0;
     for (auto e : edges_to_insert) {
-      try {
+//      try {
         ds->insert_edge_version(e, version);  // TODO should follow if not exists
-        i++;
-        if (i % 1000 == 0) {
-        cout << ".";
-        cout.flush();
-        }
-      } catch (MultipleVersionException& e) {
-        // NOP
-      }
+//        i++;
+//        if (i % 1000 == 0) {
+//        cout << ".";
+//        cout.flush();
+//        }
+//      } catch (MultipleVersionException& e) {
+//         NOP
+//      }
     }
     cout << endl<< "done inserting" << endl;
     release_locks();
@@ -108,10 +108,6 @@ size_t SnapshotTransaction::neighbourhood_size(vertex_id_t src) {
   return ret;
 }
 
-void *SnapshotTransaction::raw_neighbourhood(vertex_id_t src) {
-  return ds->raw_neighbourhood_version(src, version);
-}
-
 void SnapshotTransaction::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
   ds->aquire_vertex_lock(min(a, b));
   ds->aquire_vertex_lock(max(a, b));
@@ -142,5 +138,11 @@ SnapshotTransaction::~SnapshotTransaction() {
 }
 
 void SnapshotTransaction::bulkload(const SortedCSRDataSource &src) {
+  // TODO aquire all locks.
+  // TODO document that we are not writing version during this process.
   ds->bulkload(src);
+}
+
+VersionedTopologyInterface *SnapshotTransaction::raw_ds() {
+  return ds;
 }

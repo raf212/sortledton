@@ -257,7 +257,7 @@ void Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbour
   for (int rep = 0; rep < config.repetitions; rep++) {
     // BFS
     auto start = chrono::steady_clock::now();
-    distances = Algorithms::bfs(*this, ds, start_vertex, run_on_raw_neighbourhood);
+    distances = Algorithms::bfs(*this, ds, start_vertex, run_on_raw_neighbourhood, false);
     auto end = chrono::steady_clock::now();
 
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
@@ -611,6 +611,7 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el) {
   BFSSourceSelector ss(*this, config.base, ds);
   vertex_id_t start_vertex = ss.get_source();
 
+  // TODO fix check for versioned interface, needs that BFS decision on adjacency set type is based on the type not the size.
   auto distances = Algorithms::bfs(*this, ds, start_vertex);
   check_bfs(start_vertex, distances, true);
 }

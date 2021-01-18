@@ -14,8 +14,6 @@
 #include "SerializableUpdateTransaction.h"
 #include "ReadOnlyTransaction.h"
 
-#define FIRST_VERSION ((version_t) 0)
-
 class TransactionManager {
 
 public:

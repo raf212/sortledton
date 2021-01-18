@@ -36,7 +36,19 @@ public:
 
     void neighbourhood(vertex_id_t src, EdgeIterator& iter) override { throw NotImplemented(); };
 
-    void* raw_neighbourhood(vertex_id_t src) override;
+    /**
+     * Cannot be used. Use raw_ds instead.
+     */
+    void* raw_neighbourhood(vertex_id_t src) override { throw NotImplemented(); };
+
+    /**
+     *  Be aware that you need to handle locking and versioning yourself.
+     *
+     * Passing any other version than the one of this transaction is undefined behaviour.
+     *
+     * Using the pointer after calling execute or TransactionManager.transactionCompleted is undefined behaviour.
+     */
+    VersionedTopologyInterface* raw_ds();
 
     void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) override;
 

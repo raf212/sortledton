@@ -52,6 +52,7 @@ public:
     size_t neighbourhood_size_version(vertex_id_t src, version_t version) override;
 
     void* raw_neighbourhood_version(vertex_id_t src, version_t version) override;
+    VAdjacencySetType get_set_type(vertex_id_t v, version_t version);
     void intersect_neighbourhood_version(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) override;
 
     bool has_edge_version(edge_t edge, version_t version) override;
@@ -89,8 +90,6 @@ private:
 
     size_t skip_list_header_size() const;
     dst_t* get_data_pointer(VSkipListHeader* header) const;
-
-    VAdjacencySetType get_set_type(vertex_id_t v, version_t version);
 
     dst_t* find_upper_bound(dst_t* start, dst_t* end, dst_t value);
     bool traverse_version_chain(edge_t edge, version_t required_version, version_t inline_version);

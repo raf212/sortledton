@@ -13,6 +13,11 @@
 typedef uint32_t vertex_id_t;
 
 typedef vertex_id_t dst_t;
+
+// Version used to indicate that this is the first version of any version chain. This does not need to be
+// the original first version from system start but could be a later version after GC.
+#define FIRST_VERSION 0
+
 // The first bit of a dst_t type is set if the edge is versioned.
 #define VERSION_MASK (1 << 31)
 

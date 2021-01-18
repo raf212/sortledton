@@ -83,11 +83,16 @@ uint Algorithms::traversed_vertices(TopologyInterface &ds, vector<uint> &distanc
   return ds.vertex_count() - count(distances.begin(), distances.end(), numeric_limits<uint>::max());
 }
 
-vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
+vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool aquire_locks) {
+  if (typeid(ds) != typeid(SnapshotTransaction)) {
+    if (aquire_locks) {
+      throw NotImplemented();
+    }
+  }
+
   size_t vertices_traversed = 0;
   vector<uint> distances(ds.vertex_count(), numeric_limits<uint>::max());
   uint maxDistance = numeric_limits<uint>::max();
-
 
   queue<vertex_id_t> work;
   work.push(start_vertex);
@@ -200,17 +205,15 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
   } else if (typeid(ds) == typeid(SnapshotTransaction)) {
     auto transaction = dynamic_cast<SnapshotTransaction&>(ds);
     auto trans_timestamp = transaction.get_version();
-//    auto block_size = dynamic_cast<BlockedSkipListAdjacencyLists&>(ds).get_block_size();
-    auto block_size = 128;  // TODO find nice way to do this
+    auto raw_ds = dynamic_cast<VersioningBlockedSkipListAdjacencyList*>(transaction.raw_ds());
+
     while (!work.empty()) {
       vertex_id_t v = work.front();
       work.pop();
 
       vertices_traversed++;
-
-      auto ns_size = ds.neighbourhood_size(v);
-      if (0 < ns_size && ns_size <= block_size) {  // TODO we need to check the type here, not the neighbourhood size because if there are many versions, we have a skip list although the neighbourhood is small
-        dst_t *ns = (dst_t *) ds.raw_neighbourhood(v);
+      if (raw_ds->get_set_type(v, trans_timestamp)) {
+        dst_t *ns = (dst_t *) raw_ds->raw_neighbourhood_version(v, trans_timestamp);
         uint32_t size = ns[0];
         ns++;
         dst_t *end = ns + size;
@@ -235,7 +238,7 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
           ns++;
         }
       } else {
-        VSkipListHeader* block = (VSkipListHeader*) ds.raw_neighbourhood(v);
+        VSkipListHeader* block = (VSkipListHeader*) raw_ds->raw_neighbourhood_version(v, trans_timestamp);
         while (block != nullptr) {
           auto data = block->data;
           dst_t *end = block->data + block->size;
@@ -244,7 +247,6 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
             dst_t n = *data;
             bool deleted = false;
             if (is_versioned(n)) {
-              // TODO jump over versions
               n = make_unversioned(n);
               data++;  // Now points to the version.
               auto version = (version_t) *data;
@@ -328,12 +330,18 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
   return distances;
 }
 
-vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool raw_neighbourhood) {
+vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool raw_neighbourhood, bool aquire_locks) {
   if (raw_neighbourhood) {
-    return bfs_raw_neighbourhood(driver, ds, start_vertex);
+    return bfs_raw_neighbourhood(driver, ds, start_vertex, aquire_locks);
   } else if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
+    if (aquire_locks) {
+      throw NotImplemented();
+    }
     return bfs_single_edge_interface(driver, ds, start_vertex);
   } else {
+    if (aquire_locks) {
+      throw NotImplemented();
+    }
     return bfs_batched_interface(driver, ds, start_vertex);
   }
 }
