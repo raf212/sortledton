@@ -255,7 +255,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         inserts_run = true;
         break;
       }
-      case (INSERT_TRANSACTIONS): {  // TODO exclude inserts and inserts_transaction to run in the same run.
+      case (INSERT_TRANSACTIONS): {
         if (run_on_raw_neighbourhood) {
           throw NotImplemented();
         }

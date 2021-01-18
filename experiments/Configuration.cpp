@@ -49,6 +49,9 @@ void Config::initialize(int argc, char **argv) {
         for (auto e : experiments) {
           experiment_set.insert(e.first);
         }
+        if (experiment_set.find(INSERT) != experiment_set.end() && experiment_set.find(INSERT_TRANSACTIONS) != experiment_set.end()) {
+          throw ConfigurationError("Cannot run INSERT and INSERT_TRANSACTION in one go.");
+        }
         break;
       case 's':
         data_structures = parse_data_structures(optarg);
