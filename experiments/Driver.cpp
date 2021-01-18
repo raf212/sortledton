@@ -32,8 +32,8 @@
 #include "TwoNeighbourSourceSelector.h"
 #include "TwoNeighbour.h"
 
-vector <vector<vertex_id_t>> Driver::select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
-  vector <vector<vertex_id_t>> out;
+vector<vector<vertex_id_t>> Driver::select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
+  vector<vector<vertex_id_t>> out;
 
   TwoNeighbourSourceSelector s(src);
   for (int r = 0; r < config.repetitions; r++) {
@@ -51,19 +51,19 @@ void Driver::run() {
   SortedCSRDataSource base = read_base_dataset();
 
   EdgeList inserts;
-  if (config.experiments.find(INSERT) != config.experiments.end()) {
+  if (config.experiment_set.find(INSERT) != config.experiment_set.end()) {
     cout << "Reading insert dataset " << config.insertions.path << endl;
     inserts = read_insert_dataset();
   }
 
   EdgeList deletes;
-  if (config.experiments.find(DELETE) != config.experiments.end()) {
+  if (config.experiment_set.find(DELETE) != config.experiment_set.end()) {
     cout << "Reading delete dataset " << config.deletions.path << endl;
     inserts = read_delete_dataset();
   }
 
-  vector <vector<vertex_id_t>> neighbour_2_sources;
-  if (config.experiments.find(NEIGHBOUR_2) != config.experiments.end()) {
+  vector<vector<vertex_id_t>> neighbour_2_sources;
+  if (config.experiment_set.find(NEIGHBOUR_2) != config.experiment_set.end()) {
     neighbour_2_sources = select_2_neighbourhood_src(base, 1000);
   }
 
@@ -76,8 +76,8 @@ void Driver::run() {
 }
 
 void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes,
-                                DataStructures ds, const vector <string> &ds_parameters,
-                                vector <vector<vertex_id_t>> &neighbourhood_2_sources) {
+                                DataStructures ds, const vector<string> &ds_parameters,
+                                vector<vector<vertex_id_t>> &neighbourhood_2_sources) {
   reporter.set_data_structure(ds, ds_parameters);
 
   TopologyInterface *data_structure;
@@ -200,64 +200,95 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     run_on_raw_neighbourhood = true;
   }
 
-  if (config.experiments.find(NEIGHBOUR_2) != config.experiments.end()) {
-    run_neighbourhood_2_experiment(*data_structure, neighbourhood_2_sources, run_on_raw_neighbourhood);
-  }
-  if (config.experiments.find(BFS) != config.experiments.end()) {
-    run_bfs_experiment(*data_structure, run_on_raw_neighbourhood);
-  }
-  if (config.experiments.find(TRIANGLE_COUNTING) != config.experiments.end()) {
-    if (run_on_raw_neighbourhood) {
-      throw NotImplemented();
+  for (auto e : config.experiments) {
+    switch (e.first) {
+      case (NEIGHBOUR_2): {
+        run_neighbourhood_2_experiment(*data_structure, neighbourhood_2_sources, run_on_raw_neighbourhood);
+        break;
+      }
+      case (BFS): {
+        bool aquire_locks = false;
+        version_t version = FIRST_VERSION;
+        if (!e.second.empty()) {
+          aquire_locks = stoi(e.second[0]);
+          version = stoi(e.second[1]);
+        }
+        SnapshotTransaction transaction_to_use(FIRST_VERSION, nullptr);
+        auto ds_to_use = data_structure;
+        if (version != FIRST_VERSION) {
+          if (typeid(ds) != typeid(SnapshotTransaction)) {
+            cout << "Skipping BFS experiment with version " << version << " and data structure " << typeid(ds).name() << endl;
+            continue;
+          } else {
+            transaction_to_use = tm.getSnapshotTransaction(versioned_data_structure, version);
+            ds_to_use = &transaction_to_use;
+          }
+        }
+        run_bfs_experiment(*ds_to_use, run_on_raw_neighbourhood, aquire_locks);
+        break;
+      }
+      case (TRIANGLE_COUNTING): {
+        if (run_on_raw_neighbourhood) {
+          throw NotImplemented();
+        }
+        run_triangle_counting_experiment(*data_structure);
+        break;
+      }
+      case (COMMUNITY_DETECTION): {
+        throw NotImplemented("Current implementation is incorrect");
+        if (run_on_raw_neighbourhood) {
+          throw NotImplemented();
+        }
+        run_community_detection(*data_structure);
+        break;
+      }
+      case (PR): {
+        run_page_rank_experiment(*data_structure, run_on_raw_neighbourhood);
+        break;
+      }
+      case (INSERT): {
+        if (run_on_raw_neighbourhood) {
+          throw NotImplemented();
+        }
+        run_insert_experiment(*data_structure, inserts);
+        break;
+      }
+      case (DELETE): {
+        if (run_on_raw_neighbourhood) {
+          throw NotImplemented();
+        }
+        run_delete_experiment(*data_structure, deletes);
+        break;
+      }
+      case (STORAGE): {
+        show_storage_sizes(ds_name, *data_structure);
+        break;
+      }
+      default:
+        throw ConfigurationError("Unknown experiment type");
     }
-    run_triangle_counting_experiment(*data_structure);
   }
-  if (config.experiments.find(COMMUNITY_DETECTION) != config.experiments.end()) {
-    if (run_on_raw_neighbourhood) {
-      throw NotImplemented();
-    }
-    run_community_detection(*data_structure);
-  }
-  if(config.experiments.find(PR) != config.experiments.end()) {
-    run_page_rank_experiment(*data_structure, run_on_raw_neighbourhood);
-  }
-  if (config.experiments.find(INSERT) != config.experiments.end()) {
-    if (run_on_raw_neighbourhood) {
-      throw NotImplemented();
-    }
-    run_insert_experiment(*data_structure, inserts);
-  }
-  if (config.experiments.find(DELETE) != config.experiments.end()) {
-    if (run_on_raw_neighbourhood) {
-      throw NotImplemented();
-    }
-    run_delete_experiment(*data_structure, deletes);
-  }
-
-  if (config.experiments.find(STORAGE) != config.experiments.end()) {
-    show_storage_sizes(ds_name, *data_structure);
-  }
-
 
   if (config.validate_datastructures) {
     validate_graph_structure(*data_structure, base, inserts, deletes);
   }
 }
 
-void Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood) {
+void
+Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool aquire_locks) {
   BFSSourceSelector ss(*this, config.base, ds);
   vertex_id_t start_vertex = ss.get_source();
 
   cout << "Running BFS experiment ";
   cout.flush();
 
-  vector <uint> distances;
+  vector<uint> distances;
 
-  vector <size_t> run_times;
+  vector<size_t> run_times;
   for (int rep = 0; rep < config.repetitions; rep++) {
     // BFS
     auto start = chrono::steady_clock::now();
-    distances = Algorithms::bfs(*this, ds, start_vertex, run_on_raw_neighbourhood, false);
+    distances = Algorithms::bfs(*this, ds, start_vertex, run_on_raw_neighbourhood, aquire_locks);
     auto end = chrono::steady_clock::now();
 
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
@@ -311,8 +342,8 @@ void Driver::run_insert_experiment(TopologyInterface &ds, EdgeList &el) {
       ds.insert_edge(e);
     }
   } else {
-    atomic <uint> insert_index(0);
-    vector <thread> ts;
+    atomic<uint> insert_index(0);
+    vector<thread> ts;
     for (int i = 0; i < threads; i++) {
       ts.emplace_back(run_inserts, ref(el), ref(insert_index), ref(ds));
     }
@@ -322,7 +353,7 @@ void Driver::run_insert_experiment(TopologyInterface &ds, EdgeList &el) {
     }
   }
   if (typeid(ds) == typeid(SnapshotTransaction)) {
-    dynamic_cast<SnapshotTransaction&>(ds).execute();
+    dynamic_cast<SnapshotTransaction &>(ds).execute();
   }
   auto end = chrono::steady_clock::now();
 
@@ -344,7 +375,7 @@ void Driver::run_triangle_counting_experiment(TopologyInterface &ds) {
   cout << "Running triangle experiment ";
   cout.flush();
 
-  vector <size_t> run_times;
+  vector<size_t> run_times;
   size_t triangles;
   vector<dst_t> out;
   for (int rep = 0; rep < config.repetitions; rep++) {
@@ -354,7 +385,7 @@ void Driver::run_triangle_counting_experiment(TopologyInterface &ds) {
 
     if (typeid(ds) == typeid(HashSetAdjacencyLists)) {
       for (int a = 0; a < ds.vertex_count(); a++) {
-        auto a_neighbours = (robin_hood::unordered_flat_set<dst_t>*) ds.raw_neighbourhood(a);
+        auto a_neighbours = (robin_hood::unordered_flat_set<dst_t> *) ds.raw_neighbourhood(a);
 
         for (auto b : *a_neighbours) {
           if (a < b) {
@@ -416,16 +447,17 @@ void Driver::run_triangle_counting_experiment(TopologyInterface &ds) {
 }
 
 void Driver::run_neighbourhood_2_experiment(TopologyInterface &ds,
-                                            const vector <vector<vertex_id_t>> &sources,
+                                            const vector<vector<vertex_id_t>> &sources,
                                             bool run_raw_neighbourhood) {
   cout << "Running 2 neighbourhood experiment ";
   cout.flush();
 
-  vector <size_t> run_times;
+  vector<size_t> run_times;
 
   for (int rep = 0; rep < config.repetitions; rep++) {
     auto start = chrono::steady_clock::now();
-    unordered_map<vertex_id_t, size_t> neighbour_counts = Algorithms::neighbourhood_2(*this, ds, sources[rep], run_raw_neighbourhood);
+    unordered_map<vertex_id_t, size_t> neighbour_counts = Algorithms::neighbourhood_2(*this, ds, sources[rep],
+                                                                                      run_raw_neighbourhood);
     auto end = chrono::steady_clock::now();
 
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
@@ -491,7 +523,7 @@ EdgeIterator &Driver::getSingleEdgeIter(TopologyInterface &ds) {
   }
 }
 
-void Driver::check_bfs(vertex_id_t start_vertex, vector <uint> &distances, bool validate_inserts) {
+void Driver::check_bfs(vertex_id_t start_vertex, vector<uint> &distances, bool validate_inserts) {
   cout << "Validating bfs experiment" << endl;
   string inserts = "base";
   if (validate_inserts) {
@@ -537,12 +569,12 @@ void Driver::validate_graph_structure(TopologyInterface &ds, SortedCSRDataSource
   cout << "Validating data structure." << endl;
   auto vertices = base.vertex_count();
 
-  unordered_multimap <vertex_id_t, dst_t> insert_map;
-  unordered_multimap <vertex_id_t, dst_t> delete_map;
-  if (config.experiments.find(INSERT) != config.experiments.end()) {
+  unordered_multimap<vertex_id_t, dst_t> insert_map;
+  unordered_multimap<vertex_id_t, dst_t> delete_map;
+  if (config.experiment_set.find(INSERT) != config.experiment_set.end()) {
     insert_map = inserts.to_map();
   }
-  if (config.experiments.find(DELETE) != config.experiments.end()) {
+  if (config.experiment_set.find(DELETE) != config.experiment_set.end()) {
     delete_map = deletes.to_map();
   }
   for (vertex_id_t v = 0; v < vertices; v++) {
@@ -693,7 +725,7 @@ void Driver::run_community_detection(TopologyInterface &ds) {
 
   const uint max_iterations = 5;
 
-  vector <size_t> run_times;
+  vector<size_t> run_times;
 
   size_t vertex_count = ds.vertex_count();
 
@@ -706,8 +738,8 @@ void Driver::run_community_detection(TopologyInterface &ds) {
     auto &active_old = active1;
     auto &active_new = active2;
 
-    vector <vertex_id_t> labels1(vertex_count);
-    vector <vertex_id_t> labels2(vertex_count);
+    vector<vertex_id_t> labels1(vertex_count);
+    vector<vertex_id_t> labels2(vertex_count);
 
     auto &l_old = labels1;
     auto &l_new = labels2;
@@ -719,7 +751,7 @@ void Driver::run_community_detection(TopologyInterface &ds) {
     }
 
     // Needs to be ordered for correctness; to find the minimum label.
-    map <vertex_id_t, size_t> label_counts;
+    map<vertex_id_t, size_t> label_counts;
     bool done = false;
 
     uint iterations = 0;
@@ -785,7 +817,7 @@ void Driver::run_community_detection(TopologyInterface &ds) {
 
 
 // TODO shouldn't community detection converge?
-void Driver::check_community_detection(vector <vertex_id_t> labels) {
+void Driver::check_community_detection(vector<vertex_id_t> labels) {
   cout << "Validating community experiment" << endl;
   const string gold_standard_file =
           config.gold_standard_directory + "/community_" + config.base.get_name() + ".goldStandard";
@@ -837,13 +869,13 @@ void Driver::print_graph(TopologyInterface &ds) {
   }
 }
 
-void Driver::run_page_rank_experiment(TopologyInterface& ds, bool run_on_raw_neighbourhood) {
+void Driver::run_page_rank_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood) {
   cout << "Running PR experiment ";
   cout.flush();
 
-  vector <float> scores;
+  vector<float> scores;
 
-  vector <size_t> run_times;
+  vector<size_t> run_times;
   for (int rep = 0; rep < config.repetitions; rep++) {
     // BFS
     auto start = chrono::steady_clock::now();
@@ -868,46 +900,46 @@ void Driver::run_page_rank_experiment(TopologyInterface& ds, bool run_on_raw_nei
   cout << endl << "PR run in average in " << average << " milliseconds " << endl;
 }
 
-void Driver::check_page_rank(vector<float>& scores) {
-    cout << "Validating Page Rank experiment" << endl;
-    string inserts = "base";
+void Driver::check_page_rank(vector<float> &scores) {
+  cout << "Validating Page Rank experiment" << endl;
+  string inserts = "base";
 
-    const string gold_standard_file =
-            config.gold_standard_directory + "/pr_" + config.base.get_name() + ".goldStandard";
-    if (!file_exists(gold_standard_file)) {
-      cout << "Writing new gold standard for: " << gold_standard_file << endl;
-      ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
+  const string gold_standard_file =
+          config.gold_standard_directory + "/pr_" + config.base.get_name() + ".goldStandard";
+  if (!file_exists(gold_standard_file)) {
+    cout << "Writing new gold standard for: " << gold_standard_file << endl;
+    ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
 
-      if (!f.good()) {
-        assert(false);
-      }
-
-      size_t size = scores.size();
-      f.write((char *) &size, sizeof(size));
-
-      for (float s : scores) {
-        f.write((char *) &s, sizeof(s));
-      }
-      f.close();
-    } else {
-      ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
-
-      size_t size;
-      f.read((char *) &size, sizeof(size));
-      assert(size == scores.size());
-
-      float e;
-      for (float d : scores) {
-        f.read((char *) &e, sizeof(d));
-        assert(fabs(d - e) < 1e-4);  // TODO move PR precission to Configuration
-      }
-
-      f.close();
+    if (!f.good()) {
+      assert(false);
     }
-  }
 
-void Driver::show_storage_sizes(string ds_name, TopologyInterface& ds) {
-  cout << "Storage size of " << setw (10) << ds_name << endl;
+    size_t size = scores.size();
+    f.write((char *) &size, sizeof(size));
+
+    for (float s : scores) {
+      f.write((char *) &s, sizeof(s));
+    }
+    f.close();
+  } else {
+    ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
+
+    size_t size;
+    f.read((char *) &size, sizeof(size));
+    assert(size == scores.size());
+
+    float e;
+    for (float d : scores) {
+      f.read((char *) &e, sizeof(d));
+      assert(fabs(d - e) < 1e-4);  // TODO move PR precission to Configuration
+    }
+
+    f.close();
+  }
+}
+
+void Driver::show_storage_sizes(string ds_name, TopologyInterface &ds) {
+  cout << "Storage size of " << setw(10) << ds_name << endl;
   ds.report_storage_size();
 }
 

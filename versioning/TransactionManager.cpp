@@ -2,6 +2,7 @@
 // Created by per on 23.12.20.
 //
 
+#include <iostream>
 #include "TransactionManager.h"
 
 SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface* ti) {
@@ -36,4 +37,9 @@ void TransactionManager::transactionCompleted(SnapshotTransaction &transaction) 
       min_version = *(--active_versions.rend());
     }
   }
+}
+
+SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, version_t v) {
+  cerr << "Warning: creating snapshot transaction with custom version, this is not save in connection with GC, use only if you know what you are doing." << endl;
+  return SnapshotTransaction(v, ti);
 }

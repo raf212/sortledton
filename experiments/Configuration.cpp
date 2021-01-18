@@ -46,6 +46,9 @@ void Config::initialize(int argc, char **argv) {
         break;
       case 'e':
         experiments = parse_experiments(optarg);
+        for (auto e : experiments) {
+          experiment_set.insert(e.first);
+        }
         break;
       case 's':
         data_structures = parse_data_structures(optarg);
@@ -103,7 +106,6 @@ vector<pair<DataStructures, vector<string>>> Config::parse_data_structures(strin
     vector<string> parameters;
     auto parameters_start = d.find('(');
 
-
     if (parameters_start != string::npos) {
         data_structure_name = d.substr(0, parameters_start);
         parameters = string_split('\'', d.substr(parameters_start + 1, d.find(')') - (parameters_start + 1)));
@@ -113,24 +115,33 @@ vector<pair<DataStructures, vector<string>>> Config::parse_data_structures(strin
     if (mapping == ds_map.end()) {
       throw ConfigurationError("Unknown data structure " + d);
     } else {
-      ret.push_back({mapping->second, parameters});
+      ret.emplace_back(mapping->second, parameters);
     }
   }
 
   return ret;
 }
 
-unordered_set<Experiments> Config::parse_experiments(string arg) {
-  unordered_set<Experiments> ret;
+vector<pair<Experiments, vector<string>>> Config::parse_experiments(string arg) {
+  vector<pair<Experiments, vector<string>>> ret;
   auto es = string_split(',', arg);
 
   auto map = reverse_map(EXPERIMENT_MAPPING);
   for (const auto& e : es) {
+    vector<string> parameters;
+    auto experiment_name = e;
+    auto parameters_start = e.find('(');
+
+    if (parameters_start != string::npos) {
+      experiment_name = e.substr(0, parameters_start);
+      parameters = string_split('\'', e.substr(parameters_start + 1, e.find(')') - (parameters_start + 1)));
+    }
+
     auto mapping = map.find(e);
     if (mapping == map.end()) {
       throw ConfigurationError("Unknown experiment " + e);
     } else {
-      ret.insert(mapping->second);
+      ret.emplace_back(mapping->second, parameters);
     }
   }
 

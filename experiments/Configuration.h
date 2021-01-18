@@ -97,7 +97,8 @@ public:
     const static unordered_map<Experiments, string> EXPERIMENT_MAPPING;
 
     vector<pair<DataStructures, vector<string>>> data_structures;
-    unordered_set<Experiments> experiments;
+    vector<pair<Experiments, vector<string>>> experiments;
+    unordered_set<Experiments> experiment_set;
 
     Dataset base;
     Dataset insertions;
@@ -125,8 +126,7 @@ private:
 
     vector<pair<DataStructures, vector<string>>> parse_data_structures(string arg);
 
-    unordered_set<Experiments> parse_experiments(string arg);
-
+    vector<pair<Experiments, vector<string>>> parse_experiments(string arg);
 };
 
 #endif //LIVE_GRAPH_TWO_CONFIGURATION_H
