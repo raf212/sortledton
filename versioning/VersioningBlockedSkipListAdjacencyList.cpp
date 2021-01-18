@@ -53,12 +53,13 @@ void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start
     return nullptr;
   } else if (size <= block_size) {
     size_t block_size = round_up_power_of_two(size);
-    dst_t *block = (dst_t *) malloc((block_size + 1) * sizeof(dst_t));  // TODO is it better to have blocks of sizes with power of twos.
+    dst_t *block = (dst_t *) malloc(
+            (block_size + 1) * sizeof(dst_t));  // TODO is it better to have blocks of sizes with power of twos.
 
     block[0] = size;
     memcpy((void *) (block + 1), (void *) start, size * sizeof(dst_t));
 
-    return (void*) ((uint64_t) block | EDGE_SET_TYPE_MASK);
+    return (void *) ((uint64_t) block | EDGE_SET_TYPE_MASK);
   } else {
     VSkipListHeader *first_block = nullptr;
     VSkipListHeader *last_block = nullptr;
@@ -104,7 +105,7 @@ void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start
     auto b = first_block;
     auto a_size = 0;
     while (b != nullptr) {
-      for (auto i = 0; i < b->size; i ++) {
+      for (auto i = 0; i < b->size; i++) {
         a_size++;
       }
       b = b->next_levels[0];
@@ -117,11 +118,11 @@ void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start
 }
 
 dst_t *VersioningBlockedSkipListAdjacencyList::get_data_pointer(VSkipListHeader *header) const {
-  return (dst_t *) ((char*) header + skip_list_header_size());
+  return (dst_t *) ((char *) header + skip_list_header_size());
 }
 
 void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version) {
-   void *adjacency_list = raw_neighbourhood_version(edge.src, version);
+  void *adjacency_list = raw_neighbourhood_version(edge.src, version);
 
   // Insert to empty list
   if (adjacency_list == nullptr) {
@@ -399,7 +400,7 @@ bool VersioningBlockedSkipListAdjacencyList::size_is_versioned(vertex_id_t v) {
 }
 
 VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size, size_t levels)
-  : block_size (block_size), levels(levels) {
+        : block_size(block_size), levels(levels) {
   if (round_up_power_of_two(block_size) != block_size) {
     throw ConfigurationError("Block size needs to be a power of two.");
   }
@@ -413,7 +414,7 @@ size_t VersioningBlockedSkipListAdjacencyList::vertex_count_version(version_t ve
 
 void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_version(vertex_id_t src, version_t version) {
   // TODO vertex versions not supported yet.
-  return (void*) ((uint64_t) adjacency_index[2 * src] & ~EDGE_SET_TYPE_MASK);
+  return (void *) ((uint64_t) adjacency_index[2 * src] & ~EDGE_SET_TYPE_MASK);
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::memory_block_size() {
@@ -442,7 +443,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_empty(edge_t edge, version_t
   block[1] = make_versioned(edge.dst);
   block[2] = inline_version(false, false, version);
 
-  adjacency_index[2 * edge.src] = (void*) ((uint64_t) block | EDGE_SET_TYPE_MASK);
+  adjacency_index[2 * edge.src] = (void *) ((uint64_t) block | EDGE_SET_TYPE_MASK);
 
   update_adjacency_size(edge.src, false, version);
 }
@@ -462,12 +463,14 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
   auto size = block[0];
   auto block_capacity = round_up_power_of_two(size);
 
-  if (size < block_capacity - 1) {  // If block is not too full; -1 for enough space to insert new edge and version, insert into block by shifting
+  if (size < block_capacity -
+             1) {  // If block is not too full; -1 for enough space to insert new edge and version, insert into block by shifting
     insert_by_shift(block + 1, block + 1 + size, edge.dst, version);
     block[0] = size + 2;
     update_adjacency_size(edge.src, false, version);
   } else {  // else resize block or add skip list
-    if (block_capacity == block_size) {    // Block should be split into 2 skip list blocks, we do this in two steps, convert to SkipListHeader and then by recursion split into two.
+    if (block_capacity ==
+        block_size) {    // Block should be split into 2 skip list blocks, we do this in two steps, convert to SkipListHeader and then by recursion split into two.
       VSkipListHeader *new_block = (VSkipListHeader *) malloc(memory_block_size());
       new_block->data = get_data_pointer(new_block);
       new_block->size = size;
@@ -492,7 +495,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
       return insert_skip_list(edge,
                               version); // recursive call of depth 2, inefficient could be done with one time less copying.
     } else { // Block full: we double size and copy.
-      dst_t *new_block = (dst_t *) malloc((block_capacity * 2  + 1) * sizeof(dst_t));
+      dst_t *new_block = (dst_t *) malloc((block_capacity * 2 + 1) * sizeof(dst_t));
 
       new_block[0] = size + 2;  // old size plus new edge and version
 
@@ -508,7 +511,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
              sizeof(dst_t) * (size - pos_to_insert));
 
       free(block);
-      adjacency_index[edge.src * 2] = (void*) ((uint64_t) new_block | EDGE_SET_TYPE_MASK);
+      adjacency_index[edge.src * 2] = (void *) ((uint64_t) new_block | EDGE_SET_TYPE_MASK);
       update_adjacency_size(edge.src, false, version);
     }
   }
@@ -542,7 +545,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
   auto i = blocks_per_level[0];
 
   // Handle a full block
-  if (block_size <= i->size + 1 ) {
+  if (block_size <= i->size + 1) {
     auto data = get_data_pointer(i);
     auto split = block_size / 2;
 
@@ -593,15 +596,28 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
   }
 }
 
-void VersioningBlockedSkipListAdjacencyList::insert_by_shift(dst_t* start, dst_t* end, dst_t dst, version_t version) {
-  auto pos_to_insert = find_upper_bound(start, end, dst);
-
-  for (auto i = end - 1; pos_to_insert <= i; i--) {
-    *(i + 2) = *i;
+void VersioningBlockedSkipListAdjacencyList::insert_by_shift(dst_t *start, dst_t *end, dst_t dst, version_t version) {
+  auto i = end - 1;
+  for (; start <= i; i--) {
+    if (start < i && is_versioned(*(i - 1))) {
+      if (dst < make_unversioned(*(i - 1))) {
+        *(i + 2) = *i;
+        i--;
+        *(i + 2) = *i;
+      } else {
+        break;
+      }
+    } else if (dst < make_unversioned(*i)) {
+      *(i + 2) = *i;
+    } else {
+      break;
+    }
   }
 
-  *pos_to_insert = make_versioned(dst);
-  *(pos_to_insert + 1) = inline_version(false, false, version);
+  i++;
+
+  *i = make_versioned(dst);
+  *(i + 1) = inline_version(false, false, version);
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::get_block_size() {
