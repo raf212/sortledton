@@ -21,11 +21,15 @@ typedef vertex_id_t dst_t;
 // The first bit of a dst_t type is set if the edge is versioned.
 #define VERSION_MASK (1 << 31)
 
-bool is_versioned(dst_t e);
+#define make_versioned(e) (e | VERSION_MASK)
+#define make_unversioned(e) (e & ~VERSION_MASK)
+#define is_versioned(e) (e & VERSION_MASK)
 
-dst_t make_versioned(dst_t e);
-
-dst_t make_unversioned(dst_t e);
+//bool is_versioned(dst_t e);
+//
+//dst_t make_versioned(dst_t e);
+//
+//dst_t make_unversioned(dst_t e);
 
 // version timestamp if the second bit is set there are further versions, if the third bit is set this version is a deletion.
 // it is important that the first bit is never set

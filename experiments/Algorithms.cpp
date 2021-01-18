@@ -16,6 +16,7 @@
 #include <BlockedSkipListAdjacencyLists.h>
 #include <versioning/SnapshotTransaction.h>
 #include <versioning/VersioningBlockedSkipListAdjacencyList.h>
+#include <data_types.h>
 
 vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
   size_t vertices_traversed = 0;
