@@ -69,7 +69,7 @@ private:
     bool assert_preconditions();
 
     vector<Precondition*> preconditions {};   // TODO add preconditions again
-    set<vertex_id_t> locks_to_aquire {};
+    vector<vertex_id_t> locks_to_aquire {};
     vector<vertex_id_t> vertices_to_delete {};
     vector<vertex_id_t> vertices_to_insert {};
     vector<edge_t> edges_to_delete {};

@@ -51,7 +51,7 @@ bool SnapshotTransaction::execute() {
 
 void SnapshotTransaction::register_precondition(unique_ptr<Precondition> c) {
   for (vertex_id_t l : c->requires_vertex_locks()) {
-    locks_to_aquire.insert(l);
+    locks_to_aquire.push_back(l);
   }
   preconditions.push_back(c.release());
 }
@@ -66,14 +66,23 @@ bool SnapshotTransaction::assert_preconditions() {
 }
 
 void SnapshotTransaction::aquire_locks() {
-  for (auto & v : locks_to_aquire) {  // Relies on locks_to_aquire being a sorted data structure
-    ds->aquire_vertex_lock(v);
+  sort(locks_to_aquire.begin(), locks_to_aquire.end());
+  vertex_id_t last_lock = numeric_limits<vertex_id_t>::max();
+  for (const auto & v : locks_to_aquire) {  // Relies on locks_to_aquire being a sorted data structure
+    if (v != last_lock) {
+      ds->aquire_vertex_lock(v);
+      last_lock = v;
+    }
   }
 }
 
 void SnapshotTransaction::release_locks() {
-  for (auto & v : locks_to_aquire) {
-    ds->release_vertex_lock(v);
+  vertex_id_t last_lock = numeric_limits<vertex_id_t>::max();
+  for (auto & v : locks_to_aquire) {  // Relies on locks_to_aquire being a sorted data structure
+    if (v != last_lock) {
+      ds->release_vertex_lock(v);
+      last_lock = v;
+    }
   }
 }
 
@@ -82,22 +91,22 @@ size_t SnapshotTransaction::vertex_count() {
 }
 
 void SnapshotTransaction::insert_vertex(vertex_id_t v) {
-  locks_to_aquire.insert(v);
+  locks_to_aquire.push_back(v);
   vertices_to_insert.push_back(v);
 }
 
 void SnapshotTransaction::delete_vertex(vertex_id_t v) {
-  locks_to_aquire.insert(v);
+  locks_to_aquire.push_back(v);
   vertices_to_delete.push_back(v);
 }
 
 void SnapshotTransaction::insert_edge(edge_t edge) {
-  locks_to_aquire.insert(edge.src);
+  locks_to_aquire.push_back(edge.src);
   edges_to_insert.push_back(edge);
 }
 
 void SnapshotTransaction::delete_edge(edge_t edge) {
-  locks_to_aquire.insert(edge.src);
+  locks_to_aquire.push_back(edge.src);
   edges_to_delete.push_back(edge);
 }
 
