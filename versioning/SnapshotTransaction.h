@@ -58,7 +58,7 @@ public:
 
     void report_storage_size() override;
 
-    version_t get_version();
+    version_t get_version() const override;
 protected:
     version_t version;
     VersionedTopologyInterface* ds;

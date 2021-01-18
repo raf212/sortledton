@@ -9,6 +9,8 @@
 
 #include <data-structures/ToplogyInterface.h>
 #include <data-src/EdgeList.h>
+#include <versioning/TransactionManager.h>
+#include <versioning/VersionedTopologyInterface.h>
 #include "data-structures/adjacency-lists/BlockedBatchedEdgeIterator.h"
 #include "data-structures/adjacency-lists/VectorBatchedEdgeIterator.h"
 #include "Reporter.h"
@@ -41,6 +43,7 @@ private:
     void load_base_dataset(TopologyInterface& ds, SortedCSRDataSource& base);
 
     void run_insert_experiment(TopologyInterface& ds, EdgeList& el);
+    void run_insert_experiment_one_by_one(TransactionManager& tm, VersionedTopologyInterface* ds , EdgeList &el);
     void check_insert(TopologyInterface& ds, EdgeList& el);
 
     void run_delete_experiment(TopologyInterface& ds, EdgeList& el);

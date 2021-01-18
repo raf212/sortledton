@@ -22,7 +22,7 @@ public:
     SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, version_t v);
     SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti);
 
-    void transactionCompleted(SnapshotTransaction& transaction);
+    void transactionCompleted(const Transaction& transaction);
 
 private:
     mutex global_lock {};

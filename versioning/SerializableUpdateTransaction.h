@@ -11,7 +11,7 @@
 #include <memory>
 #include <utils/NotImplemented.h>
 
-class SerializableUpdateTransaction : Transaction {
+class SerializableUpdateTransaction : public Transaction {
 private:
     SnapshotTransaction transaction;
 
@@ -63,6 +63,9 @@ public:
       throw NotImplemented();
     };
 
+    version_t get_version() const override  {
+      return transaction.get_version();
+    };
 };
 
 

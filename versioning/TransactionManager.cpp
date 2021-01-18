@@ -25,7 +25,7 @@ SerializableUpdateTransaction TransactionManager::getWriteOnlyUpdateTransaction(
   return SerializableUpdateTransaction(getSnapshotTransaction(ti));
 }
 
-void TransactionManager::transactionCompleted(SnapshotTransaction &transaction) {
+void TransactionManager::transactionCompleted(const Transaction &transaction) {
   lock_guard<mutex> l(global_lock);
   auto v = transaction.get_version();
   auto min = *(--active_versions.rend());

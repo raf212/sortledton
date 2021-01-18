@@ -10,7 +10,7 @@
 #include "IllegalOperation.h"
 #include "SnapshotTransaction.h"
 
-class ReadOnlyTransaction : Transaction {
+class ReadOnlyTransaction : public Transaction {
 private:
     SnapshotTransaction transaction;
 
@@ -76,6 +76,10 @@ public:
 
     void report_storage_size() override {
       transaction.report_storage_size();
+    };
+
+    version_t get_version() const override {
+      return transaction.get_version();
     };
 
 };

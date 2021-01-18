@@ -253,6 +253,17 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         run_insert_experiment(*data_structure, inserts);
         break;
       }
+      case (INSERT_TRANSACTIONS): {
+        if (run_on_raw_neighbourhood) {
+          throw NotImplemented();
+        }
+        if (typeid(ds) != typeid(SnapshotTransaction)) {
+          cout << "Skipping experiment insert transactions for data structure " << ds_name << endl;
+          continue;
+        }
+        run_insert_experiment_one_by_one(tm, versioned_data_structure, inserts);
+        break;
+      }
       case (DELETE): {
         if (run_on_raw_neighbourhood) {
           throw NotImplemented();
@@ -329,6 +340,24 @@ void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &
       work++;
     }
   }
+}
+
+void run_inserts_in_transactions(EdgeList &el, atomic_uint &insert_position, TransactionManager& tm, VersionedTopologyInterface* ds) {
+  const int batch_size = 500;
+
+  const int total_work = el.edges.size();
+  while (insert_position.load() < total_work) {
+    int work = insert_position.fetch_add(batch_size);
+    int work_end = min(total_work, work + batch_size);
+
+    while (work < work_end) {
+      SerializableUpdateTransaction tx = tm.getWriteOnlyUpdateTransaction(ds);
+      tx.insert_edge(el.edges[work]);
+      tx.execute();
+      tm.transactionCompleted(tx);
+      work++;
+    }
+  }
 
 }
 
@@ -366,6 +395,43 @@ void Driver::run_insert_experiment(TopologyInterface &ds, EdgeList &el) {
   check_insert(ds, el);
 #endif
 }
+
+void Driver::run_insert_experiment_one_by_one(TransactionManager& tm, VersionedTopologyInterface* ds , EdgeList &el) {
+  cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
+  uint threads = config.insert_threads;
+
+  auto start = chrono::steady_clock::now();
+  if (threads == 1) {
+    for (auto e : el.edges) {
+      SerializableUpdateTransaction tx = tm.getWriteOnlyUpdateTransaction(ds);
+      tx.insert_edge(e);
+      tx.execute();
+      tm.transactionCompleted(tx);
+    }
+  } else {
+    atomic<uint> insert_index(0);
+    vector<thread> ts;
+    for (int i = 0; i < threads; i++) {
+      ts.emplace_back(run_inserts_in_transactions, ref(el), ref(insert_index), ref(tm), ds);
+    }
+
+    for (auto &t : ts) {
+      t.join();
+    }
+  }
+  auto end = chrono::steady_clock::now();
+
+  size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
+  reporter.add_repetition(INSERT, 0, microseconds);
+
+  cout << "Inserting took: " << microseconds / 1000 << " milliseconds " << endl;
+  cout << "This is " << ((float) el.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
+#ifdef DEBUG
+  auto rotx = tm.getReadOnlyTransaction(ds);
+  check_insert(rotx, el);
+#endif
+}
+
 
 void Driver::run_delete_experiment(TopologyInterface &ds, EdgeList &el) {
   throw NotImplemented();

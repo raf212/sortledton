@@ -162,6 +162,7 @@ const unordered_map<DataStructures, string> Config::DATA_STRUCTURE_MAPPING {
 
 const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING{
         {INSERT, "insert"},
+        {INSERT, "insert_tx"},
         {DELETE, "delete"},
         {BFS,    "bfs"},
         {PR, "pr"},

@@ -127,7 +127,7 @@ void SnapshotTransaction::report_storage_size() {
   return ds->report_storage_size();
 }
 
-version_t SnapshotTransaction::get_version() {
+version_t SnapshotTransaction::get_version() const {
   return version;
 }
 

@@ -11,6 +11,7 @@
 #include "Precondition.h"
 
 class Transaction : public TopologyInterface {
+public :
     virtual void insert_vertex(vertex_id_t v) = 0;
     virtual void delete_vertex(vertex_id_t v) = 0;
 
@@ -18,6 +19,8 @@ class Transaction : public TopologyInterface {
     void delete_vertex() override { throw NotImplemented(); };
 
     bool insert_safe(edge_t e) override { throw NotImplemented(); }
+
+    virtual version_t get_version() const = 0;
 };
 
 
