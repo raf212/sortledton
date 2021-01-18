@@ -123,6 +123,9 @@ dst_t *VersioningBlockedSkipListAdjacencyList::get_data_pointer(VSkipListHeader 
 
 void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version) {
   void *adjacency_list = raw_neighbourhood_version(edge.src, version);
+  if (size_is_versioned(edge.src)) {
+    __builtin_prefetch((void*)((uint64_t) adjacency_index[edge.src * 2 + 1] & ~SIZE_VERSION_MASK));
+  }
 
   // Insert to empty list
   if (adjacency_list == nullptr) {
