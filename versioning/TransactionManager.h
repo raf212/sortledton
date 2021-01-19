@@ -32,6 +32,8 @@ public:
 
     void transactionCompleted(const Transaction& transaction, size_t thread_id);
 
+    version_t getMinActiveVersion();
+
 private:
     uint threads;
     uint last_thread_id =0;

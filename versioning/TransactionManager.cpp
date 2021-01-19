@@ -44,3 +44,7 @@ size_t TransactionManager::register_thread() {
   thread_id_mapping.insert({this_thread::get_id(), id});
   return id;
 }
+
+version_t TransactionManager::getMinActiveVersion() {
+  return min_version;
+}

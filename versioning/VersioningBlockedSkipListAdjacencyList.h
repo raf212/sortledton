@@ -10,6 +10,8 @@
 #include <random>
 #include <atomic>
 #include <utils/NotImplemented.h>
+#include <versioning/TransactionManager.h>
+#include <versioning/SizeVersionChainEntry.h>
 #include "VersionedTopologyInterface.h"
 
 // TODO use compile time constant everywhere.
@@ -44,7 +46,7 @@ class MultipleVersionException : exception {
 class VersioningBlockedSkipListAdjacencyList : public VersionedTopologyInterface {
 
 public:
-    VersioningBlockedSkipListAdjacencyList(size_t block_size, size_t levels);
+    VersioningBlockedSkipListAdjacencyList(size_t block_size, size_t levels, TransactionManager& tm);
 
     size_t vertex_count_version(version_t version) override;
 
@@ -72,6 +74,7 @@ public:
     size_t get_block_size();
 
 private:
+    TransactionManager& tm;
     vector<void *> adjacency_index;
     vector<mutex> vertex_mutices;
     vector<atomic_flag> vertex_cas_locks;
@@ -110,6 +113,16 @@ private:
     version_t inline_version(bool deletion, bool more_versions, version_t version);
 
     void update_adjacency_size(vertex_id_t v, bool deletion, version_t version);
+
+    /**
+     * Garbage collects unnecessary versions from a adjacency size version chain. These are all version which are
+     * smaller than collect_after.
+     *
+     * @param start the start of the version chain.
+     * @param collect_after timestamp of the minimal version to keep
+     * @return nullptr or ptr to a garbage collected version which has not been freed.
+     */
+    SizeVersionChainEntry* gc_adjacency_size(SizeVersionChainEntry* start, version_t collect_after);
 };
 
 

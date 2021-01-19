@@ -129,8 +129,8 @@ dst_t *VersioningBlockedSkipListAdjacencyList::get_data_pointer(VSkipListHeader 
 
 void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version) {
   void *adjacency_list = raw_neighbourhood_version(edge.src, version);
-  __builtin_prefetch((void*)((uint64_t) adjacency_list & ~EDGE_SET_TYPE_MASK));
-  __builtin_prefetch((void*)((uint64_t) ((dst_t*) adjacency_list + 1) & ~SIZE_VERSION_MASK));
+  __builtin_prefetch((void *) ((uint64_t) adjacency_list & ~EDGE_SET_TYPE_MASK));
+  __builtin_prefetch((void *) ((uint64_t) ((dst_t *) adjacency_list + 1) & ~SIZE_VERSION_MASK));
 
   // Insert to empty list
   if (unlikely(adjacency_list == nullptr)) {
@@ -161,7 +161,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
  */
 VSkipListHeader *
 VersioningBlockedSkipListAdjacencyList::find_block(VSkipListHeader *pHeader, dst_t element,
-                                                   VSkipListHeader* blocks[LEVELS]) {
+                                                   VSkipListHeader *blocks[LEVELS]) {
   for (int l = levels - 1; 0 <= l; l--) {
     while (pHeader->next_levels[l] != nullptr && pHeader->next_levels[l]->max < element) {
       pHeader = pHeader->next_levels[l];
@@ -406,8 +406,9 @@ bool VersioningBlockedSkipListAdjacencyList::size_is_versioned(vertex_id_t v) {
   return (uint64_t) adjacency_index[2 * v + 1] & SIZE_VERSION_MASK;
 }
 
-VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size, size_t levels)
-        : block_size(block_size), levels(levels) {
+VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size, size_t levels,
+                                                                               TransactionManager &tm)
+        : block_size(block_size), levels(levels), tm(tm) {
   if (round_up_power_of_two(block_size) != block_size) {
     throw ConfigurationError("Block size needs to be a power of two.");
   }
@@ -525,6 +526,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
 }
 
 void VersioningBlockedSkipListAdjacencyList::update_adjacency_size(vertex_id_t v, bool deletion, version_t version) {
+  // TODO needs unit testing.
   auto s = (uint64_t) adjacency_index[2 * v + 1];
 
   auto update = 1;
@@ -532,14 +534,35 @@ void VersioningBlockedSkipListAdjacencyList::update_adjacency_size(vertex_id_t v
     update = -1;
   }
 
-  // TODO GC needed for performant support of the one by one adding.
   if (size_is_versioned(v)) {
     auto chain = (SizeVersionChainEntry *) (s & ~SIZE_VERSION_MASK);
+    auto min_version_to_keep = tm.getMinActiveVersion();
+
+    auto reuse = gc_adjacency_size(chain, min_version_to_keep);
+
+    // After this loop chain stores the element following our new version.
+    // After this loop chain_end stores the element previous to our new version - they can be the same in case of a singleton list.
+    auto chain_end = chain;
+    while (version < chain->version) {
+      chain_end = chain;
+      chain = chain->next;
+    }
+
     if (chain->version == version) {
       chain->current_size += update;
-    } else {
-      chain = new SizeVersionChainEntry(version, chain->current_size + update, chain);
-      adjacency_index[2 * v + 1] = (void *) ((uint64_t) chain | SIZE_VERSION_MASK);
+    } else {  // We add a new entry between chain_end and chain.
+      if (reuse != nullptr) {
+        reuse->version = version;
+        reuse->current_size = chain->current_size + update;
+        reuse->next = chain;
+      } else {
+        reuse = new SizeVersionChainEntry(version, chain->current_size + update, chain);
+      }
+      if (chain_end != chain) {
+        chain_end->next = reuse;
+      } else {
+        adjacency_index[2 * v + 1] = (void *) ((uint64_t) chain | SIZE_VERSION_MASK);
+      }
     }
   } else {
     auto chain = new SizeVersionChainEntry(version, s + update,
@@ -551,7 +574,7 @@ void VersioningBlockedSkipListAdjacencyList::update_adjacency_size(vertex_id_t v
 void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, version_t version) {
   VSkipListHeader *adjacency_list = (VSkipListHeader *) raw_neighbourhood_version(edge.src, version);
 
-  VSkipListHeader* blocks_per_level[LEVELS];
+  VSkipListHeader *blocks_per_level[LEVELS];
   find_block(adjacency_list, edge.dst, blocks_per_level);
 
   auto i = blocks_per_level[0];
@@ -703,4 +726,29 @@ void VersioningBlockedSkipListAdjacencyList::release_vertex_lock(vertex_id_t v) 
 //  vertex_cas_locks[v].clear(std::memory_order_acquire);
 //    adjacency_index[v * 2] = (void*) ((uint64_t) adjacency_index[v * 2] & ~LOCK_MASK);
   vertex_mutices[v].unlock();
+}
+
+SizeVersionChainEntry *
+VersioningBlockedSkipListAdjacencyList::gc_adjacency_size(SizeVersionChainEntry *start, version_t collect_after) {
+  while (start->next != nullptr && collect_after < start->next->version) {
+    start = start->next;
+  }
+  // Now start points to the last version to keep. This could be the FIRST_VERSION.
+  if (start->version == FIRST_VERSION) { // If its the FIRST_VERSION we can free nothing.
+    return nullptr;
+  } else {  // This becomes the new FIRST_VERSION
+    start->version = FIRST_VERSION;
+    auto temp = start->next;
+    start->next = nullptr;  // Terminate list.
+
+    SizeVersionChainEntry *to_free = nullptr;
+    while (temp != nullptr) {
+      if (to_free != nullptr) {
+        free(to_free);
+      }
+      to_free = temp;
+      temp = temp->next;
+    }
+    return to_free;
+  }
 }
