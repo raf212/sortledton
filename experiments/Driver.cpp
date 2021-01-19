@@ -51,7 +51,7 @@ void Driver::run() {
   SortedCSRDataSource base = read_base_dataset();
 
   EdgeList inserts;
-  if (config.experiment_set.find(INSERT) != config.experiment_set.end()) {
+  if (config.experiment_set.find(INSERT) != config.experiment_set.end() || config.experiment_set.find(INSERT_TRANSACTIONS) != config.experiment_set.end()) {
     cout << "Reading insert dataset " << config.insertions.path << endl;
     inserts = read_insert_dataset();
   }
@@ -257,7 +257,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         break;
       }
       case (INSERT_TRANSACTIONS): {
-        if (typeid(ds) != typeid(SnapshotTransaction)) {
+        if (typeid(*data_structure) != typeid(SnapshotTransaction)) {
           cout << "Skipping experiment insert transactions for data structure " << ds_name << endl;
           continue;
         }
@@ -435,8 +435,8 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   cout << "Inserting took: " << microseconds / 1000 << " milliseconds " << endl;
   cout << "This is " << ((float) el.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
 #ifdef DEBUG
-  auto rotx = tm.getReadOnlyTransaction(ds);
-  check_insert(rotx, el);
+  auto tx = tm.getSnapshotTransaction(ds);
+  check_insert(tx, el);
 #endif
 }
 
