@@ -5,29 +5,27 @@
 #include <iostream>
 #include "TransactionManager.h"
 
-SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface* ti) {
+SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface* ti, size_t thread_id) {
   // TODO do not allow to open more than one transaction per thread.
-  size_t id = thread_id_mapping.find(this_thread::get_id())->second;
-  active_snapshots[id] = version.fetch_add(1);
+  active_snapshots[thread_id] = version.fetch_add(1);
 
-  return SnapshotTransaction(active_snapshots[id], ti);
+  return SnapshotTransaction(active_snapshots[thread_id], ti);
 }
 
-ReadOnlyTransaction TransactionManager::getReadOnlyTransaction(VersionedTopologyInterface* ti) {
-  return ReadOnlyTransaction(getSnapshotTransaction(ti));
+ReadOnlyTransaction TransactionManager::getReadOnlyTransaction(VersionedTopologyInterface* ti, size_t thread_id) {
+  return ReadOnlyTransaction(getSnapshotTransaction(ti, thread_id));
 }
 
-SerializableUpdateTransaction TransactionManager::getWriteOnlyUpdateTransaction(VersionedTopologyInterface* ti) {
-  return SerializableUpdateTransaction(getSnapshotTransaction(ti));
+SerializableUpdateTransaction TransactionManager::getWriteOnlyUpdateTransaction(VersionedTopologyInterface* ti, size_t thread_id) {
+  return SerializableUpdateTransaction(getSnapshotTransaction(ti, thread_id));
 }
 
-void TransactionManager::transactionCompleted(const Transaction &transaction) {
-  auto id = thread_id_mapping.find(this_thread::get_id())->second;
-  active_snapshots[id] = NO_TRANSACTION;
+void TransactionManager::transactionCompleted(const Transaction &transaction, size_t thread_id) {
+  active_snapshots[thread_id] = NO_TRANSACTION;
   min_version = min(version.load(), *min_element(active_snapshots.begin(), active_snapshots.end()));
 }
 
-SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, version_t v) {
+SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, version_t v, size_t thread_id) {
 //  cerr << "Warning: creating snapshot transaction with custom version, this is not save in connection with GC, use only if you know what you are doing." << endl;
   return SnapshotTransaction(v, ti);
 }
@@ -36,7 +34,13 @@ TransactionManager::TransactionManager(uint threads) : threads(threads) {
   active_snapshots = vector<version_t>(threads, NO_TRANSACTION);
 }
 
-void TransactionManager::register_thread() {
+size_t TransactionManager::register_thread() {
   lock_guard<mutex> l(global_lock);
-  thread_id_mapping.insert({this_thread::get_id(), last_thread_id++});
+  auto e = thread_id_mapping.find(this_thread::get_id());
+  if (e != thread_id_mapping.end()) {
+    return e->second;
+  }
+  auto id = last_thread_id++;
+  thread_id_mapping.insert({this_thread::get_id(), id});
+  return id;
 }

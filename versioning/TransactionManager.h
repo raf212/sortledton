@@ -23,14 +23,14 @@ class TransactionManager {
 public:
     explicit TransactionManager(uint threads);
 
-    void register_thread();
+    size_t register_thread();
 
-    SerializableUpdateTransaction getWriteOnlyUpdateTransaction(VersionedTopologyInterface* ti);
-    ReadOnlyTransaction getReadOnlyTransaction(VersionedTopologyInterface* ti);
-    SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, version_t v);
-    SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti);
+    SerializableUpdateTransaction getWriteOnlyUpdateTransaction(VersionedTopologyInterface* ti, size_t thread_id);
+    ReadOnlyTransaction getReadOnlyTransaction(VersionedTopologyInterface* ti, size_t thread_id);
+    SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, version_t v, size_t thread_id);
+    SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, size_t thread_id);
 
-    void transactionCompleted(const Transaction& transaction);
+    void transactionCompleted(const Transaction& transaction, size_t thread_id);
 
 private:
     uint threads;

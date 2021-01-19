@@ -84,7 +84,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   string ds_name;
 
   TransactionManager tm(config.insert_threads);
-  tm.register_thread();
+  auto master_thread_id = tm.register_thread();
   VersionedTopologyInterface *versioned_data_structure;
   SnapshotTransaction transaction(0, nullptr);
 
@@ -170,7 +170,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       }
       // TODO I should probably create a new snapshot transaction for each experiment, generally clean up version management in driver.
       versioned_data_structure = new VersioningBlockedSkipListAdjacencyList(block_size, 6);
-      transaction = tm.getSnapshotTransaction(versioned_data_structure);
+      transaction = tm.getSnapshotTransaction(versioned_data_structure, master_thread_id);
       data_structure = &transaction;
       ds_name = "versioned";
       break;
@@ -227,7 +227,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         }
         if (typeid(*data_structure) == typeid(SnapshotTransaction)) {
           cout << "Running BFS experiment on version " << version << endl;
-          transaction_to_use = tm.getSnapshotTransaction(versioned_data_structure, version);
+          transaction_to_use = tm.getSnapshotTransaction(versioned_data_structure, version, master_thread_id);
           ds_to_use = &transaction_to_use;
         }
 
@@ -353,7 +353,7 @@ void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &
 
 void run_inserts_in_transactions(TransactionManager& tm, EdgeList &el, atomic_uint &insert_position,
                                  VersionedTopologyInterface *ds) {
-  tm.register_thread();
+  auto thread_id = tm.register_thread();
   const int batch_size = 500;
 
   const int total_work = el.edges.size();
@@ -362,10 +362,10 @@ void run_inserts_in_transactions(TransactionManager& tm, EdgeList &el, atomic_ui
     int work_end = min(total_work, work + batch_size);
 
     while (work < work_end) {
-      SerializableUpdateTransaction tx = tm.getWriteOnlyUpdateTransaction(ds);
+      SerializableUpdateTransaction tx = tm.getWriteOnlyUpdateTransaction(ds, thread_id);
       tx.insert_edge(el.edges[work]);
       tx.execute();
-      tm.transactionCompleted(tx);
+      tm.transactionCompleted(tx, thread_id);
       work++;
     }
   }
@@ -411,14 +411,14 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
   uint threads = config.insert_threads;
 
+  auto thread_id = tm.register_thread();
   auto start = chrono::steady_clock::now();
   if (threads == 1) {
-    tm.register_thread();
     for (auto e : el.edges) {
-      SerializableUpdateTransaction tx = tm.getWriteOnlyUpdateTransaction(ds);
+      SerializableUpdateTransaction tx = tm.getWriteOnlyUpdateTransaction(ds, thread_id);
       tx.insert_edge(e);
       tx.execute();
-      tm.transactionCompleted(tx);
+      tm.transactionCompleted(tx, thread_id);
     }
   } else {
     atomic<uint> insert_index(0);
@@ -439,7 +439,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   cout << "Inserting took: " << microseconds / 1000 << " milliseconds " << endl;
   cout << "This is " << ((float) el.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
 #ifdef DEBUG
-  auto tx = tm.getSnapshotTransaction(ds);
+  auto tx = tm.getSnapshotTransaction(ds, thread_id);
   check_insert(tx, el);
 #endif
 }
