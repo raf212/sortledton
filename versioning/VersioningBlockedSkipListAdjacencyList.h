@@ -8,6 +8,7 @@
 
 #include <mutex>
 #include <random>
+#include <atomic>
 #include <utils/NotImplemented.h>
 #include "VersionedTopologyInterface.h"
 
@@ -19,6 +20,7 @@
 // The 2nd bit of the adjacency set pointer in the index is used to indicate the VAdjacencySetType.
 // Set means the edge set is of type VSINGLE_BLOCK, unset means it is of type VSKIP_LIST
 #define EDGE_SET_TYPE_MASK (1L << 62)
+#define LOCK_MASK (1L << 61)
 
 /**
  * The types of adjacency sets used.
@@ -72,6 +74,7 @@ public:
 private:
     vector<void *> adjacency_index;
     vector<mutex> vertex_mutices;
+    vector<atomic_flag> vertex_cas_locks;
 
     size_t block_size;
     const float bulk_load_fill_rate = 1.0;
