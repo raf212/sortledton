@@ -607,23 +607,44 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
 
 void VersioningBlockedSkipListAdjacencyList::insert_by_shift(dst_t *start, dst_t *end, dst_t dst, version_t version) {
   auto i = end - 1;
-  for (; start <= i; i--) {
-    if (start < i && is_versioned(*(i - 1))) {
-      if (dst < make_unversioned(*(i - 1))) {
+//  for (; start <= i; i--) {
+//    if (start < i && is_versioned(*(i - 1))) {
+//      if (dst < make_unversioned(*(i - 1))) {
+//        *(i + 2) = *i;
+//        i--;
+//        *(i + 2) = *i;
+//      } else {
+//        break;
+//      }
+//    } else if (dst < make_unversioned(*i)) {
+//      *(i + 2) = *i;
+//    } else {
+//      break;
+//    }
+//  }
+
+  for (; start < i; i--) {
+    if (!is_versioned(*(i-1))) {
+      if (dst < *i) {
+        *(i+2) = *i;
+      } else {
+        break;
+      }
+    } else {
+      if (dst < make_unversioned(*i-1)) {
         *(i + 2) = *i;
         i--;
         *(i + 2) = *i;
       } else {
         break;
       }
-    } else if (dst < make_unversioned(*i)) {
-      *(i + 2) = *i;
-    } else {
-      break;
     }
   }
-
-  i++;
+  if (i==start && !is_versioned(*i) && dst < *i) {
+    *(i+2) = *i;
+  } else {
+    i++;
+  }
 
   *i = make_versioned(dst);
   *(i + 1) = inline_version(false, false, version);
