@@ -11,6 +11,9 @@
 #include <utils/NotImplemented.h>
 #include "VersionedTopologyInterface.h"
 
+// TODO use compile time constant everywhere.
+#define LEVELS 6
+
 // The mask indicating if a size entry in the index is versioned.
 #define SIZE_VERSION_MASK (1L << 63)
 // The 2nd bit of the adjacency set pointer in the index is used to indicate the VAdjacencySetType.
@@ -85,7 +88,7 @@ private:
 
     size_t get_height();
 
-    VSkipListHeader* find_block(VSkipListHeader *pHeader, dst_t element, vector<VSkipListHeader*> &blocks);
+    VSkipListHeader* find_block(VSkipListHeader *pHeader, dst_t element, VSkipListHeader* blocks[LEVELS]);
     VSkipListHeader* find_block1(VSkipListHeader *pHeader, dst_t element);
 
     size_t skip_list_header_size() const;

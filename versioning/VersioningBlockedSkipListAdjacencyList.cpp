@@ -14,6 +14,10 @@
 #include "BlockedSkipListAdjacencyLists.h"
 #include "SizeVersionChainEntry.h"
 
+#define LEVELS 6
+
+#define likely(x)       __builtin_expect((x),1)
+#define unlikely(x)     __builtin_expect((x),0)
 
 // TODO not rewritten to handle versions.
 #define intersect(start_a, end_a, start_b, end_b, out) while (start_a < end_a && start_b < end_b) { \
@@ -123,13 +127,11 @@ dst_t *VersioningBlockedSkipListAdjacencyList::get_data_pointer(VSkipListHeader 
 
 void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version) {
   void *adjacency_list = raw_neighbourhood_version(edge.src, version);
-//  if (size_is_versioned(edge.src)) {
   __builtin_prefetch((void*)((uint64_t) adjacency_list & ~EDGE_SET_TYPE_MASK));
   __builtin_prefetch((void*)((uint64_t) ((dst_t*) adjacency_list + 1) & ~SIZE_VERSION_MASK));
-//  }
 
   // Insert to empty list
-  if (adjacency_list == nullptr) {
+  if (unlikely(adjacency_list == nullptr)) {
     return insert_empty(edge, version);
   } else {
     switch (get_set_type(edge.src, version)) {
@@ -140,7 +142,6 @@ void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
         return insert_skip_list(edge, version);
       }
     }
-
   }
 }
 
@@ -158,7 +159,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
  */
 VSkipListHeader *
 VersioningBlockedSkipListAdjacencyList::find_block(VSkipListHeader *pHeader, dst_t element,
-                                                   vector<VSkipListHeader *> &blocks) {
+                                                   VSkipListHeader* blocks[LEVELS]) {
   for (int l = levels - 1; 0 <= l; l--) {
     while (pHeader->next_levels[l] != nullptr && pHeader->next_levels[l]->max < element) {
       pHeader = pHeader->next_levels[l];
@@ -548,7 +549,7 @@ void VersioningBlockedSkipListAdjacencyList::update_adjacency_size(vertex_id_t v
 void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, version_t version) {
   VSkipListHeader *adjacency_list = (VSkipListHeader *) raw_neighbourhood_version(edge.src, version);
 
-  vector<VSkipListHeader *> blocks_per_level(levels);
+  VSkipListHeader* blocks_per_level[LEVELS];
   find_block(adjacency_list, edge.dst, blocks_per_level);
 
   auto i = blocks_per_level[0];
@@ -564,7 +565,6 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
 
     auto *new_block = (VSkipListHeader *) malloc(memory_block_size());
     new_block->data = get_data_pointer(new_block);
-
 
     memcpy((void *) get_data_pointer(new_block), (void *) (data + split), (i->size - split) * sizeof(dst_t));
 
