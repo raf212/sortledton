@@ -9,14 +9,22 @@
 #include <atomic>
 #include <mutex>
 #include <set>
+#include <thread>
+#include <unordered_map>
 
 #include "Transaction.h"
 #include "SerializableUpdateTransaction.h"
 #include "ReadOnlyTransaction.h"
 
+#define NO_TRANSACTION numeric_limits<version_t>::max()
+
 class TransactionManager {
 
 public:
+    explicit TransactionManager(uint threads);
+
+    void register_thread();
+
     SerializableUpdateTransaction getWriteOnlyUpdateTransaction(VersionedTopologyInterface* ti);
     ReadOnlyTransaction getReadOnlyTransaction(VersionedTopologyInterface* ti);
     SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, version_t v);
@@ -25,12 +33,14 @@ public:
     void transactionCompleted(const Transaction& transaction);
 
 private:
-    mutex global_lock {};
+    uint threads;
+    uint last_thread_id =0;
+    unordered_map<thread::id, size_t> thread_id_mapping;
+    mutex global_lock;
+
+    vector<version_t> active_snapshots;
     atomic<version_t> version {1};
-    set<version_t> active_versions;
-
-    version_t min_version { numeric_limits<version_t>::max()};
-
+    version_t min_version { numeric_limits<version_t>::min()};
 };
 
 

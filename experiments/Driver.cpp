@@ -83,7 +83,8 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   TopologyInterface *data_structure;
   string ds_name;
 
-  TransactionManager tm;
+  TransactionManager tm(config.insert_threads);
+  tm.register_thread();
   VersionedTopologyInterface *versioned_data_structure;
   SnapshotTransaction transaction(0, nullptr);
 
@@ -167,6 +168,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       if (!ds_parameters.empty()) {  // TODO better parameter sanitization
         block_size = stoi(ds_parameters[0]);
       }
+      // TODO I should probably create a new snapshot transaction for each experiment, generally clean up version management in driver.
       versioned_data_structure = new VersioningBlockedSkipListAdjacencyList(block_size, 6);
       transaction = tm.getSnapshotTransaction(versioned_data_structure);
       data_structure = &transaction;
@@ -252,7 +254,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         break;
       }
       case (INSERT): {
-        run_insert_experiment(*data_structure, inserts);
+        run_insert_experiment(tm, *data_structure, inserts);
         inserts_run = true;
         break;
       }
@@ -349,8 +351,9 @@ void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &
   }
 }
 
-void run_inserts_in_transactions(EdgeList &el, atomic_uint &insert_position, TransactionManager &tm,
+void run_inserts_in_transactions(TransactionManager& tm, EdgeList &el, atomic_uint &insert_position,
                                  VersionedTopologyInterface *ds) {
+  tm.register_thread();
   const int batch_size = 500;
 
   const int total_work = el.edges.size();
@@ -369,7 +372,7 @@ void run_inserts_in_transactions(EdgeList &el, atomic_uint &insert_position, Tra
 
 }
 
-void Driver::run_insert_experiment(TopologyInterface &ds, EdgeList &el) {
+void Driver::run_insert_experiment(TransactionManager& tm, TopologyInterface &ds, EdgeList &el) {
   cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
   uint threads = config.insert_threads;
 
@@ -378,7 +381,7 @@ void Driver::run_insert_experiment(TopologyInterface &ds, EdgeList &el) {
     for (auto e : el.edges) {
       ds.insert_edge(e);
     }
-  } else {
+  } else {  // TODO disable this branch if we use a snapshot transaction?
     atomic<uint> insert_index(0);
     vector<thread> ts;
     for (int i = 0; i < threads; i++) {
@@ -410,6 +413,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
 
   auto start = chrono::steady_clock::now();
   if (threads == 1) {
+    tm.register_thread();
     for (auto e : el.edges) {
       SerializableUpdateTransaction tx = tm.getWriteOnlyUpdateTransaction(ds);
       tx.insert_edge(e);
@@ -420,7 +424,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
     atomic<uint> insert_index(0);
     vector<thread> ts;
     for (int i = 0; i < threads; i++) {
-      ts.emplace_back(run_inserts_in_transactions, ref(el), ref(insert_index), ref(tm), ds);
+      ts.emplace_back(run_inserts_in_transactions, ref(tm), ref(el), ref(insert_index), ds);
     }
 
     for (auto &t : ts) {

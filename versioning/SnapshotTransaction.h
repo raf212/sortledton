@@ -74,7 +74,6 @@ private:
     vector<vertex_id_t> vertices_to_insert {};
     vector<edge_t> edges_to_delete {};
     vector<edge_t> edges_to_insert {};
-
 };
 
 

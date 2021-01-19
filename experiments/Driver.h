@@ -42,7 +42,7 @@ private:
 
     void load_base_dataset(TopologyInterface& ds, SortedCSRDataSource& base);
 
-    void run_insert_experiment(TopologyInterface& ds, EdgeList& el);
+    void run_insert_experiment(TransactionManager& tm, TopologyInterface& ds, EdgeList& el);
     void run_insert_experiment_one_by_one(TransactionManager& tm, VersionedTopologyInterface* ds , EdgeList &el);
     void check_insert(TopologyInterface& ds, EdgeList& el);
 

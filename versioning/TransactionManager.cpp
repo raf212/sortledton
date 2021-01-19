@@ -6,15 +6,11 @@
 #include "TransactionManager.h"
 
 SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface* ti) {
-  lock_guard<mutex> l(global_lock);
-  version_t v = version.fetch_add(1);
+  // TODO do not allow to open more than one transaction per thread.
+  size_t id = thread_id_mapping.find(this_thread::get_id())->second;
+  active_snapshots[id] = version.fetch_add(1);
 
-  if (v < min_version) {  // This is the case if there was no active tranaction in the system before.
-    min_version = v;
-  }
-
-  active_versions.insert(version);
-  return SnapshotTransaction(v, ti);
+  return SnapshotTransaction(active_snapshots[id], ti);
 }
 
 ReadOnlyTransaction TransactionManager::getReadOnlyTransaction(VersionedTopologyInterface* ti) {
@@ -26,20 +22,21 @@ SerializableUpdateTransaction TransactionManager::getWriteOnlyUpdateTransaction(
 }
 
 void TransactionManager::transactionCompleted(const Transaction &transaction) {
-  lock_guard<mutex> l(global_lock);
-  auto v = transaction.get_version();
-  auto min = *(--active_versions.rend());
-  active_versions.erase(v);
-  if (v == min) {
-    if (active_versions.empty()) {
-      min_version = numeric_limits<version_t>::min();
-    } else {
-      min_version = *(--active_versions.rend());
-    }
-  }
+  auto id = thread_id_mapping.find(this_thread::get_id())->second;
+  active_snapshots[id] = NO_TRANSACTION;
+  min_version = min(version.load(), *min_element(active_snapshots.begin(), active_snapshots.end()));
 }
 
 SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, version_t v) {
 //  cerr << "Warning: creating snapshot transaction with custom version, this is not save in connection with GC, use only if you know what you are doing." << endl;
   return SnapshotTransaction(v, ti);
+}
+
+TransactionManager::TransactionManager(uint threads) : threads(threads) {
+  active_snapshots = vector<version_t>(threads, NO_TRANSACTION);
+}
+
+void TransactionManager::register_thread() {
+  lock_guard<mutex> l(global_lock);
+  thread_id_mapping.insert({this_thread::get_id(), last_thread_id++});
 }
