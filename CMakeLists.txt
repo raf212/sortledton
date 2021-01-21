@@ -6,6 +6,7 @@ add_subdirectory(tests)
 set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g -shared-libgcc")
 
 include_directories(.)
 include_directories(data-structures)
