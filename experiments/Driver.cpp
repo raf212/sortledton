@@ -354,7 +354,7 @@ void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &
 }
 
 void run_inserts_in_transactions(TransactionManager& tm, EdgeList &el, atomic_uint &insert_position,
-                                 VersionedTopologyInterface *ds) {
+                                 VersionedTopologyInterface *ds, uint total_partitions, uint partition) {
   auto thread_id = tm.register_thread();
   const int batch_size = 10000;
 
@@ -371,7 +371,17 @@ void run_inserts_in_transactions(TransactionManager& tm, EdgeList &el, atomic_ui
       work++;
     }
   }
-
+//
+//  cout << "total" << total_partitions << endl;
+//  cout << "Partition: " << partition << endl;
+//  for (const auto& e : el) {
+//    if (e.src % total_partitions == partition) {
+//      SerializableUpdateTransaction tx = tm.getWriteOnlyUpdateTransaction(ds, thread_id);
+//      tx.insert_edge(e);
+//      tx.execute();
+//      tm.transactionCompleted(tx, thread_id);
+//    }
+//  }
 }
 
 void Driver::run_insert_experiment(TransactionManager& tm, TopologyInterface &ds, EdgeList &el) {
@@ -425,8 +435,10 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   } else {
     atomic<uint> insert_index(0);
     vector<thread> ts;
+    uint partition = 0;
     for (int i = 0; i < threads; i++) {
-      ts.emplace_back(run_inserts_in_transactions, ref(tm), ref(el), ref(insert_index), ds);
+      ts.emplace_back(run_inserts_in_transactions, ref(tm), ref(el), ref(insert_index), ds, config.insert_threads, partition);
+      partition++;
     }
 
     for (auto &t : ts) {
