@@ -22,7 +22,6 @@ SerializableUpdateTransaction TransactionManager::getWriteOnlyUpdateTransaction(
 
 void TransactionManager::transactionCompleted(const Transaction &transaction, size_t thread_id) {
   active_snapshots[thread_id] = NO_TRANSACTION;
-  min_version = min(version.load(), *min_element(active_snapshots.begin(), active_snapshots.end()));
 }
 
 SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, version_t v, size_t thread_id) {
@@ -32,6 +31,7 @@ SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopology
 
 TransactionManager::TransactionManager(uint threads) : threads(threads) {
   active_snapshots = vector<version_t>(threads, NO_TRANSACTION);
+  min_version_updater = thread(&TransactionManager::run_min_version_updater, this, 2000);
 }
 
 size_t TransactionManager::register_thread() {
@@ -47,4 +47,20 @@ size_t TransactionManager::register_thread() {
 
 version_t TransactionManager::getMinActiveVersion() {
   return min_version;
+}
+
+void TransactionManager::update_min_version() {
+  min_version = min(version.load(), *min_element(active_snapshots.begin(), active_snapshots.end()));
+}
+
+void TransactionManager::run_min_version_updater(uint interval) {
+  while (!stopped.load()) {
+    update_min_version();
+    this_thread::sleep_for(chrono::milliseconds(interval));
+  }
+}
+
+TransactionManager::~TransactionManager() {
+  stopped.store(true);
+  min_version_updater.join();
 }

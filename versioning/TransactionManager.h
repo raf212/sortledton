@@ -22,6 +22,7 @@ class TransactionManager {
 
 public:
     explicit TransactionManager(uint threads);
+    ~TransactionManager();
 
     size_t register_thread();
 
@@ -33,7 +34,6 @@ public:
     void transactionCompleted(const Transaction& transaction, size_t thread_id);
 
     version_t getMinActiveVersion();
-
 private:
     uint threads;
     uint last_thread_id =0;
@@ -43,6 +43,12 @@ private:
     vector<version_t> active_snapshots;
     atomic<version_t> version {1};
     version_t min_version { numeric_limits<version_t>::min()};
+
+    thread min_version_updater;
+    atomic<bool> stopped;
+
+    void run_min_version_updater(uint interval);
+    void update_min_version();
 };
 
 
