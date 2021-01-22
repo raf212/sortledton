@@ -30,6 +30,7 @@ public:
     ReadOnlyTransaction getReadOnlyTransaction(VersionedTopologyInterface* ti, size_t thread_id);
     SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, version_t v, size_t thread_id);
     SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, size_t thread_id);
+    void getSnapshotTransaction(VersionedTopologyInterface* ti, size_t thread_id, SnapshotTransaction& existing_transaction_object);
 
     void transactionCompleted(const Transaction& transaction, size_t thread_id);
 

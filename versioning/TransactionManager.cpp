@@ -12,6 +12,13 @@ SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopology
   return SnapshotTransaction(active_snapshots[thread_id], ti);
 }
 
+void TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, size_t thread_id,
+                                                               SnapshotTransaction &existing_transaction_object) {
+  active_snapshots[thread_id] = version.fetch_add(1);
+  existing_transaction_object.clear();
+  existing_transaction_object.set_version(active_snapshots[thread_id]);
+}
+
 ReadOnlyTransaction TransactionManager::getReadOnlyTransaction(VersionedTopologyInterface* ti, size_t thread_id) {
   return ReadOnlyTransaction(getSnapshotTransaction(ti, thread_id));
 }

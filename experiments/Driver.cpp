@@ -363,23 +363,25 @@ void run_inserts_in_transactions(TransactionManager& tm, EdgeList &el, atomic_ui
     int work = insert_position.fetch_add(batch_size);
     int work_end = min(total_work, work + batch_size);
 
+    SnapshotTransaction tx = tm.getSnapshotTransaction(ds, thread_id);
     while (work < work_end) {
-      SerializableUpdateTransaction tx = tm.getWriteOnlyUpdateTransaction(ds, thread_id);
       tx.insert_edge(el.edges[work]);
       tx.execute();
       tm.transactionCompleted(tx, thread_id);
+      tm.getSnapshotTransaction(ds, thread_id, tx);
       work++;
     }
   }
-//
+
 //  cout << "total" << total_partitions << endl;
 //  cout << "Partition: " << partition << endl;
+//    SnapshotTransaction tx = tm.getSnapshotTransaction(ds, thread_id);
 //  for (const auto& e : el) {
 //    if (e.src % total_partitions == partition) {
-//      SerializableUpdateTransaction tx = tm.getWriteOnlyUpdateTransaction(ds, thread_id);
 //      tx.insert_edge(e);
 //      tx.execute();
 //      tm.transactionCompleted(tx, thread_id);
+//      tm.getSnapshotTransaction(ds, thread_id, tx);
 //    }
 //  }
 }
@@ -426,11 +428,12 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   auto thread_id = tm.register_thread();
   auto start = chrono::steady_clock::now();
   if (threads == 1) {
+    SnapshotTransaction tx = tm.getSnapshotTransaction(ds, thread_id);
     for (auto e : el.edges) {
-      SerializableUpdateTransaction tx = tm.getWriteOnlyUpdateTransaction(ds, thread_id);
       tx.insert_edge(e);
       tx.execute();
       tm.transactionCompleted(tx, thread_id);
+      tm.getSnapshotTransaction(ds, thread_id, tx);
     }
   } else {
     atomic<uint> insert_index(0);

@@ -155,3 +155,17 @@ void SnapshotTransaction::bulkload(const SortedCSRDataSource &src) {
 VersionedTopologyInterface *SnapshotTransaction::raw_ds() {
   return ds;
 }
+
+void SnapshotTransaction::clear() {
+  preconditions.clear();
+  locks_to_aquire.clear();
+  vertices_to_insert.clear();
+  vertices_to_delete.clear();
+  edges_to_insert.clear();
+  edges_to_delete.clear();
+
+}
+
+void SnapshotTransaction::set_version(version_t v) {
+  version = v;
+}
