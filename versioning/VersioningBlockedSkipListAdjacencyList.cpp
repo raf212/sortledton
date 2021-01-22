@@ -15,6 +15,7 @@
 #include "SizeVersionChainEntry.h"
 
 #define LEVELS 6
+#define MIN_BLOCK_SIZE 2u
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
@@ -58,7 +59,7 @@ void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start
   if (size == 0) {
     return nullptr;
   } else if (size <= block_size) {
-    size_t block_size = round_up_power_of_two(size);
+    size_t block_size = max(MIN_BLOCK_SIZE, round_up_power_of_two(size));
     dst_t *block = (dst_t *) malloc((block_size) * sizeof(dst_t));  // TODO is it better to have blocks of sizes with power of twos.
     memcpy((void *) block, (void *) start, size * sizeof(dst_t));
     return (void *) ((uint64_t) block | EDGE_SET_TYPE_MASK);
@@ -478,7 +479,7 @@ VAdjacencySetType VersioningBlockedSkipListAdjacencyList::get_set_type(vertex_id
 }
 
 void VersioningBlockedSkipListAdjacencyList::insert_empty(edge_t edge, version_t version) {
-  auto block = (dst_t *) malloc(2 * sizeof(dst_t));  // TODO size four immediatedly?
+  auto block = (dst_t *) malloc(MIN_BLOCK_SIZE * sizeof(dst_t));  // TODO size four immediatedly?
   block[0] = make_versioned(edge.dst);
   block[1] = inline_version(false, false, version);
 
@@ -499,7 +500,7 @@ version_t VersioningBlockedSkipListAdjacencyList::inline_version(bool deletion, 
 void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, version_t version) {
   auto block = (dst_t *) raw_neighbourhood_version(edge.src, version);
   auto size = (uint64_t) adjacency_index[edge.src * 2 + 1] & ~SIZE_VERSION_MASK;
-  auto block_capacity = round_up_power_of_two(size);
+  auto block_capacity = max(MIN_BLOCK_SIZE, round_up_power_of_two(size));
 
   if (size < block_capacity - 1) {
     // If block is not too full; -1 for enough space to insert new edge and version, insert into block by shifting
@@ -744,7 +745,11 @@ void VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock(vertex_id_t vert
 
 //  while (!vertex_cas_locks[vertex_lock].test_and_set(std::memory_order_acquire))
 //    ;
-  vertex_mutices[vertex_lock].lock();
+//  if(!vertex_mutices[vertex_lock].try_lock()) {
+//    cout << "lock contention" << endl;
+    vertex_mutices[vertex_lock].lock();
+//  }
+
 }
 
 void VersioningBlockedSkipListAdjacencyList::release_vertex_lock(vertex_id_t v) {
