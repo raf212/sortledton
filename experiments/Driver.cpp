@@ -339,7 +339,7 @@ void Driver::load_base_dataset(TopologyInterface &ds, SortedCSRDataSource &base)
 void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &ds) {
   // Effects the batch size on performance have never been tested. I tested it only for the versioned data structure.
   // But it is likely that it applies for this case as well, in particular, since jobs here are smaller/take less time.
-  const int batch_size = 10000;
+  const int batch_size = 3000;
 
   const int total_work = el.edges.size();
   while (insert_position.load() < total_work) {
@@ -356,7 +356,7 @@ void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &
 void run_inserts_in_transactions(TransactionManager& tm, EdgeList &el, atomic_uint &insert_position,
                                  VersionedTopologyInterface *ds, uint total_partitions, uint partition) {
   auto thread_id = tm.register_thread();
-  const int batch_size = 10000;
+  const int batch_size = 3000;
 
   const int total_work = el.edges.size();
   while (insert_position.load() < total_work) {
@@ -456,6 +456,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   auto tx = tm.getSnapshotTransaction(ds, thread_id);
   check_insert(tx, el);
 #endif
+  cout << "checked" << endl;
 }
 
 
