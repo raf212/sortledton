@@ -113,6 +113,7 @@ private:
     version_t inline_version(bool deletion, bool more_versions, version_t version);
 
     void update_adjacency_size(vertex_id_t v, bool deletion, version_t version);
+    SizeVersionChainEntry* construct_version_chain_from_block(vertex_id_t v, version_t version);
 
     /**
      * Garbage collects unnecessary versions from a adjacency size version chain. These are all version which are
