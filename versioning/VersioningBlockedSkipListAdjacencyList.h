@@ -60,6 +60,8 @@ public:
 
     void* raw_neighbourhood_version(vertex_id_t src, version_t version) override;
     VAdjacencySetType get_set_type(vertex_id_t v, version_t version);
+    void* raw_neighbourhood_size_entry(vertex_id_t v);
+
     void intersect_neighbourhood_version(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) override;
 
     bool has_edge_version(edge_t edge, version_t version) override;

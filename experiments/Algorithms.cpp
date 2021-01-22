@@ -215,8 +215,7 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
       vertices_traversed++;
       if (raw_ds->get_set_type(v, trans_timestamp)) {
         dst_t *ns = (dst_t *) raw_ds->raw_neighbourhood_version(v, trans_timestamp);
-        uint32_t size = ns[0];
-        ns++;
+        uint64_t size = (uint64_t) raw_ds->raw_neighbourhood_size_entry(v) & ~SIZE_VERSION_MASK;
         dst_t *end = ns + size;
 
         while (ns < end) {
