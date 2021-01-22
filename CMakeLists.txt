@@ -1,12 +1,18 @@
 cmake_minimum_required(VERSION 3.10)
 project(live_graph_two)
 
+list(APPEND CMAKE_MODULE_PATH "~/cmake_modules/FindTBB")
+
 add_subdirectory(tests)
 
 set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g -shared-libgcc")
+
+
+
+find_package(TBB COMPONENTS tbbmalloc tbbmalloc_proxy)
 
 include_directories(.)
 include_directories(data-structures)
@@ -90,3 +96,4 @@ target_link_libraries(Google_Tests_run gtest gtest_main gmock)
 find_package (Threads)
 add_executable(live_graph_two main.cpp ${SRC})
 target_link_libraries (live_graph_two Threads::Threads)
+target_link_libraries(live_graph_two ${TBB_LIBRARIES})
