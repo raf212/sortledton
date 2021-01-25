@@ -425,6 +425,7 @@ size_t VersioningBlockedSkipListAdjacencyList::neighbourhood_size_version(vertex
                 count++;
               }
             }
+            start++; // Do not count the version record.
           }
         }
         return count;
@@ -585,7 +586,7 @@ void VersioningBlockedSkipListAdjacencyList::update_adjacency_size(vertex_id_t v
       if (chain_end != chain) {
         chain_end->next = reuse;
       } else {
-        adjacency_index[2 * v + 1] = (void *) ((uint64_t) chain | SIZE_VERSION_MASK);
+        adjacency_index[2 * v + 1] = (void *) ((uint64_t) reuse | SIZE_VERSION_MASK);
       }
     }
   } else {
@@ -791,7 +792,7 @@ SizeVersionChainEntry *VersioningBlockedSkipListAdjacencyList::construct_version
     if (is_versioned(*i)) {
       auto v = (version_t) *(i + 1);
       auto t = timestamp(v);
-      if (min_version <= t) {
+      if (min_version < t) {
         versions_to_construct.push_back(t);
       }
     }
@@ -799,8 +800,8 @@ SizeVersionChainEntry *VersioningBlockedSkipListAdjacencyList::construct_version
 
   sort(versions_to_construct.begin(), versions_to_construct.end());
 
-  auto chain = new SizeVersionChainEntry(FIRST_VERSION, neighbourhood_size_version(v , FIRST_VERSION), nullptr);
-  for (auto i = 1; i < versions_to_construct.size(); i++) {
+  auto chain = new SizeVersionChainEntry(FIRST_VERSION, neighbourhood_size_version(v , min_version), nullptr);
+  for (auto i = 0; i < versions_to_construct.size(); i++) {
     chain = new SizeVersionChainEntry(versions_to_construct[i], neighbourhood_size_version(v, versions_to_construct[i]), chain);
   }
   return chain;

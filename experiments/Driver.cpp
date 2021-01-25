@@ -85,7 +85,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
 
   TransactionManager tm(config.insert_threads + 1);
   auto master_thread_id = tm.register_thread();
-  VersionedTopologyInterface *versioned_data_structure;
+  VersionedTopologyInterface *versioned_data_structure = nullptr;
   SnapshotTransaction transaction(0, nullptr);
 
   switch (ds) {
@@ -392,6 +392,7 @@ void run_inserts_in_transactions(TransactionManager& tm, EdgeList &el, atomic_ui
       work++;
     }
   }
+  tm.transactionCompleted(tx, thread_id);
 
 //  cout << "total" << total_partitions << endl;
 //  cout << "Partition: " << partition << endl;
@@ -428,6 +429,7 @@ void Driver::run_insert_experiment(TransactionManager& tm, TopologyInterface &ds
   }
   if (typeid(ds) == typeid(SnapshotTransaction)) {
     dynamic_cast<SnapshotTransaction &>(ds).execute();
+    tm.transactionCompleted(dynamic_cast<SnapshotTransaction &>(ds), tm.register_thread());
   }
   auto end = chrono::steady_clock::now();
 
@@ -455,6 +457,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
       tm.transactionCompleted(tx, thread_id);
       tm.getSnapshotTransaction(ds, thread_id, tx);
     }
+    tm.transactionCompleted(tx, thread_id);
   } else {
     atomic<uint> insert_index(0);
     vector<thread> ts;
@@ -749,6 +752,7 @@ unordered_set<dst_t> Driver::get_neighbours(TopologyInterface &ds, vertex_id_t v
 }
 
 void Driver::check_insert(TopologyInterface &ds, EdgeList &el) {
+  cout << "Validating insert experiment" << endl;
   auto i = 0;
   for (auto e : el.edges) {
     i++;
@@ -756,6 +760,42 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el) {
 //      cout << ".";
 //    }
     assert(ds.has_edge(e));
+  }
+
+
+  const string gold_standard_file_sizes =
+          config.gold_standard_directory + "/insert_adjacency_set_sizes_" + config.base.get_name() + ".goldStandard";
+  if (!file_exists(gold_standard_file_sizes)) {
+    cout << "Writing new gold standard for: " << gold_standard_file_sizes << endl;
+    ofstream f(gold_standard_file_sizes, ofstream::binary | ofstream::out);
+
+    if (!f.good()) {
+      assert(false);
+    }
+
+    size_t size = ds.vertex_count();
+    f.write((char *) &size, sizeof(size));
+
+    for (auto v = 0; v < ds.vertex_count(); v++) {
+      size_t neighbourhood_size = ds.neighbourhood_size(v);
+      f.write((char *) &neighbourhood_size, sizeof(neighbourhood_size));
+    }
+    f.close();
+  } else {
+    ifstream f(gold_standard_file_sizes, ifstream::in | ifstream::binary);
+
+    size_t size;
+    f.read((char *) &size, sizeof(size));
+
+    assert(size == ds.vertex_count());
+
+    size_t neighbourhood_size;
+    for (int i = 0; i < size; i++) {
+      f.read((char *) &neighbourhood_size, sizeof(neighbourhood_size));
+      assert(ds.neighbourhood_size(i) == neighbourhood_size);
+    }
+
+    f.close();
   }
 
   BFSSourceSelector ss(*this, config.base, ds);
