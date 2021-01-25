@@ -416,9 +416,14 @@ void Driver::run_insert_experiment(TransactionManager& tm, TopologyInterface &ds
     for (auto e : el.edges) {
       ds.insert_edge(e);
     }
-  } else {  // TODO disable this branch if we use a snapshot transaction?
+  } else {
     atomic<uint> insert_index(0);
     vector<thread> ts;
+
+    if (typeid(ds) == typeid(SnapshotTransaction)) {
+      throw ConfigurationError("Cannot run batch insertions with transactions as off yet.");
+    }
+
     for (int i = 0; i < threads; i++) {
       ts.emplace_back(run_inserts, ref(el), ref(insert_index), ref(ds));
     }
