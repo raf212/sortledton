@@ -85,10 +85,7 @@ private:
 
     // Skiplist constant, likelyhood for being x level high is p^x. 0.25 is a typical value from prior work.
     const float p = 0.25;
-
-    // TODO not thread safe.
-    mt19937 level_generator = mt19937(42);
-    binomial_distribution<int> level_distribution;
+    static thread_local mt19937 level_generator;
 
     void* write_to_blocks(const dst_t* start, const dst_t* end);
 

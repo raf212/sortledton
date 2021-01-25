@@ -34,6 +34,7 @@
   }\
 }
 
+thread_local mt19937 VersioningBlockedSkipListAdjacencyList::level_generator = mt19937((uint) time(NULL));
 
 void VersioningBlockedSkipListAdjacencyList::bulkload(const SortedCSRDataSource &src) {
   adjacency_index.reserve(src.vertex_count() * 2);
@@ -443,7 +444,6 @@ VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(s
   if (round_up_power_of_two(block_size) != block_size) {
     throw ConfigurationError("Block size needs to be a power of two.");
   }
-  level_distribution = binomial_distribution<int>(SKIP_LIST_LEVELS - 1, p);
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::vertex_count_version(version_t version) {
@@ -461,7 +461,7 @@ size_t VersioningBlockedSkipListAdjacencyList::memory_block_size() {
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::get_height() {
-  return level_distribution(level_generator) + 1;
+  return binomial_distribution<int>(SKIP_LIST_LEVELS - 1, p)(level_generator) + 1;
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::skip_list_header_size() const {
