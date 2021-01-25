@@ -62,7 +62,6 @@ private:
 
     void check_page_rank(vector<float>& scores);
 
-    // TODO remove shared pointer from everything to avoid shared counter overhead
     void run_triangle_counting_experiment(TopologyInterface& ds);
     void check_triangle_counting(size_t count);
 

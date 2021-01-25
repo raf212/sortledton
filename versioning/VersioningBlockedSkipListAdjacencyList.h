@@ -87,6 +87,7 @@ private:
     size_t levels;
     const float p = 0.25;
 
+    // TODO not thread safe.
     mt19937 level_generator = mt19937(42);
     binomial_distribution<int> level_distribution;
 

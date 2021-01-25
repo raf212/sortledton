@@ -15,7 +15,6 @@ SnapshotTransaction::SnapshotTransaction(version_t version, VersionedTopologyInt
 bool SnapshotTransaction::execute() {
   aquire_locks();
 
-  // TODO use some kind of with statement for aquire locks?
   if (assert_preconditions()) {
     // TODO check standard preconditions, e.g. I add an edge is the vertex existing?
     for (auto v: vertices_to_delete) {

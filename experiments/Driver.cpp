@@ -741,7 +741,6 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el) {
   BFSSourceSelector ss(*this, config.base, ds);
   vertex_id_t start_vertex = ss.get_source();
 
-  // TODO fix check for versioned interface, needs that BFS decision on adjacency set type is based on the type not the size.
   vector<uint> distances;
   if (typeid(ds) == typeid(SnapshotTransaction)) {
     distances = Algorithms::bfs(*this, ds, start_vertex, true, false);
@@ -819,8 +818,6 @@ void Driver::check_triangle_counting(size_t count) {
     f.close();
   }
 }
-
-// TODO add get_neighbourcount function for data structure
 
 void Driver::run_community_detection(TopologyInterface &ds) {
   cout << "Running community detection experiment ";
