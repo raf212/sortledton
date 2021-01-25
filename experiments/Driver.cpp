@@ -169,7 +169,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         block_size = stoi(ds_parameters[0]);
       }
       // TODO I should probably create a new snapshot transaction for each experiment, generally clean up version management in driver.
-      versioned_data_structure = new VersioningBlockedSkipListAdjacencyList(block_size, 6, tm);
+      versioned_data_structure = new VersioningBlockedSkipListAdjacencyList(block_size, tm);
       transaction = tm.getSnapshotTransaction(versioned_data_structure, master_thread_id);
       data_structure = &transaction;
       ds_name = "versioned";

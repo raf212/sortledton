@@ -14,8 +14,7 @@
 #include <versioning/SizeVersionChainEntry.h>
 #include "VersionedTopologyInterface.h"
 
-// TODO use compile time constant everywhere.
-#define LEVELS 6
+#define SKIP_LIST_LEVELS 6
 
 // The mask indicating if a size entry in the index is versioned.
 #define SIZE_VERSION_MASK (1L << 63)
@@ -46,7 +45,7 @@ class MultipleVersionException : exception {
 class VersioningBlockedSkipListAdjacencyList : public VersionedTopologyInterface {
 
 public:
-    VersioningBlockedSkipListAdjacencyList(size_t block_size, size_t levels, TransactionManager& tm);
+    VersioningBlockedSkipListAdjacencyList(size_t block_size, TransactionManager& tm);
 
     size_t vertex_count_version(version_t version) override;
 
@@ -84,7 +83,7 @@ private:
     size_t block_size;
     const float bulk_load_fill_rate = 1.0;
 
-    size_t levels;
+    // Skiplist constant, likelyhood for being x level high is p^x. 0.25 is a typical value from prior work.
     const float p = 0.25;
 
     // TODO not thread safe.
@@ -97,7 +96,7 @@ private:
 
     size_t get_height();
 
-    VSkipListHeader* find_block(VSkipListHeader *pHeader, dst_t element, VSkipListHeader* blocks[LEVELS]);
+    VSkipListHeader* find_block(VSkipListHeader *pHeader, dst_t element, VSkipListHeader* blocks[SKIP_LIST_LEVELS]);
     VSkipListHeader* find_block1(VSkipListHeader *pHeader, dst_t element);
 
     size_t skip_list_header_size() const;

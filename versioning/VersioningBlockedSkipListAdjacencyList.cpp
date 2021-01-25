@@ -14,7 +14,6 @@
 #include "BlockedSkipListAdjacencyLists.h"
 #include "SizeVersionChainEntry.h"
 
-#define LEVELS 6
 #define MIN_BLOCK_SIZE 2u
 
 #define likely(x)       __builtin_expect((x),1)
@@ -92,10 +91,10 @@ void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start
     last_block->next_levels[0] = nullptr;
 
     auto i = first_block;
-    vector<VSkipListHeader *> level_blocks(levels, first_block);
+    vector<VSkipListHeader *> level_blocks(SKIP_LIST_LEVELS, first_block);
     while (i != nullptr) {
       auto height = get_height();
-      for (int l = 1; l < levels; l++) {
+      for (int l = 1; l < SKIP_LIST_LEVELS; l++) {
         i->next_levels[l] = nullptr;
         if (i != first_block && l < height) {
           level_blocks[l]->next_levels[l] = i;
@@ -158,8 +157,8 @@ void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
  */
 VSkipListHeader *
 VersioningBlockedSkipListAdjacencyList::find_block(VSkipListHeader *pHeader, dst_t element,
-                                                   VSkipListHeader *blocks[LEVELS]) {
-  for (int l = levels - 1; 0 <= l; l--) {
+                                                   VSkipListHeader *blocks[SKIP_LIST_LEVELS]) {
+  for (int l = SKIP_LIST_LEVELS - 1; 0 <= l; l--) {
     while (pHeader->next_levels[l] != nullptr && pHeader->next_levels[l]->max < element) {
       pHeader = pHeader->next_levels[l];
     }
@@ -183,7 +182,7 @@ VersioningBlockedSkipListAdjacencyList::find_block(VSkipListHeader *pHeader, dst
  */
 VSkipListHeader *
 VersioningBlockedSkipListAdjacencyList::find_block1(VSkipListHeader *pHeader, dst_t element) {
-  for (int l = levels - 1; 0 <= l; l--) {
+  for (int l = SKIP_LIST_LEVELS - 1; 0 <= l; l--) {
     while (pHeader->next_levels[l] != nullptr && pHeader->next_levels[l]->max < element) {
       pHeader = pHeader->next_levels[l];
     }
@@ -439,13 +438,12 @@ bool VersioningBlockedSkipListAdjacencyList::size_is_versioned(vertex_id_t v) {
   return (uint64_t) adjacency_index[2 * v + 1] & SIZE_VERSION_MASK;
 }
 
-VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size, size_t levels,
-                                                                               TransactionManager &tm)
-        : block_size(block_size), levels(levels), tm(tm) {
+VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size, TransactionManager &tm)
+        : block_size(block_size), tm(tm) {
   if (round_up_power_of_two(block_size) != block_size) {
     throw ConfigurationError("Block size needs to be a power of two.");
   }
-  level_distribution = binomial_distribution<int>(levels - 1, p);
+  level_distribution = binomial_distribution<int>(SKIP_LIST_LEVELS - 1, p);
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::vertex_count_version(version_t version) {
@@ -467,7 +465,7 @@ size_t VersioningBlockedSkipListAdjacencyList::get_height() {
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::skip_list_header_size() const {
-  return levels * sizeof(VSkipListHeader *) + sizeof(VSkipListHeader);
+  return SKIP_LIST_LEVELS * sizeof(VSkipListHeader *) + sizeof(VSkipListHeader);
 }
 
 VAdjacencySetType VersioningBlockedSkipListAdjacencyList::get_set_type(vertex_id_t v, version_t version) {
@@ -523,7 +521,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
         new_block->max = block[size - 1];
       }
 
-      for (int l = 0; l < levels; l++) {
+      for (int l = 0; l < SKIP_LIST_LEVELS; l++) {
         new_block->next_levels[l] = nullptr;
       }
 
@@ -600,7 +598,7 @@ void VersioningBlockedSkipListAdjacencyList::update_adjacency_size(vertex_id_t v
 void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, version_t version) {
   VSkipListHeader *adjacency_list = (VSkipListHeader *) raw_neighbourhood_version(edge.src, version);
 
-  VSkipListHeader *blocks_per_level[LEVELS];
+  VSkipListHeader *blocks_per_level[SKIP_LIST_LEVELS];
   find_block(adjacency_list, edge.dst, blocks_per_level);
 
   auto i = blocks_per_level[0];
@@ -633,7 +631,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     }
 
     auto height = get_height();
-    for (int l = 1; l < levels; l++) {
+    for (int l = 1; l < SKIP_LIST_LEVELS; l++) {
       if (l < height) {
         new_block->next_levels[l] = blocks_per_level[l]->next_levels[l];
         blocks_per_level[l]->next_levels[l] = new_block;
@@ -704,7 +702,7 @@ void VersioningBlockedSkipListAdjacencyList::report_storage_size() {
 //
 //      while (ns != nullptr) {
 //        edges_multi_block += block_size * sizeof(dst_t);
-//        edges_multi_block_header += sizeof(BlockHeader) + levels * sizeof(SkipListHeader *);
+//        edges_multi_block_header += sizeof(BlockHeader) + LEVELS * sizeof(SkipListHeader *);
 //        edges_multi_block_strictly += ns->size * sizeof(dst_t);
 //        ns = (SkipListHeader *) ns->next;
 //      }
