@@ -146,9 +146,13 @@ SnapshotTransaction::~SnapshotTransaction() {
 }
 
 void SnapshotTransaction::bulkload(const SortedCSRDataSource &src) {
-  // TODO aquire all locks.
-  // TODO document that we are not writing version during this process.
+  for (auto v = 0; v < ds->vertex_count_version(version); v++) {
+    ds->aquire_vertex_lock(v);
+  }
   ds->bulkload(src);
+  for (auto v = 0; v < ds->vertex_count_version(version); v++) {
+    ds->release_vertex_lock(v);
+  }
 }
 
 VersionedTopologyInterface *SnapshotTransaction::raw_ds() {

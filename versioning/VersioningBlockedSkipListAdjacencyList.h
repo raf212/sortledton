@@ -70,6 +70,9 @@ public:
 
     void report_storage_size() override;
 
+    /**
+     * Bulkload data from a CSR. Does not write any versions. Only to be used with an empty data structure.
+     */
     void bulkload(const SortedCSRDataSource &src);
 
     size_t get_block_size();
