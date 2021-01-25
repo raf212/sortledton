@@ -6,7 +6,9 @@
 #include "TransactionManager.h"
 
 SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface* ti, size_t thread_id) {
-  // TODO do not allow to open more than one transaction per thread.
+  if (active_snapshots[thread_id] != NO_TRANSACTION) {
+    throw IllegalOperation("Cannot have more than one transaction open per thread.");
+  }
   active_snapshots[thread_id] = version.fetch_add(1);
 
   return SnapshotTransaction(active_snapshots[thread_id], ti);
@@ -14,6 +16,9 @@ SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopology
 
 void TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, size_t thread_id,
                                                                SnapshotTransaction &existing_transaction_object) {
+  if (active_snapshots[thread_id] != NO_TRANSACTION) {
+    throw IllegalOperation("Cannot have more than one transaction open per thread.");
+  }
   active_snapshots[thread_id] = version.fetch_add(1);
   existing_transaction_object.clear();
   existing_transaction_object.set_version(active_snapshots[thread_id]);
@@ -28,6 +33,9 @@ SerializableUpdateTransaction TransactionManager::getWriteOnlyUpdateTransaction(
 }
 
 void TransactionManager::transactionCompleted(const Transaction &transaction, size_t thread_id) {
+  if (transaction.get_version() != active_snapshots[thread_id]) {
+    throw IllegalOperation("Thread tried to complete transaction, it did not open.");
+  }
   active_snapshots[thread_id] = NO_TRANSACTION;
 }
 

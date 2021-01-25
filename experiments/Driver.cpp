@@ -83,7 +83,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   TopologyInterface *data_structure;
   string ds_name;
 
-  TransactionManager tm(config.insert_threads);
+  TransactionManager tm(config.insert_threads + 1);
   auto master_thread_id = tm.register_thread();
   VersionedTopologyInterface *versioned_data_structure;
   SnapshotTransaction transaction(0, nullptr);
@@ -168,10 +168,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       if (!ds_parameters.empty()) {  // TODO better parameter sanitization
         block_size = stoi(ds_parameters[0]);
       }
-      // TODO I should probably create a new snapshot transaction for each experiment, generally clean up version management in driver.
       versioned_data_structure = new VersioningBlockedSkipListAdjacencyList(block_size, tm);
-      transaction = tm.getSnapshotTransaction(versioned_data_structure, master_thread_id);
-      data_structure = &transaction;
       ds_name = "versioned";
       break;
     }
@@ -195,7 +192,14 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   }
 
   cout << "Loading base dataset." << endl;
+  if (versioned_data_structure != nullptr) {
+    transaction = tm.getSnapshotTransaction(versioned_data_structure, master_thread_id);
+    data_structure = &transaction;
+  }
   load_base_dataset(*data_structure, base);
+  if (versioned_data_structure != nullptr) {
+    tm.transactionCompleted(transaction, master_thread_id);
+  }
 
   bool run_on_raw_neighbourhood = false;
   if (find(ds_parameters.begin(), ds_parameters.end(), "raw") != ds_parameters.end()) {
@@ -204,34 +208,27 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
 
   bool inserts_run = false;
   for (auto e : config.experiments) {
+    if (versioned_data_structure != nullptr) {
+      transaction = tm.getSnapshotTransaction(versioned_data_structure, master_thread_id);
+      data_structure = &transaction;
+    }
     switch (e.first) {
       case (NEIGHBOUR_2): {
         run_neighbourhood_2_experiment(*data_structure, neighbourhood_2_sources, run_on_raw_neighbourhood);
+        if (versioned_data_structure != nullptr) {
+          tm.transactionCompleted(transaction, master_thread_id);
+        }
         break;
       }
       case (BFS): {
         bool aquire_locks = false;
-        version_t version = typeid(*data_structure) == typeid(SnapshotTransaction)?
-                dynamic_cast<SnapshotTransaction*>(data_structure)->get_version() : FIRST_VERSION;
         if (!e.second.empty()) {
           aquire_locks = stoi(e.second[0]);
-          version = stoi(e.second[1]);
         }
-
-        SnapshotTransaction transaction_to_use(FIRST_VERSION, nullptr);
-        auto ds_to_use = data_structure;
-
-        if (version != FIRST_VERSION && typeid(*data_structure) != typeid(SnapshotTransaction)) {
-          cout << "Skipping BFS experiment with version " << version << " and data structure " << ds_name << endl;
-          continue;
+        run_bfs_experiment(*data_structure, run_on_raw_neighbourhood, aquire_locks, inserts_run);
+        if (versioned_data_structure != nullptr) {
+          tm.transactionCompleted(transaction, master_thread_id);
         }
-        if (typeid(*data_structure) == typeid(SnapshotTransaction)) {
-          cout << "Running BFS experiment on version " << version << endl;
-          transaction_to_use = tm.getSnapshotTransaction(versioned_data_structure, version, master_thread_id);
-          ds_to_use = &transaction_to_use;
-        }
-
-        run_bfs_experiment(*ds_to_use, run_on_raw_neighbourhood, aquire_locks, inserts_run);
         break;
       }
       case (TRIANGLE_COUNTING): {
@@ -239,6 +236,9 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
           throw NotImplemented();
         }
         run_triangle_counting_experiment(*data_structure);
+        if (versioned_data_structure != nullptr) {
+          tm.transactionCompleted(transaction, master_thread_id);
+        }
         break;
       }
       case (COMMUNITY_DETECTION): {
@@ -247,21 +247,34 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
           throw NotImplemented();
         }
         run_community_detection(*data_structure);
+        if (versioned_data_structure != nullptr) {
+          tm.transactionCompleted(transaction, master_thread_id);
+        }
         break;
       }
       case (PR): {
         run_page_rank_experiment(*data_structure, run_on_raw_neighbourhood);
+        if (versioned_data_structure != nullptr) {
+          tm.transactionCompleted(transaction, master_thread_id);
+        }
         break;
       }
       case (INSERT): {
         run_insert_experiment(tm, *data_structure, inserts);
         inserts_run = true;
+        if (versioned_data_structure != nullptr) {
+          tm.transactionCompleted(transaction, master_thread_id);
+        }
         break;
       }
       case (INSERT_TRANSACTIONS): {
         if (typeid(*data_structure) != typeid(SnapshotTransaction)) {
           cout << "Skipping experiment insert transactions for data structure " << ds_name << endl;
           continue;
+        }
+        // Master thread generates its own transaction after insertion happened.
+        if (versioned_data_structure != nullptr) {
+          tm.transactionCompleted(transaction, master_thread_id);
         }
         run_insert_experiment_one_by_one(tm, versioned_data_structure, inserts);
         inserts_run = true;
@@ -271,11 +284,18 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         if (run_on_raw_neighbourhood) {
           throw NotImplemented();
         }
+        // Master thread generates its own transaction after insertion happened.
+        if (versioned_data_structure != nullptr) {
+          tm.transactionCompleted(transaction, master_thread_id);
+        }
         run_delete_experiment(*data_structure, deletes);
         break;
       }
       case (STORAGE): {
         show_storage_sizes(ds_name, *data_structure);
+        if (versioned_data_structure != nullptr) {
+          tm.transactionCompleted(transaction, master_thread_id);
+        }
         break;
       }
       default:
@@ -359,11 +379,11 @@ void run_inserts_in_transactions(TransactionManager& tm, EdgeList &el, atomic_ui
   const int batch_size = 3000;
 
   const int total_work = el.edges.size();
+  SnapshotTransaction tx = tm.getSnapshotTransaction(ds, thread_id);
   while (insert_position.load() < total_work) {
     int work = insert_position.fetch_add(batch_size);
     int work_end = min(total_work, work + batch_size);
 
-    SnapshotTransaction tx = tm.getSnapshotTransaction(ds, thread_id);
     while (work < work_end) {
       tx.insert_edge(el.edges[work]);
       tx.execute();

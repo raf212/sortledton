@@ -3,3 +3,11 @@
 //
 
 #include "IllegalOperation.h"
+
+IllegalOperation::IllegalOperation(string what) : what(what){
+
+}
+
+IllegalOperation::IllegalOperation() : IllegalOperation("") {
+
+}
