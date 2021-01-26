@@ -77,6 +77,32 @@ public:
 
     size_t get_block_size();
 
+    void gc_all() override;
+    void gc_vertex(vertex_id_t v) override;
+
+protected:
+    bool gc_block(vertex_id_t v);
+    bool gc_skip_list(vertex_id_t v);
+
+    /**
+     * Removes all versions older than min_version from to_clean.
+     *
+     * Moves versions to before if possible, otherwise moves versions to after.
+     *
+     * This does collapse skip lists into a single single blocked skip list, it does not collapse it to a smaller adjacency
+     * list of type VSingleBlock. This is the responsibility of the caller.
+     *
+     * @param to_clean the block to remove old versions from, this is an out parameter, it is either the same as for input or a nullptr if to_clean has been removed from the list
+     * @param before the block before to_clean, can be a nullptr, is stable after this function
+     * @param after the block after to_clean, can be a nullptr, is stable after this function
+     * @param min_version minimal version to keep
+     * @param blocks all blocks from the skip list that point to from that is one per level of from. This function
+     * guarantues not too touch any of these elements if they do not point to from.
+     * @return true if there are still versioned edges in edges to to_clean. Although, they might have been moved to before or after.
+     */
+    bool gc_skip_list_block(VSkipListHeader **to_clean, VSkipListHeader *before,
+            VSkipListHeader *after, version_t min_version, VSkipListHeader* blocks[SKIP_LIST_LEVELS]);
+
 private:
     TransactionManager& tm;
     vector<void *> adjacency_index;
@@ -126,6 +152,42 @@ private:
      * @return nullptr or ptr to a garbage collected version which has not been freed.
      */
     SizeVersionChainEntry* gc_adjacency_size(SizeVersionChainEntry* start, version_t collect_after);
+
+    /**
+     * Removes all version below min_version from this block.
+     *
+     * @param start pointer to the start of the block
+     * @param end  pointer past the end of the block
+     * @param min_version minimal version to keep
+     * @param out_size the size of the block after this function
+     * @return if any versioned edge remain in the block after this function.
+     */
+    bool gc_by_shift(dst_t* start, const dst_t* end, version_t min_version, uint64_t& out_size);
+
+    /**
+     * Merges to skip list blocks into one. Frees the other.
+     *
+     * Assumes that to->size + from->size <= block_size.
+     *
+     * @param from all elements are moved to "to", "from" is freed.
+     * @param to combines the elements of both blocks
+     * @param blocks all blocks from the skip list that point to from that is one per level of from. This function
+     * guarantues not too touch any of these elements if they do not point to from.
+     */
+    void merge_skip_list_blocks(VSkipListHeader* from, VSkipListHeader* to, VSkipListHeader* blocks[SKIP_LIST_LEVELS]);
+
+    /**
+     * Converts a SkipList adjacency list with only one block back into a single block.
+     *
+     * Does nothing if the SkipList is still half full.
+     *
+     * frees SkipList block if it is converted.
+     *
+     * @param v vertex id for which to convert the adjacency set.
+     * @param contains_versions if the block still contains any versions.
+     */
+    void skip_list_to_single_block(vertex_id_t v, bool contains_versions);
+
 };
 
 

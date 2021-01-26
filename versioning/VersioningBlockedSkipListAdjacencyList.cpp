@@ -407,7 +407,7 @@ size_t VersioningBlockedSkipListAdjacencyList::neighbourhood_size_version(vertex
       } else { // If the size is versioned the index stores the current count of destinations and versions in the block,
         // we need to iterate over the block to filter out versions.
         auto size = (uint64_t) adjacency_index[2 * src + 1] & ~SIZE_VERSION_MASK;
-        auto block = (dst_t*) raw_neighbourhood_version(src, version);
+        auto block = (dst_t *) raw_neighbourhood_version(src, version);
         auto end = block + size;
         auto count = 0;
         for (auto start = block; start < end; start++) {
@@ -440,7 +440,8 @@ bool VersioningBlockedSkipListAdjacencyList::size_is_versioned(vertex_id_t v) {
   return (uint64_t) adjacency_index[2 * v + 1] & SIZE_VERSION_MASK;
 }
 
-VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size, TransactionManager &tm)
+VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size,
+                                                                               TransactionManager &tm)
         : block_size(block_size), tm(tm) {
   if (round_up_power_of_two(block_size) != block_size) {
     throw ConfigurationError("Block size needs to be a power of two.");
@@ -512,7 +513,8 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
       new_block->data = get_data_pointer(new_block);
       new_block->size = size;
 
-      adjacency_index[edge.src * 2 + 1] = (void*) ((uint64_t) construct_version_chain_from_block(edge.src, version) | SIZE_VERSION_MASK);
+      adjacency_index[edge.src * 2 + 1] = (void *) ((uint64_t) construct_version_chain_from_block(edge.src, version) |
+                                                    SIZE_VERSION_MASK);
 
       memcpy((void *) get_data_pointer(new_block), (void *) block, size * sizeof(dst_t));
 
@@ -746,7 +748,7 @@ void VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock(vertex_id_t vert
 //    ;
 //  if(!vertex_mutices[vertex_lock].try_lock()) {
 //    cout << "lock contention" << endl;
-    vertex_mutices[vertex_lock].lock();
+  vertex_mutices[vertex_lock].lock();
 //  }
 
 }
@@ -782,8 +784,9 @@ VersioningBlockedSkipListAdjacencyList::gc_adjacency_size(SizeVersionChainEntry 
   }
 }
 
-SizeVersionChainEntry *VersioningBlockedSkipListAdjacencyList::construct_version_chain_from_block(vertex_id_t v, version_t version) {
-  auto block = (dst_t*) raw_neighbourhood_version(v, version);
+SizeVersionChainEntry *
+VersioningBlockedSkipListAdjacencyList::construct_version_chain_from_block(vertex_id_t v, version_t version) {
+  auto block = (dst_t *) raw_neighbourhood_version(v, version);
   auto size = (uint64_t) adjacency_index[v * 2 + 1] & ~SIZE_VERSION_MASK;
   auto min_version = tm.getMinActiveVersion();
 
@@ -800,13 +803,214 @@ SizeVersionChainEntry *VersioningBlockedSkipListAdjacencyList::construct_version
 
   sort(versions_to_construct.begin(), versions_to_construct.end());
 
-  auto chain = new SizeVersionChainEntry(FIRST_VERSION, neighbourhood_size_version(v , min_version), nullptr);
+  auto chain = new SizeVersionChainEntry(FIRST_VERSION, neighbourhood_size_version(v, min_version), nullptr);
   for (auto i = 0; i < versions_to_construct.size(); i++) {
-    chain = new SizeVersionChainEntry(versions_to_construct[i], neighbourhood_size_version(v, versions_to_construct[i]), chain);
+    chain = new SizeVersionChainEntry(versions_to_construct[i], neighbourhood_size_version(v, versions_to_construct[i]),
+                                      chain);
   }
   return chain;
 }
 
 void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_size_entry(vertex_id_t v) {
   return adjacency_index[v * 2 + 1];
+}
+
+void VersioningBlockedSkipListAdjacencyList::gc_all() {
+  auto vertices = this->vertex_count_version(FIRST_VERSION);
+  for (vertex_id_t v = 0; v < vertices; v++) {
+    gc_vertex(v);
+
+    // TODO sizes are still missing
+  }
+}
+
+void VersioningBlockedSkipListAdjacencyList::gc_vertex(vertex_id_t v) {
+  aquire_vertex_lock(v);
+  switch (get_set_type(v, FIRST_VERSION)) {
+    case VSINGLE_BLOCK: {
+      gc_block(v);
+      break;
+    }
+    case VSKIP_LIST: {
+      gc_skip_list(v);
+      break;
+    }
+  }
+  release_vertex_lock(v);
+}
+
+bool VersioningBlockedSkipListAdjacencyList::gc_block(vertex_id_t v) {
+  assert(get_set_type(v, FIRST_VERSION) == VSINGLE_BLOCK);
+  bool version_remaining = false; // If a version remains after shifting.
+  if (size_is_versioned(v)) {
+    auto block = (dst_t *) raw_neighbourhood_version(v, FIRST_VERSION);
+    auto size = neighbourhood_size_version(v, FIRST_VERSION);
+    auto end = block + size;
+    uint64_t new_size;
+    auto min_version = tm.getMinActiveVersion();
+
+    version_remaining = gc_by_shift(block, end, min_version, new_size);
+
+    if (version_remaining) {
+      new_size |= SIZE_VERSION_MASK;
+    }
+    adjacency_index[v * 2 + 1] = (void*) new_size;
+  }
+  return !version_remaining;
+}
+
+bool VersioningBlockedSkipListAdjacencyList::gc_skip_list(vertex_id_t v) {
+  auto min_version = tm.getMinActiveVersion();
+  bool version_remaining = false;
+  if (size_is_versioned(v)) {
+    VSkipListHeader* before = nullptr;
+    auto i = (VSkipListHeader*) raw_neighbourhood_version(v, FIRST_VERSION);
+    VSkipListHeader* blocks[SKIP_LIST_LEVELS] = {i};
+    while (i != nullptr) {
+      for (auto l = 0; l < SKIP_LIST_LEVELS; l++) {
+        if (i->next_levels[l] != nullptr) {
+          blocks[l] = i;
+        }
+      }
+      auto after = i->next_levels[0];
+      version_remaining |= gc_skip_list_block(&i, before, after, min_version, blocks);
+      if (i != nullptr) {
+        before = i;
+      } else {
+        i = after;
+      }
+    }
+    auto skip_list = (VSkipListHeader*) raw_neighbourhood_version(v, FIRST_VERSION);
+    if (skip_list->next_levels[0] == nullptr) {
+      skip_list_to_single_block(v, version_remaining);
+    }
+  }
+  return !version_remaining;
+}
+
+bool VersioningBlockedSkipListAdjacencyList::gc_skip_list_block(VSkipListHeader **to_clean, VSkipListHeader *before,
+                                                                VSkipListHeader *after, version_t min_version, VSkipListHeader* blocks[SKIP_LIST_LEVELS]) {
+  dst_t* data = get_data_pointer(*to_clean);
+  uint64_t new_size = (*to_clean)->size;
+  auto end = data + new_size;
+  bool version_remaining = gc_by_shift(data, end, min_version, new_size);
+
+  if (is_versioned(data[new_size - 2])) {
+    (*to_clean)->max = make_unversioned(data[new_size - 2]);
+  } else {
+    (*to_clean)->max = data[new_size - 1];
+  }
+  (*to_clean)->size = (uint16_t) new_size;
+
+  if (block_size / 2 < new_size) {
+    auto other = before;
+    if (before == nullptr) {
+      other = after;
+    }
+    if (other == nullptr) {
+      return version_remaining;
+    }
+    if (new_size + other->size <= block_size) {
+      merge_skip_list_blocks(*to_clean, other, blocks);
+      to_clean = nullptr;
+    } else {
+      if (before != nullptr) {
+        auto move_elements = block_size / 2 - new_size;
+        for (auto i = 0; i < new_size; i++) {
+          data[i + move_elements] = data[i];
+        }
+        auto before_data = get_data_pointer(before);
+        memcpy(data, before_data + before->size - move_elements, sizeof(dst_t) * move_elements);
+
+        before->size = before->size - move_elements;
+        (*to_clean)->size = (uint16_t) (new_size + move_elements);
+
+        if (is_versioned(before_data[before->size - 2])) {
+          before->max = make_unversioned(data[before->size - 2]);
+        } else {
+          before->max = data[before->size - 1];
+        }
+      } else { // After is not a nullptr
+        auto move_elements = block_size / 2 - new_size;
+        auto after_data = get_data_pointer(after);
+        memcpy(data, after_data, sizeof(dst_t) * move_elements);
+
+        for (auto i = 0; i < move_elements; i++) {
+          after_data[i] = after_data[i + move_elements];
+        }
+
+        after->size = after->size - move_elements;
+        new_size += move_elements;
+
+        if (is_versioned(data[new_size - 2])) {
+          (*to_clean)->max = make_unversioned(data[new_size - 2]);
+        } else {
+          (*to_clean)->max = data[new_size - 1];
+        }
+        (*to_clean)->size = (uint16_t) new_size;
+      }
+    }
+  }
+  return version_remaining;
+}
+
+bool VersioningBlockedSkipListAdjacencyList::gc_by_shift(dst_t *start, const dst_t *end, version_t min_version, uint64_t& new_size) {
+  // Removes unncessary versions and shifts remaining destinations and versions forward.
+  auto shift = 0; // The forward shift to use, increases when versions are removed.
+  bool version_remaining = false;
+  new_size = end - start;
+  for (auto i = start; i < end; i++) {
+    auto e = *i;
+    if (is_versioned(e) && timestamp(*(i + 1) < min_version)) {
+      if (is_deletion(*(i+1))) {
+        new_size -= 2;
+        shift += 2;
+        i += 3;
+      } else {
+        *(i - shift) = make_unversioned(e);
+        new_size -= 1;
+        shift += 1;
+        i += 2;
+      }
+    } else {
+      if (is_versioned(e)) {
+        version_remaining = true;
+      }
+      *(i - shift) = e;
+    }
+  }
+  return version_remaining;
+}
+
+void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHeader *from, VSkipListHeader *to,
+                                                                    VSkipListHeader **blocks) {
+  assert(from->size + to->size <= block_size);
+  memcpy(get_data_pointer(to) + to->size, get_data_pointer(from), sizeof(dst_t) * from->size);
+  to->size += from->size;
+  to->max = max(from->max, to->max);
+  for (auto l = 0; l < SKIP_LIST_LEVELS; l++) {
+    if (from->next_levels[l] != nullptr) {
+      blocks[l]->next_levels[l] = from->next_levels[l];
+    }
+  }
+  free(from);
+}
+
+void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id_t v, bool contains_versions) {
+  assert(get_set_type(v, FIRST_VERSION) == VSKIP_LIST);
+
+  auto skip_list_block = (VSkipListHeader*) raw_neighbourhood_version(v, FIRST_VERSION);
+  assert(skip_list_block->next_levels[0] == nullptr);
+
+  auto size = (uint64_t) skip_list_block->size;
+  if (size < block_size / 2) {
+   auto single_block = (dst_t*) malloc(round_up_power_of_two(size) * sizeof(dst_t));
+   memcpy(single_block, get_data_pointer(skip_list_block), size * sizeof(dst_t));
+   free(skip_list_block);
+   adjacency_index[v * 2] = (void*) single_block;
+   if (contains_versions) {
+     size |= SIZE_VERSION_MASK;
+   }
+   adjacency_index[v * 2 + 1] = (void*) size;
+  }
 }
