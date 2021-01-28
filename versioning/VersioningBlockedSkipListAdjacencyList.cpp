@@ -1075,13 +1075,13 @@ void VersioningBlockedSkipListAdjacencyList::assert_block_consistency(dst_t *sta
   for (auto i = start; i < end; i++) {
     auto e = *i;
     if (is_versioned(e)) {
-      assert(before < make_unversioned(e));
+      assert(before <= make_unversioned(e));
       before = make_unversioned(e);
       assert(i + 1 < end);
       assert(min_version <= timestamp(*(i + 1)));
       i += 1; // Jump over version
     } else {
-      assert(before < e);
+      assert(before <= e);
       before = e;
     }
   }
