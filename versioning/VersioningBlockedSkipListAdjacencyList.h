@@ -35,7 +35,7 @@ struct VSkipListHeader {
     dst_t* data;
     uint16_t size;  // Number of destinations stored in this block.
     dst_t max;
-    VSkipListHeader* next_levels[];  // a fixed number of pointers for all levels.
+    VSkipListHeader* next_levels[SKIP_LIST_LEVELS];  // a fixed number of pointers for all levels.
 };
 
 class MultipleVersionException : exception {
@@ -187,6 +187,11 @@ private:
      * @param contains_versions if the block still contains any versions.
      */
     void skip_list_to_single_block(vertex_id_t v, bool contains_versions);
+
+    void assert_adjacency_list_consistency(vertex_id_t v, version_t min_version);
+    void assert_block_consistency(dst_t* start, dst_t* end, version_t min_version);
+
+    dst_t get_min_from_skip_list_header(VSkipListHeader* header);
 
 };
 

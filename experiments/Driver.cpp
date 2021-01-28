@@ -51,7 +51,8 @@ void Driver::run() {
   SortedCSRDataSource base = read_base_dataset();
 
   EdgeList inserts;
-  if (config.experiment_set.find(INSERT) != config.experiment_set.end() || config.experiment_set.find(INSERT_TRANSACTIONS) != config.experiment_set.end()) {
+  if (config.experiment_set.find(INSERT) != config.experiment_set.end() ||
+      config.experiment_set.find(INSERT_TRANSACTIONS) != config.experiment_set.end()) {
     cout << "Reading insert dataset " << config.insertions.path << endl;
     inserts = read_insert_dataset();
   }
@@ -262,9 +263,6 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       case (INSERT): {
         run_insert_experiment(tm, *data_structure, inserts);
         inserts_run = true;
-        if (versioned_data_structure != nullptr) {
-          tm.transactionCompleted(transaction, master_thread_id);
-        }
         break;
       }
       case (INSERT_TRANSACTIONS): {
@@ -291,6 +289,16 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         run_delete_experiment(*data_structure, deletes);
         break;
       }
+      case (GC): {
+        if (versioned_data_structure == nullptr) {
+          cout << "Skipping GC experiment for data structure " << ds_name << endl;
+          continue;
+        }
+        tm.transactionCompleted(transaction, master_thread_id);
+        run_gc_experiment(tm, *versioned_data_structure, inserts_run, inserts);
+        break;
+      }
+
       case (STORAGE): {
         show_storage_sizes(ds_name, *data_structure);
         if (versioned_data_structure != nullptr) {
@@ -373,7 +381,7 @@ void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &
   }
 }
 
-void run_inserts_in_transactions(TransactionManager& tm, EdgeList &el, atomic_uint &insert_position,
+void run_inserts_in_transactions(TransactionManager &tm, EdgeList &el, atomic_uint &insert_position,
                                  VersionedTopologyInterface *ds, uint total_partitions, uint partition) {
   auto thread_id = tm.register_thread();
   const int batch_size = 3000;
@@ -407,7 +415,7 @@ void run_inserts_in_transactions(TransactionManager& tm, EdgeList &el, atomic_ui
 //  }
 }
 
-void Driver::run_insert_experiment(TransactionManager& tm, TopologyInterface &ds, EdgeList &el) {
+void Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList &el) {
   cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
   uint threads = config.insert_threads;
 
@@ -468,7 +476,8 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
     vector<thread> ts;
     uint partition = 0;
     for (int i = 0; i < threads; i++) {
-      ts.emplace_back(run_inserts_in_transactions, ref(tm), ref(el), ref(insert_index), ds, config.insert_threads, partition);
+      ts.emplace_back(run_inserts_in_transactions, ref(tm), ref(el), ref(insert_index), ds, config.insert_threads,
+                      partition);
       partition++;
     }
 
@@ -1106,5 +1115,33 @@ void Driver::check_page_rank(vector<float> &scores) {
 void Driver::show_storage_sizes(string ds_name, TopologyInterface &ds) {
   cout << "Storage size of " << setw(10) << ds_name << endl;
   ds.report_storage_size();
+}
+
+void Driver::run_gc_experiment(TransactionManager& tm, VersionedTopologyInterface& ds, bool inserts_run, EdgeList &inserts) {
+  cout << "Running GC experiment " << endl;
+
+  auto start = chrono::steady_clock::now();
+  ds.gc_all();
+  auto end = chrono::steady_clock::now();
+
+  size_t milliseconds = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+  reporter.add_repetition(GC, 0, milliseconds);
+
+  cout << ".";
+  cout.flush();
+
+#ifdef DEBUG
+  if (inserts_run) {
+    // TODO add function to return the thread ID.
+    auto tx = tm.getSnapshotTransaction(&ds, tm.register_thread());
+    check_insert(tx, inserts);
+  }
+  check_gc_experiment(ds);
+#endif
+
+  cout << endl << "GC run in " << milliseconds << " milliseconds " << endl;
+}
+
+void Driver::check_gc_experiment(VersionedTopologyInterface& ds) {
 }
 

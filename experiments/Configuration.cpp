@@ -172,7 +172,8 @@ const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING{
         {TRIANGLE_COUNTING, "triangle"},
         {NEIGHBOUR_2, "2-neighbour"},
         {COMMUNITY_DETECTION, "community"},
-        {STORAGE, "storage"}
+        {STORAGE, "storage"},
+        {GC, "gc"}
 };
 
 const string Config::gold_standard_directory = "/space/fuchs/shared/graph_two_gold_standards";

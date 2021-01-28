@@ -34,7 +34,7 @@
   }\
 }
 
-thread_local mt19937 VersioningBlockedSkipListAdjacencyList::level_generator = mt19937((uint) time(NULL));
+thread_local mt19937 VersioningBlockedSkipListAdjacencyList::level_generator = mt19937((uint) 42);
 
 void VersioningBlockedSkipListAdjacencyList::bulkload(const SortedCSRDataSource &src) {
   adjacency_index.reserve(src.vertex_count() * 2);
@@ -48,6 +48,10 @@ void VersioningBlockedSkipListAdjacencyList::bulkload(const SortedCSRDataSource 
     const dst_t *end = &src.adjacency_lists[0] + src.adjacency_index[i + 1];
 
     void *head_block = write_to_blocks(start, end);
+
+#ifdef DEBUG
+    assert_adjacency_list_consistency(i, FIRST_VERSION);
+#endif
 
     adjacency_index.push_back(head_block);
     adjacency_index.push_back((void *) (end - start));
@@ -160,14 +164,10 @@ VSkipListHeader *
 VersioningBlockedSkipListAdjacencyList::find_block(VSkipListHeader *pHeader, dst_t element,
                                                    VSkipListHeader *blocks[SKIP_LIST_LEVELS]) {
   for (int l = SKIP_LIST_LEVELS - 1; 0 <= l; l--) {
-    while (pHeader->next_levels[l] != nullptr && pHeader->next_levels[l]->max < element) {
+    while (pHeader->next_levels[l] != nullptr && get_min_from_skip_list_header(pHeader->next_levels[l]) <= element) {
       pHeader = pHeader->next_levels[l];
     }
-    if (l == 0 && pHeader->next_levels[0] != nullptr && pHeader->max < element) {
-      blocks[0] = pHeader->next_levels[0];
-    } else {
-      blocks[l] = pHeader;
-    }
+    blocks[l] = pHeader;
   }
   return blocks[0];
 }
@@ -184,15 +184,11 @@ VersioningBlockedSkipListAdjacencyList::find_block(VSkipListHeader *pHeader, dst
 VSkipListHeader *
 VersioningBlockedSkipListAdjacencyList::find_block1(VSkipListHeader *pHeader, dst_t element) {
   for (int l = SKIP_LIST_LEVELS - 1; 0 <= l; l--) {
-    while (pHeader->next_levels[l] != nullptr && pHeader->next_levels[l]->max < element) {
+    while (pHeader->next_levels[l] != nullptr && get_min_from_skip_list_header(pHeader->next_levels[l]) <= element) {
       pHeader = pHeader->next_levels[l];
     }
   }
-  if (pHeader->max < element) {
-    return pHeader->next_levels[0];
-  } else {
-    return pHeader;
-  }
+  return pHeader;
 }
 
 bool VersioningBlockedSkipListAdjacencyList::has_edge_version(edge_t edge, version_t version) {
@@ -466,8 +462,9 @@ size_t VersioningBlockedSkipListAdjacencyList::get_height() {
   return binomial_distribution<int>(SKIP_LIST_LEVELS - 1, p)(level_generator) + 1;
 }
 
+// TODO remove function
 size_t VersioningBlockedSkipListAdjacencyList::skip_list_header_size() const {
-  return SKIP_LIST_LEVELS * sizeof(VSkipListHeader *) + sizeof(VSkipListHeader);
+  return sizeof(VSkipListHeader);
 }
 
 VAdjacencySetType VersioningBlockedSkipListAdjacencyList::get_set_type(vertex_id_t v, version_t version) {
@@ -655,6 +652,9 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
 
     update_adjacency_size(edge.src, false, version);
   }
+#ifdef DEBUG
+  assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
+#endif
 }
 
 void VersioningBlockedSkipListAdjacencyList::insert_by_shift(dst_t *start, dst_t *end, dst_t dst, version_t version) {
@@ -844,7 +844,7 @@ bool VersioningBlockedSkipListAdjacencyList::gc_block(vertex_id_t v) {
   bool version_remaining = false; // If a version remains after shifting.
   if (size_is_versioned(v)) {
     auto block = (dst_t *) raw_neighbourhood_version(v, FIRST_VERSION);
-    auto size = neighbourhood_size_version(v, FIRST_VERSION);
+    auto size = (uint64_t) raw_neighbourhood_size_entry(v) & ~SIZE_VERSION_MASK;
     auto end = block + size;
     uint64_t new_size;
     auto min_version = tm.getMinActiveVersion();
@@ -854,7 +854,7 @@ bool VersioningBlockedSkipListAdjacencyList::gc_block(vertex_id_t v) {
     if (version_remaining) {
       new_size |= SIZE_VERSION_MASK;
     }
-    adjacency_index[v * 2 + 1] = (void*) new_size;
+    adjacency_index[v * 2 + 1] = (void *) new_size;
   }
   return !version_remaining;
 }
@@ -863,9 +863,9 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list(vertex_id_t v) {
   auto min_version = tm.getMinActiveVersion();
   bool version_remaining = false;
   if (size_is_versioned(v)) {
-    VSkipListHeader* before = nullptr;
-    auto i = (VSkipListHeader*) raw_neighbourhood_version(v, FIRST_VERSION);
-    VSkipListHeader* blocks[SKIP_LIST_LEVELS] = {i};
+    VSkipListHeader *before = nullptr;
+    auto i = (VSkipListHeader *) raw_neighbourhood_version(v, FIRST_VERSION);
+    VSkipListHeader *blocks[SKIP_LIST_LEVELS] = {i};
     while (i != nullptr) {
       for (auto l = 0; l < SKIP_LIST_LEVELS; l++) {
         if (i->next_levels[l] != nullptr) {
@@ -876,21 +876,26 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list(vertex_id_t v) {
       version_remaining |= gc_skip_list_block(&i, before, after, min_version, blocks);
       if (i != nullptr) {
         before = i;
+        i = i->next_levels[0];
       } else {
         i = after;
       }
     }
-    auto skip_list = (VSkipListHeader*) raw_neighbourhood_version(v, FIRST_VERSION);
-    if (skip_list->next_levels[0] == nullptr) {
-      skip_list_to_single_block(v, version_remaining);
-    }
+    auto skip_list = (VSkipListHeader *) raw_neighbourhood_version(v, FIRST_VERSION);
+#ifdef DEBUG
+    assert_adjacency_list_consistency(v, FIRST_VERSION);
+#endif
+//    if (skip_list->next_levels[0] == nullptr) {
+//      skip_list_to_single_block(v, version_remaining);
+//    }
   }
   return !version_remaining;
 }
 
 bool VersioningBlockedSkipListAdjacencyList::gc_skip_list_block(VSkipListHeader **to_clean, VSkipListHeader *before,
-                                                                VSkipListHeader *after, version_t min_version, VSkipListHeader* blocks[SKIP_LIST_LEVELS]) {
-  dst_t* data = get_data_pointer(*to_clean);
+                                                                VSkipListHeader *after, version_t min_version,
+                                                                VSkipListHeader *blocks[SKIP_LIST_LEVELS]) {
+  dst_t *data = get_data_pointer(*to_clean);
   uint64_t new_size = (*to_clean)->size;
   auto end = data + new_size;
   bool version_remaining = gc_by_shift(data, end, min_version, new_size);
@@ -902,7 +907,7 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list_block(VSkipListHeader 
   }
   (*to_clean)->size = (uint16_t) new_size;
 
-  if (block_size / 2 < new_size) {
+  if (new_size < block_size / 2) {
     auto other = before;
     if (before == nullptr) {
       other = after;
@@ -911,8 +916,8 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list_block(VSkipListHeader 
       return version_remaining;
     }
     if (new_size + other->size <= block_size) {
-      merge_skip_list_blocks(*to_clean, other, blocks);
-      to_clean = nullptr;
+//      merge_skip_list_blocks(*to_clean, other, blocks);
+//      to_clean = nullptr;
     } else {
       if (before != nullptr) {
         auto move_elements = block_size / 2 - new_size;
@@ -954,7 +959,8 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list_block(VSkipListHeader 
   return version_remaining;
 }
 
-bool VersioningBlockedSkipListAdjacencyList::gc_by_shift(dst_t *start, const dst_t *end, version_t min_version, uint64_t& new_size) {
+bool VersioningBlockedSkipListAdjacencyList::gc_by_shift(dst_t *start, const dst_t *end, version_t min_version,
+                                                         uint64_t &new_size) {
   // Removes unncessary versions and shifts remaining destinations and versions forward.
   auto shift = 0; // The forward shift to use, increases when versions are removed.
   bool version_remaining = false;
@@ -962,15 +968,15 @@ bool VersioningBlockedSkipListAdjacencyList::gc_by_shift(dst_t *start, const dst
   for (auto i = start; i < end; i++) {
     auto e = *i;
     if (is_versioned(e) && timestamp(*(i + 1) < min_version)) {
-      if (is_deletion(*(i+1))) {
+      if (is_deletion(*(i + 1))) {
         new_size -= 2;
         shift += 2;
-        i += 3;
+        i += 2;
       } else {
         *(i - shift) = make_unversioned(e);
         new_size -= 1;
         shift += 1;
-        i += 2;
+        i += 1;
       }
     } else {
       if (is_versioned(e)) {
@@ -999,18 +1005,74 @@ void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHea
 void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id_t v, bool contains_versions) {
   assert(get_set_type(v, FIRST_VERSION) == VSKIP_LIST);
 
-  auto skip_list_block = (VSkipListHeader*) raw_neighbourhood_version(v, FIRST_VERSION);
+  auto skip_list_block = (VSkipListHeader *) raw_neighbourhood_version(v, FIRST_VERSION);
   assert(skip_list_block->next_levels[0] == nullptr);
 
   auto size = (uint64_t) skip_list_block->size;
   if (size < block_size / 2) {
-   auto single_block = (dst_t*) malloc(round_up_power_of_two(size) * sizeof(dst_t));
-   memcpy(single_block, get_data_pointer(skip_list_block), size * sizeof(dst_t));
-   free(skip_list_block);
-   adjacency_index[v * 2] = (void*) single_block;
-   if (contains_versions) {
-     size |= SIZE_VERSION_MASK;
-   }
-   adjacency_index[v * 2 + 1] = (void*) size;
+    auto single_block = (dst_t *) malloc(round_up_power_of_two(size) * sizeof(dst_t));
+    memcpy(single_block, get_data_pointer(skip_list_block), size * sizeof(dst_t));
+    free(skip_list_block);
+    adjacency_index[v * 2] = (void *) single_block;
+    if (contains_versions) {
+      size |= SIZE_VERSION_MASK;
+    }
+    adjacency_index[v * 2 + 1] = (void *) size;
   }
+}
+
+void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(vertex_id_t v, version_t version) {
+  switch (get_set_type(v, version)) {
+    case VSKIP_LIST: {
+      auto start = (VSkipListHeader *) raw_neighbourhood_version(v, version);
+
+      auto i = start;
+      while (i != nullptr) {
+        assert(i->size <= block_size);
+//        assert( block_size / 2 < i->size); // TODO activate after completing GC.
+
+        auto data = get_data_pointer(i);
+        auto end = data + i->size;
+
+        assert_block_consistency(data, end, version);
+
+        if (is_versioned(*(end - 2))) {
+          assert(i->max == make_unversioned(*(end - 2)));
+        } else {
+          assert(i->max == make_unversioned(*(end - 1)));
+        }
+
+        for (auto l = 0; l < SKIP_LIST_LEVELS; l++) {
+          if (i->next_levels[l] != nullptr) {
+            assert(i->max < get_min_from_skip_list_header(i->next_levels[l]));
+          }
+        }
+        i = i->next_levels[0];
+      }
+      break;
+    }
+  }
+
+}
+
+void VersioningBlockedSkipListAdjacencyList::assert_block_consistency(dst_t *start, dst_t *end, version_t min_version) {
+  auto size = end - start;
+  dst_t before = 0;
+  for (auto i = start; i < end; i++) {
+    auto e = *i;
+    if (is_versioned(e)) {
+      assert(before < make_unversioned(e));
+      before = make_unversioned(e);
+      assert(i + 1 < end);
+      assert(min_version <= timestamp(*(i + 1)));
+      i += 1; // Jump over version
+    } else {
+      assert(before < e);
+      before = e;
+    }
+  }
+}
+
+dst_t VersioningBlockedSkipListAdjacencyList::get_min_from_skip_list_header(VSkipListHeader *header) {
+  return make_unversioned(get_data_pointer(header)[0]);
 }

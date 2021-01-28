@@ -52,7 +52,8 @@ enum Experiments {
     PR,
     NEIGHBOUR_2,
     COMMUNITY_DETECTION,
-    STORAGE
+    STORAGE,
+    GC
 };
 
 class Dataset {

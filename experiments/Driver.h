@@ -84,6 +84,9 @@ private:
 
     void show_storage_sizes(string ds_name, TopologyInterface& ds);
 
+    void run_gc_experiment(TransactionManager& tm, VersionedTopologyInterface& ds, bool inserts_run, EdgeList &inserts);
+    void check_gc_experiment(VersionedTopologyInterface& ds);
+
 };
 
 
