@@ -881,13 +881,13 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list(vertex_id_t v) {
         i = after;
       }
     }
-    auto skip_list = (VSkipListHeader *) raw_neighbourhood_version(v, FIRST_VERSION);
 #ifdef DEBUG
     assert_adjacency_list_consistency(v, FIRST_VERSION);
 #endif
-//    if (skip_list->next_levels[0] == nullptr) {
-//      skip_list_to_single_block(v, version_remaining);
-//    }
+    auto skip_list = (VSkipListHeader *) raw_neighbourhood_version(v, FIRST_VERSION);
+    if (skip_list->next_levels[0] == nullptr) {  //  Single block skip list
+      skip_list_to_single_block(v, version_remaining);
+    }
   }
   return !version_remaining;
 }
@@ -1043,7 +1043,13 @@ void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(v
       auto i = start;
       while (i != nullptr) {
         assert(i->size <= block_size);
-//        assert( block_size / 2 < i->size); // TODO activate after completing GC.
+        // If not the last block, the last block could contain less than b_size / 2 elements after bulkloading.
+        // && if not the first block because the first block might have less than block_size / 2 elemetns because I only move elements forwards in GC
+        if (i->next_levels[0] != nullptr && i != start) {
+          // TODO fix that the fact that the last block is less than half full after bulkloading.
+          assert( block_size / 2 <= i->size);
+        }
+
 
         auto data = get_data_pointer(i);
         auto end = data + i->size;

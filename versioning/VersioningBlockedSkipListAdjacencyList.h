@@ -168,6 +168,8 @@ private:
      * Merges to skip list blocks into one. Frees the other.
      *
      * Assumes that to->size + from->size <= block_size.
+     * Assumes to --> from relationship on the first skip list level, in other words, expects that the to block
+     * is the predecessor of the from block.
      *
      * @param from all elements are moved to "to", "from" is freed.
      * @param to combines the elements of both blocks
