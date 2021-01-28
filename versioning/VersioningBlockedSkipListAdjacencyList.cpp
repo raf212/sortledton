@@ -78,8 +78,10 @@ void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start
 
       if (first_block == nullptr) {
         first_block = block;
+        block->before = nullptr;
       } else {
         last_block->next_levels[0] = block;
+        block->before = last_block;
       }
       last_block = block;
 
@@ -499,6 +501,8 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
   auto size = (uint64_t) adjacency_index[edge.src * 2 + 1] & ~SIZE_VERSION_MASK;
   auto block_capacity = max(MIN_BLOCK_SIZE, round_up_power_of_two(size));
 
+//  gc_block(edge.src);
+
   if (size < block_capacity - 1) {
     // If block is not too full; -1 for enough space to insert new edge and version, insert into block by shifting
     insert_by_shift(block, block + size, edge.dst, version);
@@ -521,6 +525,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
         new_block->max = block[size - 1];
       }
 
+      new_block->before = nullptr;
       for (int l = 0; l < SKIP_LIST_LEVELS; l++) {
         new_block->next_levels[l] = nullptr;
       }
@@ -601,8 +606,13 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
   VSkipListHeader *blocks_per_level[SKIP_LIST_LEVELS];
   find_block(adjacency_list, edge.dst, blocks_per_level);
 
+  version_t min_version = tm.getMinActiveVersion();
   auto i = blocks_per_level[0];
-
+  auto before = i->before;
+//  gc_skip_list_block(&i, before, nullptr, min_version, blocks_per_level);
+//  if (i == nullptr) {
+//    i = before;
+//  }
   // Handle a full block
   if (block_size <= i->size + 1) {
     auto data = get_data_pointer(i);
@@ -621,6 +631,10 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     i->size = split;
 
     new_block->next_levels[0] = i->next_levels[0];
+    new_block->before = i;
+    if (new_block->next_levels[0] != nullptr) {
+      new_block->next_levels[0]->before = new_block;
+    }
     i->next_levels[0] = new_block;
 
     new_block->max = i->max;
@@ -986,6 +1000,9 @@ void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHea
       blocks[l]->next_levels[l] = from->next_levels[l];
     }
   }
+  if (from->next_levels[0] != nullptr) {
+    from->next_levels[0]->before = to;
+  }
   free(from);
 }
 
@@ -1014,6 +1031,7 @@ void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(v
       auto start = (VSkipListHeader *) raw_neighbourhood_version(v, version);
 
       auto i = start;
+      VSkipListHeader* before = nullptr;
       while (i != nullptr) {
         assert(i->size <= block_size);
         // If not the last block, the last block could contain less than b_size / 2 elements after bulkloading.
@@ -1039,6 +1057,8 @@ void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(v
             assert(i->max < get_min_from_skip_list_header(i->next_levels[l]));
           }
         }
+        assert(before == i->before);
+        before = i;
         i = i->next_levels[0];
       }
       break;

@@ -32,6 +32,7 @@ enum VAdjacencySetType {
 };
 
 struct VSkipListHeader {
+    VSkipListHeader* before;
     dst_t* data;
     uint16_t size;  // Number of destinations stored in this block.
     dst_t max;
