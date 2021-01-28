@@ -876,7 +876,7 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list(vertex_id_t v) {
       version_remaining |= gc_skip_list_block(&i, before, after, min_version, blocks);
       if (i != nullptr) {
         before = i;
-        i = i->next_levels[0];
+        i = i->next_levels[0];  // TODO remove
       } else {
         i = after;
       }
@@ -907,54 +907,61 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list_block(VSkipListHeader 
   }
   (*to_clean)->size = (uint16_t) new_size;
 
-  if (new_size < block_size / 2) {
-    auto other = before;
-    if (before == nullptr) {
-      other = after;
-    }
-    if (other == nullptr) {
-      return version_remaining;
-    }
-    if (new_size + other->size <= block_size) {
-//      merge_skip_list_blocks(*to_clean, other, blocks);
-//      to_clean = nullptr;
+  if (before != nullptr && new_size < block_size / 2) {
+    if (new_size + before->size <= block_size) {
+      merge_skip_list_blocks(*to_clean, before, blocks);
+      *to_clean = nullptr;
     } else {
-      if (before != nullptr) {
-        auto move_elements = block_size / 2 - new_size;
-        for (auto i = 0; i < new_size; i++) {
-          data[i + move_elements] = data[i];
-        }
-        auto before_data = get_data_pointer(before);
-        memcpy(data, before_data + before->size - move_elements, sizeof(dst_t) * move_elements);
+      auto move_elements = block_size / 2 - new_size;
+      auto before_data = get_data_pointer(before);
 
-        before->size = before->size - move_elements;
-        (*to_clean)->size = (uint16_t) (new_size + move_elements);
-
-        if (is_versioned(before_data[before->size - 2])) {
-          before->max = make_unversioned(data[before->size - 2]);
-        } else {
-          before->max = data[before->size - 1];
-        }
-      } else { // After is not a nullptr
-        auto move_elements = block_size / 2 - new_size;
-        auto after_data = get_data_pointer(after);
-        memcpy(data, after_data, sizeof(dst_t) * move_elements);
-
-        for (auto i = 0; i < move_elements; i++) {
-          after_data[i] = after_data[i + move_elements];
-        }
-
-        after->size = after->size - move_elements;
-        new_size += move_elements;
-
-        if (is_versioned(data[new_size - 2])) {
-          (*to_clean)->max = make_unversioned(data[new_size - 2]);
-        } else {
-          (*to_clean)->max = data[new_size - 1];
-        }
-        (*to_clean)->size = (uint16_t) new_size;
+      if (is_versioned(before_data[before->size - move_elements - 1])) {
+        move_elements += 1;
       }
+
+      for (int i = new_size - 1; 0 <= i; i--) {
+        data[i + move_elements] = data[i];
+      }
+      memcpy(data, before_data + before->size - move_elements, sizeof(dst_t) * move_elements);
+
+      before->size = before->size - move_elements;
+      (*to_clean)->size = (uint16_t) (new_size + move_elements);
+
+      if (is_versioned(before_data[before->size - 2])) {
+        before->max = make_unversioned(before_data[before->size - 2]);
+      } else {
+        before->max = before_data[before->size - 1];
+      }
+#ifdef DEBUG
+      assert_block_consistency(get_data_pointer(*to_clean), get_data_pointer(*to_clean) + (*to_clean)->size,
+                               min_version);
+      assert_block_consistency(get_data_pointer(before), get_data_pointer(before) + before->size, min_version);
+#endif
     }
+
+//      } else { // After is not a nullptr
+//        auto move_elements = block_size / 2 - new_size;
+//        auto after_data = get_data_pointer(after);
+//
+//        if (is_versioned(after_data[move_elements - 1])) {
+//          move_elements += 1;
+//        }
+//
+//        memcpy(data + new_size, after_data, sizeof(dst_t) * move_elements);
+//
+//        for (auto i = 0; i < after->size - move_elements; i++) {
+//          after_data[i] = after_data[i + move_elements];
+//        }
+//
+//        after->size = after->size - move_elements;
+//        new_size += move_elements;
+//
+//        if (is_versioned(data[new_size - 2])) {
+//          (*to_clean)->max = make_unversioned(data[new_size - 2]);
+//        } else {
+//          (*to_clean)->max = data[new_size - 1];
+//        }
+//        (*to_clean)->size = (uint16_t) new_size;
   }
   return version_remaining;
 }
@@ -991,14 +998,21 @@ bool VersioningBlockedSkipListAdjacencyList::gc_by_shift(dst_t *start, const dst
 void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHeader *from, VSkipListHeader *to,
                                                                     VSkipListHeader **blocks) {
   assert(from->size + to->size <= block_size);
+  assert(to->max < get_min_from_skip_list_header(from));
   memcpy(get_data_pointer(to) + to->size, get_data_pointer(from), sizeof(dst_t) * from->size);
   to->size += from->size;
-  to->max = max(from->max, to->max);
+  to->max = from->max;
   for (auto l = 0; l < SKIP_LIST_LEVELS; l++) {
+    if (to->next_levels[l] == from) {
+      to->next_levels[l] = from->next_levels[l];
+    }
     if (from->next_levels[l] != nullptr) {
       blocks[l]->next_levels[l] = from->next_levels[l];
     }
   }
+#ifdef DEBUG
+  assert_block_consistency(get_data_pointer(to), get_data_pointer(to) + to->size, 0);
+#endif
   free(from);
 }
 
