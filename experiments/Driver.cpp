@@ -495,6 +495,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
 #ifdef DEBUG
   auto tx = tm.getSnapshotTransaction(ds, thread_id);
   check_insert(tx, el);
+  tm.transactionCompleted(tx, thread_id);
 #endif
   cout << "checked" << endl;
 }
