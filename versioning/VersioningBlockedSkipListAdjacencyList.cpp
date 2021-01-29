@@ -773,30 +773,33 @@ void VersioningBlockedSkipListAdjacencyList::report_storage_size() {
 
 void VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock(vertex_id_t vertex_lock) {
 //  auto old_value = (uint64_t) adjacency_index[vertex_lock * 2];
-//  while (true) {
-//    auto old_value = (uint64_t) adjacency_index[vertex_lock * 2];
-//
-//    if (!(old_value & LOCK_MASK)) {
-//      auto locked = old_value | LOCK_MASK;
-//      if (__atomic_compare_exchange_n(&adjacency_index[vertex_lock * 2], &old_value, locked, true, __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE)) {
-//        break;
-//      }
-//    }
-//  }
+
+  while (true) {
+    void* old_value = __atomic_load_n(&adjacency_index[vertex_lock * 2], __ATOMIC_ACQUIRE);
+    if (!((uint64_t)old_value & LOCK_MASK)) {
+      auto locked = (void*) ((uint64_t) old_value | LOCK_MASK);
+      if (__atomic_compare_exchange_n(&adjacency_index[vertex_lock * 2], &old_value, locked, true, __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE)) {
+        break;
+      }
+    }
+  }
 
 //  while (!vertex_cas_locks[vertex_lock].test_and_set(std::memory_order_acquire))
 //    ;
 //  if(!vertex_mutices[vertex_lock].try_lock()) {
 //    cout << "lock contention" << endl;
-  vertex_mutices[vertex_lock].lock();
+//  vertex_mutices[vertex_lock].lock();
 //  }
 
 }
 
 void VersioningBlockedSkipListAdjacencyList::release_vertex_lock(vertex_id_t v) {
 //  vertex_cas_locks[v].clear(std::memory_order_acquire);
+//    __atomic_store()
+    void* unlocked = (void*) ((uint64_t) adjacency_index[v * 2] & ~LOCK_MASK);
+    __atomic_store(&(adjacency_index[v * 2]), &unlocked, __ATOMIC_RELEASE);
 //    adjacency_index[v * 2] = (void*) ((uint64_t) adjacency_index[v * 2] & ~LOCK_MASK);
-  vertex_mutices[v].unlock();
+//  vertex_mutices[v].unlock();
 }
 
 SizeVersionChainEntry *

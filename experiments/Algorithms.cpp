@@ -213,6 +213,7 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
       work.pop();
 
       vertices_traversed++;
+      raw_ds->aquire_vertex_lock(v);
       if (raw_ds->get_set_type(v, trans_timestamp)) {
         dst_t *ns = (dst_t *) raw_ds->raw_neighbourhood_version(v, trans_timestamp);
         uint64_t size = (uint64_t) raw_ds->raw_neighbourhood_size_entry(v) & ~SIZE_VERSION_MASK;
@@ -265,6 +266,7 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
           block = block->next_levels[0];
         }
       }
+      raw_ds->release_vertex_lock(v);
     }
   }
   else if (typeid(ds) == typeid(BlockedSkipListAdjacencyLists)) {
