@@ -1121,6 +1121,7 @@ void Driver::show_storage_sizes(string ds_name, TopologyInterface &ds) {
 void Driver::run_gc_experiment(TransactionManager& tm, VersionedTopologyInterface& ds, bool inserts_run, EdgeList &inserts) {
   cout << "Running GC experiment " << endl;
 
+  tm.update_min_version();
   auto start = chrono::steady_clock::now();
   ds.gc_all();
   auto end = chrono::steady_clock::now();
@@ -1141,6 +1142,9 @@ void Driver::run_gc_experiment(TransactionManager& tm, VersionedTopologyInterfac
 #endif
 
   cout << endl << "GC run in " << milliseconds << " milliseconds " << endl;
+  cout << "Collected " << dynamic_cast<VersioningBlockedSkipListAdjacencyList&>(ds).gced_edges << " edge versions" << endl;
+  cout << "Merged " << dynamic_cast<VersioningBlockedSkipListAdjacencyList&>(ds).gc_merges << " skip list blocks" << endl;
+  cout << "Changed  " << dynamic_cast<VersioningBlockedSkipListAdjacencyList&>(ds).gc_to_single_block << " skip list blocks to single blocks" << endl;
 }
 
 void Driver::check_gc_experiment(VersionedTopologyInterface& ds) {

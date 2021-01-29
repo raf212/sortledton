@@ -15,6 +15,8 @@
 #include "SizeVersionChainEntry.h"
 
 #define MIN_BLOCK_SIZE 2u
+#define COLLECT_VERSIONS_ON_INSERT 1
+
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
@@ -36,6 +38,10 @@
 
 //thread_local mt19937 VersioningBlockedSkipListAdjacencyList::level_generator = mt19937((uint) time(NULL));
 thread_local mt19937 VersioningBlockedSkipListAdjacencyList::level_generator = mt19937((uint) 42);
+
+thread_local int VersioningBlockedSkipListAdjacencyList::gced_edges = 0;
+thread_local int VersioningBlockedSkipListAdjacencyList::gc_merges = 0;
+thread_local int VersioningBlockedSkipListAdjacencyList::gc_to_single_block = 0;
 
 void VersioningBlockedSkipListAdjacencyList::bulkload(const SortedCSRDataSource &src) {
   adjacency_index.reserve(src.vertex_count() * 2);
@@ -502,7 +508,10 @@ version_t VersioningBlockedSkipListAdjacencyList::inline_version(bool deletion, 
 }
 
 void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, version_t version) {
+#if COLLECT_VERSIONS_ON_INSERT
   gc_block(edge.src);
+#endif
+
 
   auto block = (dst_t *) raw_neighbourhood_version(edge.src, version);
   auto size = (uint64_t) adjacency_index[edge.src * 2 + 1] & ~SIZE_VERSION_MASK;
@@ -613,10 +622,12 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
 
   version_t min_version = tm.getMinActiveVersion();
   auto before = i->before;
+#if COLLECT_VERSIONS_ON_INSERT
   gc_skip_list_block(&i, before, nullptr, min_version, blocks_per_level, 2);
   if (i == nullptr) {
     i = find_block(adjacency_list, edge.dst, blocks_per_level);
   }
+#endif
 #ifdef DEBUG
   assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
 #endif
@@ -994,6 +1005,7 @@ bool VersioningBlockedSkipListAdjacencyList::gc_by_shift(dst_t *start, const dst
         shift += 1;
         i += 1;
       }
+      gced_edges += 1;
     } else {
       if (is_versioned(e)) {
         version_remaining = true;
@@ -1023,6 +1035,9 @@ void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHea
     from->next_levels[0]->before = to;
   }
   free(from);
+//  cout << "merge" << endl;
+//  cout << gc_merges << endl;
+  gc_merges += 1;
 }
 
 void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id_t v, bool contains_versions) {
@@ -1041,6 +1056,7 @@ void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id
       size |= SIZE_VERSION_MASK;
     }
     adjacency_index[v * 2 + 1] = (void *) size;
+    gc_to_single_block += 1;
   }
 }
 

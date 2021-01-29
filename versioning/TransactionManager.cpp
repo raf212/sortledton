@@ -45,8 +45,9 @@ SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopology
 }
 
 TransactionManager::TransactionManager(uint threads) : threads(threads) {
+  stopped.store(false);
   active_snapshots = vector<version_t>(threads, NO_TRANSACTION);
-  min_version_updater = thread(&TransactionManager::run_min_version_updater, this, 2000);
+  min_version_updater = thread(&TransactionManager::run_min_version_updater, this, MIN_VERSION_UPDATER_INTERVAL);
 }
 
 size_t TransactionManager::register_thread() {
@@ -71,7 +72,7 @@ void TransactionManager::update_min_version() {
 void TransactionManager::run_min_version_updater(uint interval) {
   while (!stopped.load()) {
     update_min_version();
-    this_thread::sleep_for(chrono::milliseconds(interval));
+    this_thread::sleep_for(chrono::microseconds(interval));
   }
 }
 

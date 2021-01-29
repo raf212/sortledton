@@ -32,7 +32,7 @@ enum VAdjacencySetType {
 };
 
 struct VSkipListHeader {
-    VSkipListHeader* before;
+    VSkipListHeader* before;  // TODO remove
     dst_t* data;
     uint16_t size;  // Number of destinations stored in this block.
     dst_t max;
@@ -42,6 +42,8 @@ struct VSkipListHeader {
 class MultipleVersionException : exception {
 
 };
+
+
 
 class VersioningBlockedSkipListAdjacencyList : public VersionedTopologyInterface {
 
@@ -81,6 +83,9 @@ public:
     void gc_all() override;
     void gc_vertex(vertex_id_t v) override;
 
+    thread_local static int gced_edges;
+    thread_local static int gc_merges;
+    thread_local static int gc_to_single_block;
 protected:
     bool gc_block(vertex_id_t v);
     bool gc_skip_list(vertex_id_t v);

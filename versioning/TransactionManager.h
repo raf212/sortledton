@@ -18,6 +18,8 @@
 
 #define NO_TRANSACTION numeric_limits<version_t>::max()
 
+#define MIN_VERSION_UPDATER_INTERVAL 100 // The interval in which the minimal version is updated, in microseconds.
+
 class TransactionManager {
 
 public:
@@ -35,6 +37,7 @@ public:
     void transactionCompleted(const Transaction& transaction, size_t thread_id);
 
     version_t getMinActiveVersion();
+    void update_min_version();
 private:
     uint threads;
     uint last_thread_id =0;
@@ -49,7 +52,6 @@ private:
     atomic<bool> stopped;
 
     void run_min_version_updater(uint interval);
-    void update_min_version();
 };
 
 
