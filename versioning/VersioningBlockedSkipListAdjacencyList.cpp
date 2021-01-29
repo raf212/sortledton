@@ -34,7 +34,8 @@
   }\
 }
 
-thread_local mt19937 VersioningBlockedSkipListAdjacencyList::level_generator = mt19937((uint) time(NULL));
+//thread_local mt19937 VersioningBlockedSkipListAdjacencyList::level_generator = mt19937((uint) time(NULL));
+thread_local mt19937 VersioningBlockedSkipListAdjacencyList::level_generator = mt19937((uint) 42);
 
 void VersioningBlockedSkipListAdjacencyList::bulkload(const SortedCSRDataSource &src) {
   adjacency_index.reserve(src.vertex_count() * 2);
@@ -497,11 +498,11 @@ version_t VersioningBlockedSkipListAdjacencyList::inline_version(bool deletion, 
 }
 
 void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, version_t version) {
+  gc_block(edge.src);
+
   auto block = (dst_t *) raw_neighbourhood_version(edge.src, version);
   auto size = (uint64_t) adjacency_index[edge.src * 2 + 1] & ~SIZE_VERSION_MASK;
   auto block_capacity = max(MIN_BLOCK_SIZE, round_up_power_of_two(size));
-
-//  gc_block(edge.src);
 
   if (size < block_capacity - 1) {
     // If block is not too full; -1 for enough space to insert new edge and version, insert into block by shifting
