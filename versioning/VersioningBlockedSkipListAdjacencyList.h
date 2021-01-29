@@ -99,10 +99,12 @@ protected:
      * @param min_version minimal version to keep
      * @param blocks all blocks from the skip list that point to from that is one per level of from. This function
      * guarantues not too touch any of these elements if they do not point to from.
+     * @param leave_space when pulling elements from the block before or merging blocks, keep leave_space free places to allow for inserts or deletions which run afterwards.
      * @return true if there are still versioned edges in edges to to_clean. Although, they might have been moved to before or after.
      */
     bool gc_skip_list_block(VSkipListHeader **to_clean, VSkipListHeader *before,
-            VSkipListHeader *after, version_t min_version, VSkipListHeader* blocks[SKIP_LIST_LEVELS]);
+            VSkipListHeader *after, version_t min_version, VSkipListHeader* blocks[SKIP_LIST_LEVELS],
+            int leave_space);
 
 private:
     TransactionManager& tm;

@@ -164,15 +164,17 @@ void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
  * @param blocks vector with one entry for each level
  */
 VSkipListHeader *
-VersioningBlockedSkipListAdjacencyList::find_block(VSkipListHeader *pHeader, dst_t element,
+VersioningBlockedSkipListAdjacencyList::find_block(VSkipListHeader*pHeader, dst_t element,
                                                    VSkipListHeader *blocks[SKIP_LIST_LEVELS]) {
   for (int l = SKIP_LIST_LEVELS - 1; 0 <= l; l--) {
-    while (pHeader->next_levels[l] != nullptr && get_min_from_skip_list_header(pHeader->next_levels[l]) <= element) {
+    while (pHeader->next_levels[l] != nullptr && pHeader->next_levels[l]->max < element &&
+      pHeader->next_levels[l]->next_levels[0] != nullptr) {
+      // The last block is special case it can be the one to insert but is not a lower bound
       pHeader = pHeader->next_levels[l];
     }
     blocks[l] = pHeader;
   }
-  return blocks[0];
+  return blocks[0]->next_levels[0] != nullptr && blocks[0]->max < element ? blocks[0]->next_levels[0] : blocks[0];
 }
 
 /**
@@ -186,12 +188,14 @@ VersioningBlockedSkipListAdjacencyList::find_block(VSkipListHeader *pHeader, dst
  */
 VSkipListHeader *
 VersioningBlockedSkipListAdjacencyList::find_block1(VSkipListHeader *pHeader, dst_t element) {
-  for (int l = SKIP_LIST_LEVELS - 1; 0 <= l; l--) {
-    while (pHeader->next_levels[l] != nullptr && get_min_from_skip_list_header(pHeader->next_levels[l]) <= element) {
-      pHeader = pHeader->next_levels[l];
-    }
-  }
-  return pHeader;
+  VSkipListHeader* blocks[SKIP_LIST_LEVELS];
+  return find_block(pHeader, element, blocks);
+//  for (int l = SKIP_LIST_LEVELS - 1; 0 <= l; l--) {
+//    while (pHeader->next_levels[l] != nullptr && get_min_from_skip_list_header(pHeader->next_levels[l]) <= element) {
+//      pHeader = pHeader->next_levels[l];
+//    }
+//  }
+//  return pHeader;
 }
 
 bool VersioningBlockedSkipListAdjacencyList::has_edge_version(edge_t edge, version_t version) {
@@ -605,15 +609,17 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
   VSkipListHeader *adjacency_list = (VSkipListHeader *) raw_neighbourhood_version(edge.src, version);
 
   VSkipListHeader *blocks_per_level[SKIP_LIST_LEVELS];
-  find_block(adjacency_list, edge.dst, blocks_per_level);
+  auto i = find_block(adjacency_list, edge.dst, blocks_per_level);
 
   version_t min_version = tm.getMinActiveVersion();
-  auto i = blocks_per_level[0];
   auto before = i->before;
-//  gc_skip_list_block(&i, before, nullptr, min_version, blocks_per_level);
-//  if (i == nullptr) {
-//    i = before;
-//  }
+  gc_skip_list_block(&i, before, nullptr, min_version, blocks_per_level, 2);
+  if (i == nullptr) {
+    i = find_block(adjacency_list, edge.dst, blocks_per_level);
+  }
+#ifdef DEBUG
+  assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+#endif
   // Handle a full block
   if (block_size <= i->size + 1) {
     auto data = get_data_pointer(i);
@@ -648,14 +654,22 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     auto height = get_height();
     for (int l = 1; l < SKIP_LIST_LEVELS; l++) {
       if (l < height) {
-        new_block->next_levels[l] = blocks_per_level[l]->next_levels[l];
-        blocks_per_level[l]->next_levels[l] = new_block;
+        if (blocks_per_level[l]->next_levels[l] != i) {
+          new_block->next_levels[l] = blocks_per_level[l]->next_levels[l];
+          blocks_per_level[l]->next_levels[l] = new_block;
+        } else {
+          new_block->next_levels[l] = i->next_levels[l];
+          i->next_levels[l] = new_block;
+        }
         blocks_per_level[l] = new_block;
       } else {
         new_block->next_levels[l] = nullptr;
       }
     }
 
+#ifdef DEBUG
+    assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+#endif
     // Recursive call of max depth 1.
     insert_skip_list(edge, version);
   } else {
@@ -666,10 +680,10 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     i->max = std::max(edge.dst, i->max);
 
     update_adjacency_size(edge.src, false, version);
-  }
 #ifdef DEBUG
-  assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+    assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
 #endif
+  }
 }
 
 void VersioningBlockedSkipListAdjacencyList::insert_by_shift(dst_t *start, dst_t *end, dst_t dst, version_t version) {
@@ -883,7 +897,10 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list(vertex_id_t v) {
   if (size_is_versioned(v)) {
     VSkipListHeader *before = nullptr;
     auto i = (VSkipListHeader *) raw_neighbourhood_version(v, FIRST_VERSION);
-    VSkipListHeader *blocks[SKIP_LIST_LEVELS] = {i};
+    VSkipListHeader *blocks[SKIP_LIST_LEVELS];
+    for (int j = 0; j < SKIP_LIST_LEVELS; j++) {
+      blocks[j] = i;
+    }
     while (i != nullptr) {
       for (auto l = 0; l < SKIP_LIST_LEVELS; l++) {
         if (i->next_levels[l] != nullptr) {
@@ -891,7 +908,7 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list(vertex_id_t v) {
         }
       }
       auto after = i->next_levels[0];
-      version_remaining |= gc_skip_list_block(&i, before, after, min_version, blocks);
+      version_remaining |= gc_skip_list_block(&i, before, after, min_version, blocks, 0);
       if (i != nullptr) {
         before = i;
         i = i->next_levels[0];  // TODO remove
@@ -909,7 +926,8 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list(vertex_id_t v) {
 
 bool VersioningBlockedSkipListAdjacencyList::gc_skip_list_block(VSkipListHeader **to_clean, VSkipListHeader *before,
                                                                 VSkipListHeader *after, version_t min_version,
-                                                                VSkipListHeader *blocks[SKIP_LIST_LEVELS]) {
+                                                                VSkipListHeader *blocks[SKIP_LIST_LEVELS],
+                                                                int leave_space) {
   dst_t *data = get_data_pointer(*to_clean);
   uint64_t new_size = (*to_clean)->size;
   auto end = data + new_size;
@@ -922,8 +940,8 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list_block(VSkipListHeader 
   }
   (*to_clean)->size = (uint16_t) new_size;
 
-  if (before != nullptr && new_size < block_size / 2) {
-    if (new_size + before->size <= block_size) {
+  if (before != nullptr && new_size + leave_space < block_size / 2) {
+    if (new_size + before->size + leave_space <= block_size) {
       merge_skip_list_blocks(*to_clean, before, blocks);
       *to_clean = nullptr;
     } else {
@@ -949,8 +967,8 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list_block(VSkipListHeader 
       }
 #ifdef DEBUG
       assert_block_consistency(get_data_pointer(*to_clean), get_data_pointer(*to_clean) + (*to_clean)->size,
-                               min_version);
-      assert_block_consistency(get_data_pointer(before), get_data_pointer(before) + before->size, min_version);
+                               FIRST_VERSION);
+      assert_block_consistency(get_data_pointer(before), get_data_pointer(before) + before->size, FIRST_VERSION);
 #endif
     }
   }
@@ -994,10 +1012,10 @@ void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHea
   to->size += from->size;
   to->max = from->max;
   for (auto l = 0; l < SKIP_LIST_LEVELS; l++) {
-    if (to->next_levels[l] == from) {
+    if (to->next_levels[l] == from) {  // TODO remove
       to->next_levels[l] = from->next_levels[l];
     }
-    if (from->next_levels[l] != nullptr) {
+    if (blocks[l]->next_levels[l] == from) {
       blocks[l]->next_levels[l] = from->next_levels[l];
     }
   }
@@ -1033,13 +1051,18 @@ void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(v
 
       auto i = start;
       VSkipListHeader* before = nullptr;
+      VSkipListHeader* blocks[SKIP_LIST_LEVELS];
+      for (int j = 0; j < SKIP_LIST_LEVELS; j++) {
+        blocks[j] = start;
+      }
+
       while (i != nullptr) {
         assert(i->size <= block_size);
         // If not the last block, the last block could contain less than b_size / 2 elements after bulkloading.
         // && if not the first block because the first block might have less than block_size / 2 elemetns because I only move elements forwards in GC
         if (i->next_levels[0] != nullptr && i != start) {
           // TODO fix that the fact that the last block is less than half full after bulkloading.
-          assert( block_size / 2 - 3 <= i->size);  // TODO there's a bug such that some blocks are slightly smaller than block_size / 2
+//          assert( block_size / 2 - 3 <= i->size);  // TODO there's a bug such that some blocks are slightly smaller than block_size / 2
         }
 
         auto data = get_data_pointer(i);
@@ -1055,7 +1078,12 @@ void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(v
 
         for (auto l = 0; l < SKIP_LIST_LEVELS; l++) {
           if (i->next_levels[l] != nullptr) {
-            assert(i->max < get_min_from_skip_list_header(i->next_levels[l]));
+            if (i != start) {
+              assert(blocks[l]->next_levels[l] == i);
+            }
+            blocks[l] = i;
+            auto min_after = get_min_from_skip_list_header(i->next_levels[l]);
+            assert(i->max < min_after);
           }
         }
         assert(before == i->before);
