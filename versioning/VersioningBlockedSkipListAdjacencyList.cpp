@@ -248,13 +248,35 @@ bool VersioningBlockedSkipListAdjacencyList::has_edge_version(edge_t edge, versi
  * @return a pointer to the position of the upper bound or end.
  */
 dst_t *VersioningBlockedSkipListAdjacencyList::find_upper_bound(dst_t *start, dst_t *end, dst_t value) {
-  for (; start < end; start++) {
-    auto s = *start;
-    if (value <= make_unversioned(s)) {
-      return start;
+  auto l = 0;
+  auto r = end - start;
+  while ((r - l) > 16) {  // Incorrect if not ended before r-l > 4 because there could be an endless loop.
+    auto m = l + (r - l) / 2;
+
+    auto v = 0 < m && is_versioned(start[m - 1]) ? make_unversioned(start[m-1]) : make_unversioned(start[m]);
+    if (value > v) {
+      l = m + 1;
+    } else if (v == value) {
+      if (0 < m && is_versioned(start[m - 1])) {
+        return start + m - 1;
+      } else {
+        return start + m;
+      }
+    } else {
+      r = m;
     }
-    if (is_versioned(s)) {
-      start++;  // Skip inline version record.
+  }
+  dst_t* ptr = start + l;
+  if (ptr != start && is_versioned(*(ptr - 1))) {
+    ptr -= 1;
+  }
+  for (; ptr < end; ptr++) {
+    auto v = *ptr;
+    if (value <= make_unversioned(v)) {
+      return ptr;
+    }
+    if (is_versioned(v)) {
+      ptr++;  // Skip inline version record.
     }
   }
   return end;
@@ -526,6 +548,9 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
     // If block is not too full; -1 for enough space to insert new edge and version, insert into block by shifting
     insert_by_shift(block, block + size, edge.dst, version);
     adjacency_index[2 * edge.src + 1] = (void *) ((uint64_t) (size + 2) | SIZE_VERSION_MASK);
+#ifdef DEBUG
+    assert_block_consistency(block, block + size + 2, FIRST_VERSION);
+#endif
   } else {  // else resize block or add skip list
     if (block_capacity == block_size) {
       // Block should be split into 2 skip list blocks, we do this in two steps, convert to SkipListHeader and then by recursion split into two.
@@ -569,6 +594,9 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
       free(block);
       adjacency_index[edge.src * 2] = (void *) ((uint64_t) new_block | EDGE_SET_TYPE_MASK);
       adjacency_index[2 * edge.src + 1] = (void *) ((uint64_t) (size + 2) | SIZE_VERSION_MASK);
+#ifdef DEBUG
+      assert_block_consistency(new_block, new_block + size + 2, FIRST_VERSION);
+#endif
     }
   }
 }

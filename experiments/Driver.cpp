@@ -21,6 +21,7 @@
 #include <map>
 #include <thread>
 #include <atomic>
+#include <exception>
 #include <data-structures/HashSetAdjacencyLists.h>
 #include <versioning/SnapshotTransaction.h>
 #include <versioning/TransactionManager.h>
@@ -32,6 +33,7 @@
 #include "Algorithms.h"
 #include "TwoNeighbourSourceSelector.h"
 #include "TwoNeighbour.h"
+
 
 vector<vector<vertex_id_t>> Driver::select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
   vector<vector<vertex_id_t>> out;
@@ -472,7 +474,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
       EdgeDoesNotExistsPrecondition p(e);
       tx.register_precondition(&p);
       tx.insert_edge(e);
-      tx.execute();
+      tx.execute();  // TODO handle execution failure due to precondition.
       tm.transactionCompleted(tx, thread_id);
       tm.getSnapshotTransaction(ds, thread_id, tx);
     }
