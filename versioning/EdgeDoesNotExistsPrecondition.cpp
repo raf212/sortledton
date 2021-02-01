@@ -1,0 +1,27 @@
+//
+// Created by per on 29.01.21.
+//
+
+#include "EdgeDoesNotExistsPrecondition.h"
+
+#include <iostream>
+
+EdgeDoesNotExistsPrecondition::EdgeDoesNotExistsPrecondition(edge_t e) : e(e) {
+
+}
+
+bool EdgeDoesNotExistsPrecondition::assert_it(VersionedTopologyInterface &ds, version_t version) {
+  return !ds.has_edge_version(e, version);
+}
+
+vector<vertex_id_t> EdgeDoesNotExistsPrecondition::requires_vertex_locks() {
+  return vector<vertex_id_t>(1, e.src);
+}
+
+vertex_id_t EdgeDoesNotExistsPrecondition::requires_vertex_lock() {
+  return e.src;
+}
+
+EdgeDoesNotExistsPrecondition::~EdgeDoesNotExistsPrecondition() {
+
+}

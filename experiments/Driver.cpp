@@ -25,6 +25,7 @@
 #include <versioning/SnapshotTransaction.h>
 #include <versioning/TransactionManager.h>
 #include <versioning/VersioningBlockedSkipListAdjacencyList.h>
+#include <versioning/EdgeDoesNotExistsPrecondition.h>
 #include "Driver.h"
 
 #include "BFSSourceSelector.h"
@@ -393,6 +394,8 @@ void run_inserts_in_transactions(TransactionManager &tm, EdgeList &el, atomic_ui
     int work_end = min(total_work, work + batch_size);
 
     while (work < work_end) {
+      EdgeDoesNotExistsPrecondition p(el.edges[work]);
+      tx.register_precondition(&p);
       tx.insert_edge(el.edges[work]);
       tx.execute();
       tm.transactionCompleted(tx, thread_id);
@@ -464,7 +467,10 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   auto start = chrono::steady_clock::now();
   if (threads == 1) {
     SnapshotTransaction tx = tm.getSnapshotTransaction(ds, thread_id);
+
     for (auto e : el.edges) {
+      EdgeDoesNotExistsPrecondition p(e);
+      tx.register_precondition(&p);
       tx.insert_edge(e);
       tx.execute();
       tm.transactionCompleted(tx, thread_id);

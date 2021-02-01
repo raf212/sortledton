@@ -7,3 +7,7 @@
 Precondition::~Precondition() {
 
 }
+
+vertex_id_t Precondition::requires_vertex_lock() {
+  return numeric_limits<vertex_id_t>::max();
+}

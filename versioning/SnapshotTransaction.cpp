@@ -48,11 +48,16 @@ bool SnapshotTransaction::execute() {
   }
 }
 
-void SnapshotTransaction::register_precondition(unique_ptr<Precondition> c) {
-  for (vertex_id_t l : c->requires_vertex_locks()) {
-    locks_to_aquire.push_back(l);
+void SnapshotTransaction::register_precondition(Precondition* c) {
+  vertex_id_t lock_to_aquire = c->requires_vertex_lock();
+  if (lock_to_aquire != numeric_limits<vertex_id_t>::max()) {
+    locks_to_aquire.push_back(lock_to_aquire);
+  } else {
+    for (vertex_id_t l : c->requires_vertex_locks()) {
+      locks_to_aquire.push_back(l);
+    }
   }
-  preconditions.push_back(c.release());
+  preconditions.push_back(c);
 }
 
 bool SnapshotTransaction::assert_preconditions() {
@@ -140,9 +145,9 @@ version_t SnapshotTransaction::get_version() const {
 }
 
 SnapshotTransaction::~SnapshotTransaction() {
-  for (auto p : preconditions) {
-    delete p;
-  }
+//  for (auto p : preconditions) {
+//    delete p;
+//  }
 }
 
 void SnapshotTransaction::bulkload(const SortedCSRDataSource &src) {

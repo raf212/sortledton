@@ -209,10 +209,15 @@ bool VersioningBlockedSkipListAdjacencyList::has_edge_version(edge_t edge, versi
   dst_t *end;
   switch (get_set_type(edge.src, version)) {
     case SKIP_LIST: {
-      auto block = find_block1((VSkipListHeader *) raw_neighbourhood_version(edge.src, version), edge.dst);
-      end = get_data_pointer(block) + block->size;
+      VSkipListHeader* head = (VSkipListHeader *) raw_neighbourhood_version(edge.src, version);
+      if (head != nullptr) {
+        auto block = find_block1(head, edge.dst);
+        end = get_data_pointer(block) + block->size;
 
-      pos = find_upper_bound(get_data_pointer(block), end, edge.dst);
+        pos = find_upper_bound(get_data_pointer(block), end, edge.dst);
+      } else {
+        return false;
+      }
       break;
     }
     case SINGLE_BLOCK: {

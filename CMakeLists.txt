@@ -74,7 +74,8 @@ set(SRC
         versioning/ReadOnlyTransaction.cpp versioning/ReadOnlyTransaction.h
         versioning/SerializableUpdateTransaction.cpp versioning/SerializableUpdateTransaction.h
         versioning/TransactionManager.cpp versioning/TransactionManager.h
-        versioning/VertexExistsPrecondition.cpp versioning/VertexExistsPrecondition.h)
+        versioning/VertexExistsPrecondition.cpp versioning/VertexExistsPrecondition.h
+        versioning/EdgeDoesNotExistsPrecondition.cpp versioning/EdgeDoesNotExistsPrecondition.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp

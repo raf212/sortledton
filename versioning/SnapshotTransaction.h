@@ -18,7 +18,7 @@ public:
     SnapshotTransaction(version_t version, VersionedTopologyInterface* ds);
     ~SnapshotTransaction();
 
-    void register_precondition(unique_ptr<Precondition> c);
+    void register_precondition(Precondition* c);
 
     bool execute();
 

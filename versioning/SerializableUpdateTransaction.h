@@ -18,7 +18,7 @@ private:
 public:
     SerializableUpdateTransaction(SnapshotTransaction trans) : transaction(trans) {}
 
-    void register_precondition(unique_ptr<Precondition> c) { transaction.register_precondition(std::move(c)); };
+    void register_precondition(Precondition* c) { transaction.register_precondition(c); };
     bool execute() { return transaction.execute(); };
 
     size_t vertex_count() override {
