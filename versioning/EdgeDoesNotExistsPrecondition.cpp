@@ -11,7 +11,11 @@ EdgeDoesNotExistsPrecondition::EdgeDoesNotExistsPrecondition(edge_t e) : e(e) {
 }
 
 bool EdgeDoesNotExistsPrecondition::assert_it(VersionedTopologyInterface &ds, version_t version) {
-  return !ds.has_edge_version(e, version);
+  if (ds.has_edge_version(e, version)) {
+    throw EdgeExistsException(e);
+  } else {
+    return true;
+  }
 }
 
 vector<vertex_id_t> EdgeDoesNotExistsPrecondition::requires_vertex_locks() {

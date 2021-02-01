@@ -267,7 +267,7 @@ dst_t *VersioningBlockedSkipListAdjacencyList::find_upper_bound(dst_t *start, ds
     }
   }
   dst_t* ptr = start + l;
-  if (ptr != start && is_versioned(*(ptr - 1))) {
+  if (ptr != start && is_versioned(*(ptr - 1))) { // Do not start on a version record.
     ptr -= 1;
   }
   for (; ptr < end; ptr++) {

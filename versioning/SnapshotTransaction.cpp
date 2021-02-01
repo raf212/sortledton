@@ -15,19 +15,20 @@ SnapshotTransaction::SnapshotTransaction(version_t version, VersionedTopologyInt
 bool SnapshotTransaction::execute() {
   aquire_locks();
 
-  if (assert_preconditions()) {
-    // TODO check standard preconditions, e.g. I add an edge is the vertex existing?
-    for (auto v: vertices_to_delete) {
-      ds->delete_vertex_version(v, version);  // TODO should follow if exists
-    }
-    for (auto v : vertices_to_insert) {
-      ds->insert_vertex_version(v, version);  // TODO should follow if not exists
-    }
-    for (auto e : edges_to_delete) {
-      ds->delete_edge_version(e, version);   // TODO should follow if exists
-    }
-    auto i = 0;
-    for (auto e : edges_to_insert) {
+  try {
+    if (assert_preconditions()) {
+      // TODO check standard preconditions, e.g. I add an edge is the vertex existing?
+      for (auto v: vertices_to_delete) {
+        ds->delete_vertex_version(v, version);  // TODO should follow if exists
+      }
+      for (auto v : vertices_to_insert) {
+        ds->insert_vertex_version(v, version);  // TODO should follow if not exists
+      }
+      for (auto e : edges_to_delete) {
+        ds->delete_edge_version(e, version);   // TODO should follow if exists
+      }
+      auto i = 0;
+      for (auto e : edges_to_insert) {
 //      try {
         ds->insert_edge_version(e, version);  // TODO should follow if not exists
 //        i++;
@@ -38,13 +39,17 @@ bool SnapshotTransaction::execute() {
 //      } catch (MultipleVersionException& e) {
 //         NOP
 //      }
-    }
+      }
 //    cout << endl<< "done inserting" << endl;
+      release_locks();
+      return true;
+    } else {
+      release_locks();
+      return false;  // TODO remove return code. Preconditions should throw
+    }
+  } catch (exception& e) {
     release_locks();
-    return true;
-  } else {
-    release_locks();
-    return false;
+    throw e;
   }
 }
 
