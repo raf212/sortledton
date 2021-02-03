@@ -652,7 +652,7 @@ ContigiousBlockIterator &Driver::getIter(TopologyInterface &ds) {
     vectorIterators.push_back(VectorBatchedEdgeIterator());
     return vectorIterators[vectorIterators.size() - 1];
   } else {
-    throw NotImplemented();
+      throw NotImplemented();
   }
 }
 
@@ -660,6 +660,9 @@ EdgeIterator &Driver::getSingleEdgeIter(TopologyInterface &ds) {
   if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
     filteredBlockIterators.push_back(FilteredVectorIterator());
     return filteredBlockIterators[filteredBlockIterators.size() - 1];
+  } else if (typeid(ds) == typeid(SnapshotTransaction)) {
+    versionedIterators.push_back(VersionedEdgeIterator(dynamic_cast<VersioningBlockedSkipListAdjacencyList&>(*dynamic_cast<SnapshotTransaction&>(ds).raw_ds())));
+    return versionedIterators[versionedIterators.size() - 1];
   } else {
     throw NotImplemented();
   }

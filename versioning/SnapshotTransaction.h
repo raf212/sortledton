@@ -34,7 +34,7 @@ public:
 
     void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) override { throw NotImplemented(); };
 
-    void neighbourhood(vertex_id_t src, EdgeIterator& iter) override { throw NotImplemented(); };
+    void neighbourhood(vertex_id_t src, EdgeIterator& iter) override;
 
     /**
      * Cannot be used. Use raw_ds instead.

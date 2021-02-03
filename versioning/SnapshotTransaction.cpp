@@ -182,3 +182,7 @@ void SnapshotTransaction::clear() {
 void SnapshotTransaction::set_version(version_t v) {
   version = v;
 }
+
+void SnapshotTransaction::neighbourhood(vertex_id_t src, EdgeIterator &iter) {
+  ds->neighbourhood_version(src, iter, version);
+}

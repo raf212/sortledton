@@ -13,6 +13,7 @@
 #include <data-structures/adjacency-lists/VectorBatchedEdgeIterator.h>
 #include "BlockedSkipListAdjacencyLists.h"
 #include "SizeVersionChainEntry.h"
+#include "VersionedEdgeIterator.h"
 
 #define MIN_BLOCK_SIZE 2u
 #define COLLECT_VERSIONS_ON_INSERT 1
@@ -1174,4 +1175,8 @@ void VersioningBlockedSkipListAdjacencyList::assert_block_consistency(dst_t *sta
 
 dst_t VersioningBlockedSkipListAdjacencyList::get_min_from_skip_list_header(VSkipListHeader *header) {
   return make_unversioned(get_data_pointer(header)[0]);
+}
+
+void VersioningBlockedSkipListAdjacencyList::neighbourhood_version(vertex_id_t src, EdgeIterator& iter, version_t version) {
+  dynamic_cast<VersionedEdgeIterator&>(iter).initialize(get_set_type(src, version), raw_neighbourhood_version(src, version), ((uint64_t) raw_neighbourhood_size_entry(src)) & ~SIZE_VERSION_MASK, version);
 }

@@ -11,6 +11,7 @@
 #include <data-src/EdgeList.h>
 #include <versioning/TransactionManager.h>
 #include <versioning/VersionedTopologyInterface.h>
+#include <versioning/VersionedEdgeIterator.h>
 #include "data-structures/adjacency-lists/BlockedBatchedEdgeIterator.h"
 #include "data-structures/adjacency-lists/VectorBatchedEdgeIterator.h"
 #include "Reporter.h"
@@ -81,6 +82,7 @@ private:
 
     vector<BlockedBatchedEdgeIterator> blockIterators;
     vector<FilteredVectorIterator> filteredBlockIterators;
+    vector<VersionedEdgeIterator> versionedIterators;
 
     void show_storage_sizes(string ds_name, TopologyInterface& ds);
 

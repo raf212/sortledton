@@ -84,7 +84,8 @@ uint Algorithms::traversed_vertices(TopologyInterface &ds, vector<uint> &distanc
   return ds.vertex_count() - count(distances.begin(), distances.end(), numeric_limits<uint>::max());
 }
 
-vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool aquire_locks) {
+vector<uint>
+Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool aquire_locks) {
   if (typeid(ds) != typeid(SnapshotTransaction)) {
     if (aquire_locks) {
       throw NotImplemented();
@@ -149,7 +150,7 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
 
       vertices_traversed++;
 
-      auto n =  (dst_t*) ds.raw_neighbourhood(v);
+      auto n = (dst_t *) ds.raw_neighbourhood(v);
       auto end = n + ds.neighbourhood_size(v);
       while (n < end) {
         if (distances[*n] == maxDistance) {
@@ -160,8 +161,7 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
       }
     }
 
-  }
-  else if (typeid(ds) == typeid(BlockedLinkedListAdjacencyLists)) {
+  } else if (typeid(ds) == typeid(BlockedLinkedListAdjacencyLists)) {
     while (!work.empty()) {
       vertex_id_t v = work.front();
       work.pop();
@@ -173,7 +173,7 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
       if (tagged_pointer < 0) {
         tagged_pointer *= -1;
 
-        dst_t *ns = (dst_t *) tagged_pointer ;
+        dst_t *ns = (dst_t *) tagged_pointer;
         ns++;
         dst_t *end = ns + ds.neighbourhood_size(v);
 
@@ -186,7 +186,7 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
           ns++;
         }
       } else {
-        BlockHeader* block = (BlockHeader*) tagged_pointer;
+        BlockHeader *block = (BlockHeader *) tagged_pointer;
         while (block != nullptr) {
           auto data = block->data;
           dst_t *end = block->data + block->size;
@@ -204,9 +204,9 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
       }
     }
   } else if (typeid(ds) == typeid(SnapshotTransaction)) {
-    auto transaction = dynamic_cast<SnapshotTransaction&>(ds);
+    auto transaction = dynamic_cast<SnapshotTransaction &>(ds);
     auto trans_timestamp = transaction.get_version();
-    auto raw_ds = dynamic_cast<VersioningBlockedSkipListAdjacencyList*>(transaction.raw_ds());
+    auto raw_ds = dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(transaction.raw_ds());
 
     while (!work.empty()) {
       vertex_id_t v = work.front();
@@ -239,7 +239,7 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
           ns++;
         }
       } else {
-        VSkipListHeader* block = (VSkipListHeader*) raw_ds->raw_neighbourhood_version(v, trans_timestamp);
+        VSkipListHeader *block = (VSkipListHeader *) raw_ds->raw_neighbourhood_version(v, trans_timestamp);
         while (block != nullptr) {
           auto data = block->data;
           dst_t *end = block->data + block->size;
@@ -268,9 +268,8 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
       }
       raw_ds->release_vertex_lock(v);
     }
-  }
-  else if (typeid(ds) == typeid(BlockedSkipListAdjacencyLists)) {
-    auto block_size = dynamic_cast<BlockedSkipListAdjacencyLists&>(ds).get_block_size();
+  } else if (typeid(ds) == typeid(BlockedSkipListAdjacencyLists)) {
+    auto block_size = dynamic_cast<BlockedSkipListAdjacencyLists &>(ds).get_block_size();
     while (!work.empty()) {
       vertex_id_t v = work.front();
       work.pop();
@@ -291,7 +290,7 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
           ns++;
         }
       } else {
-        BlockHeader* block = (BlockHeader*) ds.raw_neighbourhood(v);
+        BlockHeader *block = (BlockHeader *) ds.raw_neighbourhood(v);
         while (block != nullptr) {
           auto data = block->data;
           dst_t *end = block->data + block->size;
@@ -309,14 +308,14 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
       }
     }
   } else if (typeid(ds) == typeid(CSR)) {
-    CSR& csr = dynamic_cast<CSR&>(ds);
+    CSR &csr = dynamic_cast<CSR &>(ds);
     while (!work.empty()) {
       vertex_id_t v = work.front();
       work.pop();
 
       vertices_traversed++;
 
-      auto n = (dst_t*) ds.raw_neighbourhood(v);  //&(csr.adjacency_lists[csr.adjacency_index[v]]);
+      auto n = (dst_t *) ds.raw_neighbourhood(v);  //&(csr.adjacency_lists[csr.adjacency_index[v]]);
       auto end = n + ds.neighbourhood_size(v); //&(csr.adjacency_lists[csr.adjacency_index[v + 1]]);
       while (n < end) {
         if (distances[*n] == maxDistance) {
@@ -332,13 +331,16 @@ vector<uint> Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface
   return distances;
 }
 
-vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool raw_neighbourhood, bool aquire_locks) {
+vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool raw_neighbourhood,
+                             bool aquire_locks) {
   if (raw_neighbourhood) {
     return bfs_raw_neighbourhood(driver, ds, start_vertex, aquire_locks);
   } else if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
     if (aquire_locks) {
       throw NotImplemented();
     }
+    return bfs_single_edge_interface(driver, ds, start_vertex);
+  } else if (typeid(ds) == typeid(SnapshotTransaction)) {
     return bfs_single_edge_interface(driver, ds, start_vertex);
   } else {
     if (aquire_locks) {
@@ -348,8 +350,10 @@ vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t 
   }
 }
 
-unordered_map<vertex_id_t, size_t> Algorithms::neighbourhood_2(Driver& driver,
-        TopologyInterface &ds, const vector<vertex_id_t> &sources, bool raw_neighbourhood) {
+unordered_map<vertex_id_t, size_t> Algorithms::neighbourhood_2(Driver &driver,
+                                                               TopologyInterface &ds,
+                                                               const vector<vertex_id_t> &sources,
+                                                               bool raw_neighbourhood) {
   if (raw_neighbourhood) {
     return TwoNeighbour::neighbourhood_2_raw_neighbourhood(driver, ds, sources);
   } else if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
@@ -359,7 +363,7 @@ unordered_map<vertex_id_t, size_t> Algorithms::neighbourhood_2(Driver& driver,
   }
 }
 
-vector<float> Algorithms::page_rank(Driver& driver, TopologyInterface &ds, bool run_on_raw_neighbourhood) {
+vector<float> Algorithms::page_rank(Driver &driver, TopologyInterface &ds, bool run_on_raw_neighbourhood) {
   const int max_iters = 5;
   const float epsilon = 1e-4;
 

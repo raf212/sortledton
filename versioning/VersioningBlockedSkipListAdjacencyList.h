@@ -60,6 +60,7 @@ public:
 
     size_t neighbourhood_size_version(vertex_id_t src, version_t version) override;
 
+    void neighbourhood_version(vertex_id_t src, EdgeIterator& iter, version_t version) override;
     void* raw_neighbourhood_version(vertex_id_t src, version_t version) override;
     VAdjacencySetType get_set_type(vertex_id_t v, version_t version);
     void* raw_neighbourhood_size_entry(vertex_id_t v);
@@ -82,6 +83,9 @@ public:
 
     void gc_all() override;
     void gc_vertex(vertex_id_t v) override;
+
+    // TODO make protected
+    bool traverse_version_chain(edge_t edge, version_t required_version, version_t inline_version);
 
     thread_local static int gced_edges;
     thread_local static int gc_merges;
@@ -137,8 +141,6 @@ private:
     dst_t* get_data_pointer(VSkipListHeader* header) const;
 
     dst_t* find_upper_bound(dst_t* start, dst_t* end, dst_t value);
-    bool traverse_version_chain(edge_t edge, version_t required_version, version_t inline_version);
-
 
     void insert_empty(edge_t edge, version_t version);
     void insert_single_block(edge_t edge, version_t version);
