@@ -10,6 +10,7 @@ VersionedEdgeIterator::VersionedEdgeIterator(VersioningBlockedSkipListAdjacencyL
 
 bool VersionedEdgeIterator::has_next() {
   if (data == nullptr) {
+    ds.release_vertex_lock(src);
     return false;
   }
   bool ret = move_to_next_edge_in_current_block();
@@ -18,6 +19,9 @@ bool VersionedEdgeIterator::has_next() {
     current_block_end = data + next_skip_list_block->size;
     next_skip_list_block = next_skip_list_block->next_levels[0];
     ret = move_to_next_edge_in_current_block();
+  }
+  if (!ret) {
+    ds.release_vertex_lock(src);
   }
   return ret;
 }
@@ -47,7 +51,9 @@ dst_t VersionedEdgeIterator::next() {
 }
 
 void
-VersionedEdgeIterator::initialize(VAdjacencySetType type, void *adjacency_set, uint64_t set_size, version_t version) {
+VersionedEdgeIterator::initialize(vertex_id_t src, VAdjacencySetType type, void *adjacency_set, uint64_t set_size, version_t version) {
+  this->src = src;
+  ds.aquire_vertex_lock(src);
   this->version = version;
   if (adjacency_set == nullptr) {
     data = nullptr;

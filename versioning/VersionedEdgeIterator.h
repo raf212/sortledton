@@ -20,7 +20,7 @@ public:
      * @param set_size only set to a meaningful value if type is VSINGLE_BLOCK.
      * @param version
      */
-    void initialize(VAdjacencySetType type, void* adjacency_set, uint64_t set_size, version_t version);
+    void initialize(vertex_id_t src, VAdjacencySetType type, void* adjacency_set, uint64_t set_size, version_t version);
 
     bool has_next() override;
     dst_t next() override;
