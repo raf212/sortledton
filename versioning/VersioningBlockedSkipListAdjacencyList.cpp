@@ -1180,3 +1180,38 @@ dst_t VersioningBlockedSkipListAdjacencyList::get_min_from_skip_list_header(VSki
 void VersioningBlockedSkipListAdjacencyList::neighbourhood_version(vertex_id_t src, EdgeIterator& iter, version_t version) {
   dynamic_cast<VersionedEdgeIterator&>(iter).initialize(src, get_set_type(src, version), raw_neighbourhood_version(src, version), ((uint64_t) raw_neighbourhood_size_entry(src)) & ~SIZE_VERSION_MASK, version);
 }
+
+VersioningBlockedSkipListAdjacencyList::~VersioningBlockedSkipListAdjacencyList() {
+  gc_all();  // Make the data structure completely unversioned.
+
+  for (auto v = 0; v < vertex_count_version(FIRST_VERSION); v++) {
+    free_adjacency_set(v);
+  }
+}
+
+void VersioningBlockedSkipListAdjacencyList::free_adjacency_set(vertex_id_t v) {
+  assert(!size_is_versioned(v));
+
+  switch (get_set_type(v, FIRST_VERSION)) {
+    case VSKIP_LIST: {
+      auto skip_list_header = (VSkipListHeader*) raw_neighbourhood_version(v, FIRST_VERSION);
+
+      while (skip_list_header != nullptr) {
+        auto next = skip_list_header->next_levels[0];
+        free(skip_list_header);
+        skip_list_header = next;
+      }
+      adjacency_index[v * 2] = nullptr;
+      adjacency_index[v * 2 + 1] = 0;
+      break;
+    }
+    case VSINGLE_BLOCK: {
+      auto block = (dst_t*) raw_neighbourhood_version(v, FIRST_VERSION);
+      free(block);
+      adjacency_index[v * 2] = nullptr;
+      adjacency_index[v * 2 + 1] = 0;
+      break;
+    };
+  }
+
+}

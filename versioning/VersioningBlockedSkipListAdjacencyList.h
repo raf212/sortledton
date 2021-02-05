@@ -49,6 +49,7 @@ class VersioningBlockedSkipListAdjacencyList : public VersionedTopologyInterface
 
 public:
     VersioningBlockedSkipListAdjacencyList(size_t block_size, TransactionManager& tm);
+    ~VersioningBlockedSkipListAdjacencyList() override;
 
     size_t vertex_count_version(version_t version) override;
 
@@ -204,6 +205,12 @@ private:
     void assert_block_consistency(dst_t* start, dst_t* end, version_t min_version);
 
     dst_t get_min_from_skip_list_header(VSkipListHeader* header);
+
+    /**
+     * Assumes that the adjacency set is unversioned.
+     * @param v
+     */
+    void free_adjacency_set(vertex_id_t v);
 
 };
 

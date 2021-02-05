@@ -14,6 +14,8 @@ using namespace std;
 
 class VersionedTopologyInterface {
 public:
+    virtual ~VersionedTopologyInterface();
+
     virtual size_t vertex_count_version(version_t version) = 0;
 
     virtual void insert_vertex_version(vertex_id_t v, version_t version) = 0;

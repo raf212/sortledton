@@ -4,3 +4,6 @@
 
 #include "VersionedTopologyInterface.h"
 
+VersionedTopologyInterface::~VersionedTopologyInterface() {
+
+}

@@ -318,6 +318,15 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   if (config.validate_datastructures) {
     validate_graph_structure(*data_structure, base, inserts, deletes);
   }
+
+  if (data_structure != nullptr && typeid(*data_structure) != typeid(SnapshotTransaction)) {
+    delete data_structure;
+    data_structure = nullptr;
+  }
+  if (versioned_data_structure != nullptr) {
+    delete versioned_data_structure;
+    versioned_data_structure = nullptr;
+  }
 }
 
 void
