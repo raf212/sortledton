@@ -919,6 +919,17 @@ void VersioningBlockedSkipListAdjacencyList::gc_vertex(vertex_id_t v) {
 #ifdef DEBUG
   assert_adjacency_list_consistency(v, tm.getMinActiveVersion());
 #endif
+  if (size_is_versioned(v)) {
+    auto start = (SizeVersionChainEntry*) ((uint64_t) raw_neighbourhood_size_entry(v) & ~SIZE_VERSION_MASK);
+    SizeVersionChainEntry* to_free = gc_adjacency_size(start, tm.getMinActiveVersion());
+    if (to_free != nullptr) {
+      free(to_free);
+    }
+    if (start->version == FIRST_VERSION) {
+      adjacency_index[v * 2 + 1] = (void*) ((uint64_t) start->current_size);
+      free(start);
+    }
+  }
   release_vertex_lock(v);
 }
 
