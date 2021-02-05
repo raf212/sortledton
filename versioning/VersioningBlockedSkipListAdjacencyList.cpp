@@ -66,6 +66,7 @@ void VersioningBlockedSkipListAdjacencyList::bulkload(const SortedCSRDataSource 
     adjacency_index.push_back(head_block);
     adjacency_index.push_back((void *) (end - start));
   }
+  vertex_count.store(src.vertex_count());
 }
 
 void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start, const dst_t *end) {
@@ -489,7 +490,7 @@ VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(s
 
 size_t VersioningBlockedSkipListAdjacencyList::vertex_count_version(version_t version) {
   // TODO vertex versions not supported yet.
-  return adjacency_index.size() / 2;
+  return vertex_count.load();
 }
 
 void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_version(vertex_id_t src, version_t version) {
@@ -895,7 +896,7 @@ void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_size_entry(verte
 }
 
 void VersioningBlockedSkipListAdjacencyList::gc_all() {
-  auto vertices = this->vertex_count_version(FIRST_VERSION);
+  auto vertices = get_max_vertex();
   for (vertex_id_t v = 0; v < vertices; v++) {
     gc_vertex(v);
 
@@ -1186,7 +1187,7 @@ void VersioningBlockedSkipListAdjacencyList::neighbourhood_version(vertex_id_t s
 VersioningBlockedSkipListAdjacencyList::~VersioningBlockedSkipListAdjacencyList() {
   gc_all();  // Make the data structure completely unversioned.
 
-  for (auto v = 0; v < vertex_count_version(FIRST_VERSION); v++) {
+  for (auto v = 0; v < get_max_vertex(); v++) {
     free_adjacency_set(v);
   }
 }
@@ -1227,13 +1228,20 @@ void VersioningBlockedSkipListAdjacencyList::reserve_vertices(size_t max_vertice
   vertex_mutices.swap(m);
   vector<atomic_flag> m1(max_vertices);
   vertex_cas_locks.swap(m1);
+
+  vertex_count.store(0);
 }
 
 void VersioningBlockedSkipListAdjacencyList::insert_vertex_version(vertex_id_t v, version_t version) {
   adjacency_index[v * 2] = nullptr;
   adjacency_index[v * 2 + 1] = 0;
+  vertex_count.fetch_add(1);
 }
 
 bool VersioningBlockedSkipListAdjacencyList::has_vertex_version(vertex_id_t v, version_t version) {
   return !((uint64_t) adjacency_index[2 * v] & VERTEX_NOT_USED_MASK);
+}
+
+size_t VersioningBlockedSkipListAdjacencyList::get_max_vertex() {
+  return adjacency_index.size() / 2;
 }

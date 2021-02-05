@@ -131,6 +131,8 @@ private:
     vector<mutex> vertex_mutices;
     vector<atomic_flag> vertex_cas_locks;
 
+    atomic<uint> vertex_count { 0 };
+
     size_t block_size;
     const float bulk_load_fill_rate = 1.0;
 
@@ -220,6 +222,8 @@ private:
      * @param v
      */
     void free_adjacency_set(vertex_id_t v);
+
+    size_t get_max_vertex();
 
 };
 
