@@ -8,11 +8,16 @@
 
 #include "Precondition.h"
 
-class VertexExistsPrecondition : Precondition {
+class VertexExistsPrecondition : public Precondition {
 public:
+  explicit VertexExistsPrecondition(vertex_id_t v);
   ~VertexExistsPrecondition();
   bool assert_it(VersionedTopologyInterface& ds, version_t version) override;
-  vector<vertex_id_t> requires_vertex_locks() override;
+  vector<vertex_id_t> requires_vertex_locks() override;  // TODO provide default
+  vertex_id_t requires_vertex_lock() override;
+
+private:
+    vertex_id_t  v;
 };
 
 
