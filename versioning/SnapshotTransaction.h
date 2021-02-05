@@ -28,6 +28,7 @@ public:
     void insert_vertex(vertex_id_t v) override;
     void delete_vertex(vertex_id_t v) override;
 
+    size_t edge_count() override;
     void insert_edge(edge_t edge) override;
     void delete_edge(edge_t edge) override;
 

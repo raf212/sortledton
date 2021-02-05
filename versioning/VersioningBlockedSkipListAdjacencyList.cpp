@@ -1235,6 +1235,11 @@ void VersioningBlockedSkipListAdjacencyList::reserve_vertices(size_t max_vertice
 
   void* e = (void*) ((uint64_t) nullptr | VERTEX_NOT_USED_MASK);
   adjacency_index.resize(max_vertices * 2, e);
+  for (auto i = 0; i < adjacency_index.size(); i++) {
+    if (i % 2 == 1) {
+      adjacency_index[i] = (void*) ((uint64_t) 0);
+    }
+  }
   vector<mutex> m(max_vertices);
   vertex_mutices.swap(m);
   vector<atomic_flag> m1(max_vertices);
@@ -1255,4 +1260,14 @@ bool VersioningBlockedSkipListAdjacencyList::has_vertex_version(vertex_id_t v, v
 
 size_t VersioningBlockedSkipListAdjacencyList::get_max_vertex() {
   return adjacency_index.size() / 2;
+}
+
+size_t VersioningBlockedSkipListAdjacencyList::edge_count_version(version_t version) {
+  size_t sum = 0;
+  for (size_t v = 0, sz = get_max_vertex(); v < sz; v++) {
+    aquire_vertex_lock(v);
+    sum += neighbourhood_size_version(v, version);
+    release_vertex_lock(v);
+  }
+  return sum;
 }

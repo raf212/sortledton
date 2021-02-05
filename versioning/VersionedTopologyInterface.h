@@ -24,6 +24,7 @@ public:
     virtual void insert_vertex_version(vertex_id_t v, version_t version) = 0;
     virtual void delete_vertex_version(vertex_id_t v, version_t version) = 0;
 
+    virtual size_t edge_count_version(version_t version) = 0;
     virtual void insert_edge_version(edge_t edge, version_t version) = 0;
     virtual void delete_edge_version(edge_t edge, version_t version) = 0;
 

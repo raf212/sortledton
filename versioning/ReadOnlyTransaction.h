@@ -42,6 +42,10 @@ public:
       throw IllegalOperation();
     };
 
+    size_t edge_count() override {
+      return transaction.edge_count();
+    }
+
     void insert_edge(edge_t edge) override {
       throw IllegalOperation();
     };

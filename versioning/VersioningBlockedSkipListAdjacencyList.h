@@ -65,6 +65,7 @@ public:
     void insert_vertex_version(vertex_id_t v, version_t version) override;
     void delete_vertex_version(vertex_id_t v, version_t version) override { throw NotImplemented(); };
 
+    size_t edge_count_version(version_t version) override;
     void insert_edge_version(edge_t edge, version_t version) override;
     void delete_edge_version(edge_t edge, version_t version) override { throw NotImplemented(); };
 

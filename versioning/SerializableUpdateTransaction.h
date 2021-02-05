@@ -29,6 +29,8 @@ public:
     void insert_vertex(vertex_id_t v) override { return transaction.insert_vertex(v); };
     void delete_vertex(vertex_id_t v) override { return transaction.delete_vertex(v); };
 
+    size_t edge_count() override { throw IllegalOperation(); };
+
     void insert_edge(edge_t edge) override { return transaction.insert_edge(edge); };
     void delete_edge(edge_t edge) override { return transaction.delete_edge(edge); };;
 

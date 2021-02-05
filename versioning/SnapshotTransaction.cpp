@@ -193,3 +193,7 @@ bool SnapshotTransaction::has_vertex(vertex_id_t v) {
   ds->release_vertex_lock(v);
   return ret;
 }
+
+size_t SnapshotTransaction::edge_count() {
+  return ds->edge_count_version(version);
+}
