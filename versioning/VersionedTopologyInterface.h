@@ -18,6 +18,9 @@ public:
 
     virtual size_t vertex_count_version(version_t version) = 0;
 
+    // TODO define fault model for already existing vertices and edges
+
+    virtual bool has_vertex_version(vertex_id_t v, version_t version) = 0;
     virtual void insert_vertex_version(vertex_id_t v, version_t version) = 0;
     virtual void delete_vertex_version(vertex_id_t v, version_t version) = 0;
 

@@ -22,6 +22,9 @@
 // Set means the edge set is of type VSINGLE_BLOCK, unset means it is of type VSKIP_LIST
 #define EDGE_SET_TYPE_MASK (1L << 62)
 #define LOCK_MASK (1L << 61)
+// This mask is set on vertex index entries for unused vertices.
+#define VERTEX_NOT_USED_MASK (1L << 60)
+
 
 /**
  * The types of adjacency sets used.
@@ -51,9 +54,15 @@ public:
     VersioningBlockedSkipListAdjacencyList(size_t block_size, TransactionManager& tm);
     ~VersioningBlockedSkipListAdjacencyList() override;
 
+    void reserve_vertices(size_t max_vertices);
+
     size_t vertex_count_version(version_t version) override;
 
-    void insert_vertex_version(vertex_id_t v, version_t version) override { throw NotImplemented(); };
+    // TODO vertex versioning not yet supported
+    bool has_vertex_version(vertex_id_t v, version_t version) override;
+
+    // TODO versioning not yet supported
+    void insert_vertex_version(vertex_id_t v, version_t version) override;
     void delete_vertex_version(vertex_id_t v, version_t version) override { throw NotImplemented(); };
 
     void insert_edge_version(edge_t edge, version_t version) override;

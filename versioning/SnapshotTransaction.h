@@ -24,6 +24,7 @@ public:
 
     size_t vertex_count() override;
 
+    bool has_vertex(vertex_id_t v) override;
     void insert_vertex(vertex_id_t v) override;
     void delete_vertex(vertex_id_t v) override;
 

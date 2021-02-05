@@ -186,3 +186,10 @@ void SnapshotTransaction::set_version(version_t v) {
 void SnapshotTransaction::neighbourhood(vertex_id_t src, EdgeIterator &iter) {
   ds->neighbourhood_version(src, iter, version);
 }
+
+bool SnapshotTransaction::has_vertex(vertex_id_t v) {
+  ds->aquire_vertex_lock(v);
+  bool ret = ds->has_vertex_version(v, version);
+  ds->release_vertex_lock(v);
+  return ret;
+}

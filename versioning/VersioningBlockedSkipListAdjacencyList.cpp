@@ -45,6 +45,8 @@ thread_local int VersioningBlockedSkipListAdjacencyList::gc_merges = 0;
 thread_local int VersioningBlockedSkipListAdjacencyList::gc_to_single_block = 0;
 
 void VersioningBlockedSkipListAdjacencyList::bulkload(const SortedCSRDataSource &src) {
+  assert(adjacency_index.empty());  // Should only be called on an empty data structure
+
   adjacency_index.reserve(src.vertex_count() * 2);
   vector<mutex> m(src.vertex_count());
   vertex_mutices.swap(m);
@@ -492,7 +494,7 @@ size_t VersioningBlockedSkipListAdjacencyList::vertex_count_version(version_t ve
 
 void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_version(vertex_id_t src, version_t version) {
   // TODO vertex versions not supported yet.
-  return (void *) ((uint64_t) adjacency_index[2 * src] & ~EDGE_SET_TYPE_MASK & ~LOCK_MASK);
+  return (void *) ((uint64_t) adjacency_index[2 * src] & ~EDGE_SET_TYPE_MASK & ~LOCK_MASK & ~VERTEX_NOT_USED_MASK);
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::memory_block_size() {
@@ -1088,7 +1090,7 @@ void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id
     auto single_block = (dst_t *) malloc(round_up_power_of_two(size) * sizeof(dst_t));
     memcpy(single_block, get_data_pointer(skip_list_block), size * sizeof(dst_t));
     free(skip_list_block);
-    adjacency_index[v * 2] = (void *) single_block;
+    adjacency_index[v * 2] = (void *) ((uint64_t) single_block | EDGE_SET_TYPE_MASK);
     if (contains_versions) {
       size |= SIZE_VERSION_MASK;
     }
@@ -1214,4 +1216,24 @@ void VersioningBlockedSkipListAdjacencyList::free_adjacency_set(vertex_id_t v) {
     };
   }
 
+}
+
+void VersioningBlockedSkipListAdjacencyList::reserve_vertices(size_t max_vertices) {
+  assert(adjacency_index.empty());  // Should only be called on an empty data structure
+
+  void* e = (void*) ((uint64_t) nullptr | VERTEX_NOT_USED_MASK);
+  adjacency_index.resize(max_vertices * 2, e);
+  vector<mutex> m(max_vertices);
+  vertex_mutices.swap(m);
+  vector<atomic_flag> m1(max_vertices);
+  vertex_cas_locks.swap(m1);
+}
+
+void VersioningBlockedSkipListAdjacencyList::insert_vertex_version(vertex_id_t v, version_t version) {
+  adjacency_index[v * 2] = nullptr;
+  adjacency_index[v * 2 + 1] = 0;
+}
+
+bool VersioningBlockedSkipListAdjacencyList::has_vertex_version(vertex_id_t v, version_t version) {
+  return !((uint64_t) adjacency_index[2 * v] & VERTEX_NOT_USED_MASK);
 }

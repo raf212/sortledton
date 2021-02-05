@@ -12,6 +12,8 @@
 
 class Transaction : public TopologyInterface {
 public :
+    // TODO lower to Topology interface
+    virtual bool has_vertex(vertex_id_t v) = 0;
     virtual void insert_vertex(vertex_id_t v) = 0;
     virtual void delete_vertex(vertex_id_t v) = 0;
 
