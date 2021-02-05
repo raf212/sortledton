@@ -43,9 +43,10 @@ private:
 
     void load_base_dataset(TopologyInterface& ds, SortedCSRDataSource& base);
 
-    void run_insert_experiment(TransactionManager& tm, TopologyInterface& ds, EdgeList& el);
-    void run_insert_experiment_one_by_one(TransactionManager& tm, VersionedTopologyInterface* ds , EdgeList &el);
-    void check_insert(TopologyInterface& ds, EdgeList& el);
+    void run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList &el, size_t base_edge_count);
+    void run_insert_experiment_one_by_one(TransactionManager &tm, VersionedTopologyInterface *ds, EdgeList &el,
+                                          size_t base_edge_count);
+    void check_insert(TopologyInterface& ds, EdgeList& el, size_t base_edge_count);
 
     void run_delete_experiment(TopologyInterface& ds, EdgeList& el);
 

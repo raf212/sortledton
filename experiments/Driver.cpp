@@ -264,7 +264,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         break;
       }
       case (INSERT): {
-        run_insert_experiment(tm, *data_structure, inserts);
+        run_insert_experiment(tm, *data_structure, inserts, base.edge_count());
         inserts_run = true;
         break;
       }
@@ -277,7 +277,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         if (versioned_data_structure != nullptr) {
           tm.transactionCompleted(transaction, master_thread_id);
         }
-        run_insert_experiment_one_by_one(tm, versioned_data_structure, inserts);
+        run_insert_experiment_one_by_one(tm, versioned_data_structure, inserts, base.edge_count());
         inserts_run = true;
         break;
       }
@@ -429,7 +429,8 @@ void run_inserts_in_transactions(TransactionManager &tm, EdgeList &el, atomic_ui
 //  }
 }
 
-void Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList &el) {
+void
+Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList &el, size_t base_edge_count) {
   cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
   uint threads = config.insert_threads;
 
@@ -466,11 +467,12 @@ void Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds
   cout << "Inserting took: " << microseconds / 1000 << " milliseconds " << endl;
   cout << "This is " << ((float) el.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
 #ifdef DEBUG
-  check_insert(ds, el);
+  check_insert(ds, el, base_edge_count);
 #endif
 }
 
-void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedTopologyInterface *ds, EdgeList &el) {
+void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedTopologyInterface *ds, EdgeList &el,
+                                              size_t base_edge_count) {
   cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
   uint threads = config.insert_threads;
 
@@ -478,6 +480,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   auto start = chrono::steady_clock::now();
   if (threads == 1) {
     SnapshotTransaction tx = tm.getSnapshotTransaction(ds, thread_id);
+    assert(tx.edge_count() == base_edge_count);
 
     for (auto e : el.edges) {
       EdgeDoesNotExistsPrecondition p(e);
@@ -511,7 +514,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   cout << "This is " << ((float) el.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
 #ifdef DEBUG
   auto tx = tm.getSnapshotTransaction(ds, thread_id);
-  check_insert(tx, el);
+  check_insert(tx, el, base_edge_count);
   tm.transactionCompleted(tx, thread_id);
 #endif
   cout << "checked" << endl;
@@ -786,8 +789,11 @@ unordered_set<dst_t> Driver::get_neighbours(TopologyInterface &ds, vertex_id_t v
   return neighbours;
 }
 
-void Driver::check_insert(TopologyInterface &ds, EdgeList &el) {
+void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_count) {
   cout << "Validating insert experiment" << endl;
+
+  assert(ds.edge_count() == el.edges.size() + base_edge_count);
+
   auto i = 0;
   for (auto e : el.edges) {
     i++;
@@ -1156,7 +1162,7 @@ void Driver::run_gc_experiment(TransactionManager& tm, VersionedTopologyInterfac
   if (inserts_run) {
     // TODO add function to return the thread ID.
     auto tx = tm.getSnapshotTransaction(&ds, tm.register_thread());
-    check_insert(tx, inserts);
+    check_insert(tx, inserts, 0);
   }
   check_gc_experiment(ds);
 #endif

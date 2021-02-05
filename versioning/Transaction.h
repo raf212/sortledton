@@ -17,7 +17,6 @@ public :
     virtual void insert_vertex(vertex_id_t v) = 0;
     virtual void delete_vertex(vertex_id_t v) = 0;
 
-    virtual size_t edge_count() = 0;  // TODO lower to Topology interface
     vertex_id_t insert_vertex() override { throw NotImplemented(); };
     void delete_vertex() override { throw NotImplemented(); };
 

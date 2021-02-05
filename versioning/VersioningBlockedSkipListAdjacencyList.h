@@ -132,6 +132,8 @@ private:
     vector<mutex> vertex_mutices;
     vector<atomic_flag> vertex_cas_locks;
 
+
+    atomic<uint> calls_to_add_edge { 0 };
     atomic<uint> vertex_count { 0 };
 
     size_t block_size;

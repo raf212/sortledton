@@ -17,6 +17,7 @@ public:
     virtual vertex_id_t insert_vertex() = 0;  // TODO needs interfance change
     virtual void delete_vertex() = 0;  // TODO needs interface change
 
+    virtual size_t edge_count() = 0;
     virtual void insert_edge(edge_t edge) = 0;
     virtual bool insert_safe(edge_t edge) = 0;
     virtual void delete_edge(edge_t edge) = 0;

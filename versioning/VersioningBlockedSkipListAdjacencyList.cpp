@@ -146,6 +146,8 @@ void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
   __builtin_prefetch((void *) ((uint64_t) adjacency_list & ~EDGE_SET_TYPE_MASK));
   __builtin_prefetch((void *) ((uint64_t) ((dst_t *) adjacency_list + 1) & ~SIZE_VERSION_MASK));
 
+  calls_to_add_edge.fetch_add(1);
+
   // Insert to empty list
   if (unlikely(adjacency_list == nullptr)) {
     return insert_empty(edge, version);

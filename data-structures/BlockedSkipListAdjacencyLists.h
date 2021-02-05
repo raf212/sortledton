@@ -34,6 +34,7 @@ public:
     vertex_id_t insert_vertex() override { throw NotImplemented(); };
     void delete_vertex() override { throw NotImplemented(); };
 
+    size_t edge_count() override { throw NotImplemented(); };
     void insert_edge(edge_t edge) override;
     bool insert_safe(edge_t edge) override;
     void delete_edge(edge_t edge) override { throw NotImplemented(); };
