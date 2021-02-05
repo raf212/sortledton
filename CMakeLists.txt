@@ -1,18 +1,17 @@
 cmake_minimum_required(VERSION 3.10)
-project(live_graph_two)
+project(live_graph_two VERSION 0.1 DESCRIPTION "Data structure supporting transactional, ananlytical and pattern matching workloads on sorted data with a simple design.")
 
 list(APPEND CMAKE_MODULE_PATH "~/cmake_modules/FindTBB")
-
-add_subdirectory(tests)
 
 set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g -shared-libgcc")
 
-
-
 find_package(TBB COMPONENTS tbbmalloc tbbmalloc_proxy)
+find_package (Threads)
+
+add_subdirectory(tests)
 
 include_directories(.)
 include_directories(data-structures)
@@ -90,12 +89,17 @@ add_executable(dataset_converter data-src/dataset-converter/main.cpp ${DATASET_C
 add_executable(bitset_analysis dataset_bitset_analyser.cpp ${SRC})
 target_link_libraries (bitset_analysis Threads::Threads)
 
-
 add_executable(Google_Tests_run ${TESTS} ${DATASET_CONVERTER_SRC} ${SRC})
-
 target_link_libraries(Google_Tests_run gtest gtest_main gmock)
 
-find_package (Threads)
 add_executable(live_graph_two main.cpp ${SRC})
 target_link_libraries (live_graph_two Threads::Threads)
 target_link_libraries(live_graph_two ${TBB_LIBRARIES})
+
+add_library(sortledton STATIC ${SRC})
+target_link_libraries (sortledton Threads::Threads)
+target_link_libraries(sortledton ${TBB_LIBRARIES})
+set_target_properties(sortledton PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(sortledton PROPERTIES SOVERSION 0)
+#set_target_properties(mylib PROPERTIES PUBLIC_HEADER include/mylib.h)  // TODO I should decide for a public API
+# TODO support installation of library? https://stackoverflow.com/questions/17511496/how-to-create-a-shared-library-with-cmake
