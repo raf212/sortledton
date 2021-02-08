@@ -61,7 +61,13 @@ set(SRC
         utils/robin_hood.h
         experiments/TwoNeighbour.cpp
         experiments/TwoNeighbour.h
-        data-structures/adjacency-lists/ContigiousBlockIterator.h data-structures/BlockedSkipListAdjacencyLists.cpp data-structures/BlockedSkipListAdjacencyLists.h data-structures/memory_pools/NonContigiousMemoryPool.cpp data-structures/memory_pools/NonContigiousMemoryPool.h experiments/BFSSourceSelector.cpp experiments/BFSSourceSelector.h experiments/Algorithms.cpp experiments/Algorithms.h experiments/TwoNeighbourSourceSelector.cpp experiments/TwoNeighbourSourceSelector.h data-structures/HashSetSimulatorAdjacencyList.cpp data-structures/HashSetSimulatorAdjacencyList.h data-structures/adjacency-lists/FilteredVectorIterator.cpp data-structures/adjacency-lists/FilteredVectorIterator.h data-structures/adjacency-lists/EdgeIterator.cpp data-structures/adjacency-lists/EdgeIterator.h data-structures/HashSetAdjacencyLists.cpp data-structures/HashSetAdjacencyLists.h experiments/PageRank.cpp experiments/PageRank.h
+        data-structures/adjacency-lists/ContigiousBlockIterator.h data-structures/BlockedSkipListAdjacencyLists.cpp
+        data-structures/BlockedSkipListAdjacencyLists.h data-structures/memory_pools/NonContigiousMemoryPool.cpp
+        data-structures/memory_pools/NonContigiousMemoryPool.h experiments/BFSSourceSelector.cpp experiments/BFSSourceSelector.h
+        experiments/Algorithms.cpp experiments/Algorithms.h experiments/TwoNeighbourSourceSelector.cpp experiments/TwoNeighbourSourceSelector.h
+        data-structures/HashSetSimulatorAdjacencyList.cpp data-structures/HashSetSimulatorAdjacencyList.h data-structures/adjacency-lists/FilteredVectorIterator.cpp
+        data-structures/adjacency-lists/FilteredVectorIterator.h data-structures/adjacency-lists/EdgeIterator.cpp
+        data-structures/adjacency-lists/EdgeIterator.h data-structures/HashSetAdjacencyLists.cpp data-structures/HashSetAdjacencyLists.h experiments/PageRank.cpp experiments/PageRank.h
         data_types.cpp
         versioning/SizeVersionChainEntry.cpp versioning/SizeVersionChainEntry.h
         versioning/VersionedTopologyInterface.cpp versioning/VersionedTopologyInterface.h
@@ -70,8 +76,6 @@ set(SRC
         versioning/IllegalOperation.cpp versioning/IllegalOperation.h
         versioning/Transaction.cpp versioning/Transaction.h
         versioning/SnapshotTransaction.cpp versioning/SnapshotTransaction.h
-        versioning/ReadOnlyTransaction.cpp versioning/ReadOnlyTransaction.h
-        versioning/SerializableUpdateTransaction.cpp versioning/SerializableUpdateTransaction.h
         versioning/TransactionManager.cpp versioning/TransactionManager.h
         versioning/VertexExistsPrecondition.cpp versioning/VertexExistsPrecondition.h
         versioning/EdgeDoesNotExistsPrecondition.cpp versioning/EdgeDoesNotExistsPrecondition.h

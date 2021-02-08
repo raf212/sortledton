@@ -18,6 +18,9 @@ public:
     SnapshotTransaction(version_t version, VersionedTopologyInterface* ds);
     ~SnapshotTransaction();
 
+    void use_vertex_does_not_exists_semantics() override;
+    void use_edge_does_not_exists_semantics() override;
+
     void register_precondition(Precondition* c);
 
     bool execute();
@@ -73,10 +76,14 @@ private:
     void release_locks();
     bool assert_preconditions();
 
+    bool vertex_does_not_exists_semantic_activated = false;
+    bool edge_does_not_exists_semantic_activated = false;
+
     vector<Precondition*> preconditions {};
     vector<vertex_id_t> locks_to_aquire {};
     vector<vertex_id_t> vertices_to_delete {};
     vector<vertex_id_t> vertices_to_insert {};
+    vector<vertex_id_t> vertices_to_insert_if_not_exists {};
     vector<edge_t> edges_to_delete {};
     vector<edge_t> edges_to_insert {};
 };

@@ -13,8 +13,7 @@
 #include <unordered_map>
 
 #include "Transaction.h"
-#include "SerializableUpdateTransaction.h"
-#include "ReadOnlyTransaction.h"
+#include "SnapshotTransaction.h"
 
 #define NO_TRANSACTION numeric_limits<version_t>::max()
 
@@ -28,8 +27,6 @@ public:
 
     size_t register_thread();
 
-    SerializableUpdateTransaction getWriteOnlyUpdateTransaction(VersionedTopologyInterface* ti, size_t thread_id);
-    ReadOnlyTransaction getReadOnlyTransaction(VersionedTopologyInterface* ti, size_t thread_id);
     SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, version_t v, size_t thread_id);
     SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, size_t thread_id);
     void getSnapshotTransaction(VersionedTopologyInterface* ti, size_t thread_id, SnapshotTransaction& existing_transaction_object);

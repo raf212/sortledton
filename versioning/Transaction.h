@@ -12,6 +12,10 @@
 
 class Transaction : public TopologyInterface {
 public :
+    virtual void use_does_not_exists_semantics();
+    virtual void use_vertex_does_not_exists_semantics() = 0;
+    virtual void use_edge_does_not_exists_semantics() = 0;
+
     // TODO lower to Topology interface
     virtual bool has_vertex(vertex_id_t v) = 0;
     virtual void insert_vertex(vertex_id_t v) = 0;

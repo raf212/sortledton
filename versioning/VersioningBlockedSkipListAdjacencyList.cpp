@@ -146,7 +146,10 @@ void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
   __builtin_prefetch((void *) ((uint64_t) adjacency_list & ~EDGE_SET_TYPE_MASK));
   __builtin_prefetch((void *) ((uint64_t) ((dst_t *) adjacency_list + 1) & ~SIZE_VERSION_MASK));
 
-  calls_to_add_edge.fetch_add(1);
+  if (has_edge_version(edge, version)) {
+    throw EdgeExistsException(edge);
+  }
+  calls_to_add_edge.fetch_add(1); // TODO remove again
 
   // Insert to empty list
   if (unlikely(adjacency_list == nullptr)) {
@@ -1251,6 +1254,9 @@ void VersioningBlockedSkipListAdjacencyList::reserve_vertices(size_t max_vertice
 }
 
 void VersioningBlockedSkipListAdjacencyList::insert_vertex_version(vertex_id_t v, version_t version) {
+  if (has_vertex_version(v, version)) {
+    throw VertexExistsException(v);
+  }
   adjacency_index[v * 2] = nullptr;
   adjacency_index[v * 2 + 1] = 0;
   vertex_count.fetch_add(1);

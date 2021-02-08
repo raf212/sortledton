@@ -7,11 +7,6 @@
 
 #include "Precondition.h"
 
-class EdgeExistsException : exception {
-public:
-    EdgeExistsException(edge_t e) : e(e) {};
-    edge_t e;
-};
 
 class EdgeDoesNotExistsPrecondition : public Precondition {
 public:

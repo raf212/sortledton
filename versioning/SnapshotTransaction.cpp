@@ -19,17 +19,29 @@ bool SnapshotTransaction::execute() {
     if (assert_preconditions()) {
       // TODO check standard preconditions, e.g. I add an edge is the vertex existing?
       for (auto v: vertices_to_delete) {
+        if (vertex_does_not_exists_semantic_activated && !ds->has_vertex_version(v, version)) {
+          continue;
+        }
         ds->delete_vertex_version(v, version);  // TODO should follow if exists
       }
       for (auto v : vertices_to_insert) {
-        ds->insert_vertex_version(v, version);  // TODO should follow if not exists
+        if (vertex_does_not_exists_semantic_activated && ds->has_vertex_version(v, version)) {
+          continue;
+        }
+        ds->insert_vertex_version(v, version);
       }
       for (auto e : edges_to_delete) {
+        if (edge_does_not_exists_semantic_activated && !ds->has_edge_version(e, version)) {
+          continue;
+        }
         ds->delete_edge_version(e, version);   // TODO should follow if exists
       }
       auto i = 0;
       for (auto e : edges_to_insert) {
 //      try {
+        if (edge_does_not_exists_semantic_activated && ds->has_edge_version(e, version)) {
+          continue;
+        }
         ds->insert_edge_version(e, version);  // TODO should follow if not exists
 //        i++;
 //        if (i % 1000 == 0) {
@@ -196,4 +208,12 @@ bool SnapshotTransaction::has_vertex(vertex_id_t v) {
 
 size_t SnapshotTransaction::edge_count() {
   return ds->edge_count_version(version);
+}
+
+void SnapshotTransaction::use_vertex_does_not_exists_semantics() {
+  vertex_does_not_exists_semantic_activated = true;
+}
+
+void SnapshotTransaction::use_edge_does_not_exists_semantics() {
+  edge_does_not_exists_semantic_activated = true;
 }

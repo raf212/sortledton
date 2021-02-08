@@ -7,6 +7,19 @@
 #include "adjacency-lists/BatchedEdgeIterator.h"
 #include "adjacency-lists/EdgeIterator.h"
 
+class EdgeExistsException : exception {
+public:
+    const edge_t edge;
+    explicit EdgeExistsException(edge_t e) : edge(e) {  };
+};
+
+class VertexExistsException : exception {
+public:
+    const vertex_id_t vertex;
+    explicit VertexExistsException(vertex_id_t v) : vertex(v) {};
+};
+
+
 class TopologyInterface {
 public:
 //    TopologyInterface();

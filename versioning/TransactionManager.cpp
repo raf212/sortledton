@@ -24,14 +24,6 @@ void TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, 
   existing_transaction_object.set_version(active_snapshots[thread_id]);
 }
 
-ReadOnlyTransaction TransactionManager::getReadOnlyTransaction(VersionedTopologyInterface* ti, size_t thread_id) {
-  return ReadOnlyTransaction(getSnapshotTransaction(ti, thread_id));
-}
-
-SerializableUpdateTransaction TransactionManager::getWriteOnlyUpdateTransaction(VersionedTopologyInterface* ti, size_t thread_id) {
-  return SerializableUpdateTransaction(getSnapshotTransaction(ti, thread_id));
-}
-
 void TransactionManager::transactionCompleted(const Transaction &transaction, size_t thread_id) {
   if (transaction.get_version() != active_snapshots[thread_id]) {
     throw IllegalOperation("Thread tried to complete transaction, it did not open.");
