@@ -9,7 +9,7 @@ vector<vertex_id_t> VertexExistsPrecondition::requires_vertex_locks() {
 }
 
 bool VertexExistsPrecondition::assert_it(VersionedTopologyInterface &ds, version_t version) {
-  return v < ds.vertex_count_version(version);
+  return ds.has_vertex_version(v, version);  // TODO should throw
 }
 
 VertexExistsPrecondition::VertexExistsPrecondition(vertex_id_t v) : v(v) {
