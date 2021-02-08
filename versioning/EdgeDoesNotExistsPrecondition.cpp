@@ -12,11 +12,9 @@ EdgeDoesNotExistsPrecondition::EdgeDoesNotExistsPrecondition(edge_t e) : e(e) {
 
 }
 
-bool EdgeDoesNotExistsPrecondition::assert_it(VersionedTopologyInterface &ds, version_t version) {
+void EdgeDoesNotExistsPrecondition::assert_it(VersionedTopologyInterface &ds, version_t version) {
   if (ds.has_edge_version(e, version)) {
     throw EdgeExistsException(e);
-  } else {
-    return true;
   }
 }
 

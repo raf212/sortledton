@@ -3,13 +3,16 @@
 //
 
 #include "VertexExistsPrecondition.h"
+#include "data-structures/ToplogyInterface.h"
 
 vector<vertex_id_t> VertexExistsPrecondition::requires_vertex_locks() {
   return vector<vertex_id_t>(1, v);
 }
 
-bool VertexExistsPrecondition::assert_it(VersionedTopologyInterface &ds, version_t version) {
-  return ds.has_vertex_version(v, version);  // TODO should throw
+void VertexExistsPrecondition::assert_it(VersionedTopologyInterface &ds, version_t version) {
+  if (!ds.has_vertex_version(v, version)) {
+    throw VertexDoesNotExistsException(v);
+  }
 }
 
 VertexExistsPrecondition::VertexExistsPrecondition(vertex_id_t v) : v(v) {

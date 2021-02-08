@@ -19,6 +19,12 @@ public:
     explicit VertexExistsException(vertex_id_t v) : vertex(v) {};
 };
 
+class VertexDoesNotExistsException : exception {
+public:
+    const vertex_id_t vertex;
+    explicit VertexDoesNotExistsException(vertex_id_t v) : vertex(v) {};
+};
+
 
 class TopologyInterface {
 public:

@@ -13,7 +13,7 @@ public:
     explicit EdgeDoesNotExistsPrecondition(edge_t e);
     ~EdgeDoesNotExistsPrecondition() override;
 
-    bool assert_it(VersionedTopologyInterface& ds, version_t version) override;
+    void assert_it(VersionedTopologyInterface& ds, version_t version) override;
     vector<vertex_id_t> requires_vertex_locks() override;
     vertex_id_t requires_vertex_lock() override;
 

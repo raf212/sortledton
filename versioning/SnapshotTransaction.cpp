@@ -7,8 +7,8 @@
 #include "SnapshotTransaction.h"
 #include <iostream>
 
-SnapshotTransaction::SnapshotTransaction(version_t version, VersionedTopologyInterface* ds)
-  : version(version), ds(ds) {
+SnapshotTransaction::SnapshotTransaction(version_t version, VersionedTopologyInterface *ds)
+        : version(version), ds(ds) {
 
 }
 
@@ -16,33 +16,32 @@ bool SnapshotTransaction::execute() {
   aquire_locks();
 
   try {
-    if (assert_preconditions()) {
-      // TODO check standard preconditions, e.g. I add an edge is the vertex existing?
-      for (auto v: vertices_to_delete) {
-        if (vertex_does_not_exists_semantic_activated && !ds->has_vertex_version(v, version)) {
-          continue;
-        }
-        ds->delete_vertex_version(v, version);  // TODO should follow if exists
+    assert_preconditions();
+    for (auto v: vertices_to_delete) {
+      if (vertex_does_not_exists_semantic_activated && !ds->has_vertex_version(v, version)) {
+        continue;
       }
-      for (auto v : vertices_to_insert) {
-        if (vertex_does_not_exists_semantic_activated && ds->has_vertex_version(v, version)) {
-          continue;
-        }
-        ds->insert_vertex_version(v, version);
+      ds->delete_vertex_version(v, version);
+    }
+    for (auto v : vertices_to_insert) {
+      if (vertex_does_not_exists_semantic_activated && ds->has_vertex_version(v, version)) {
+        continue;
       }
-      for (auto e : edges_to_delete) {
-        if (edge_does_not_exists_semantic_activated && !ds->has_edge_version(e, version)) {
-          continue;
-        }
-        ds->delete_edge_version(e, version);   // TODO should follow if exists
+      ds->insert_vertex_version(v, version);
+    }
+    for (auto e : edges_to_delete) {
+      if (edge_does_not_exists_semantic_activated && !ds->has_edge_version(e, version)) {
+        continue;
       }
-      auto i = 0;
-      for (auto e : edges_to_insert) {
+      ds->delete_edge_version(e, version);
+    }
+    auto i = 0;
+    for (auto e : edges_to_insert) {
 //      try {
-        if (edge_does_not_exists_semantic_activated && ds->has_edge_version(e, version)) {
-          continue;
-        }
-        ds->insert_edge_version(e, version);  // TODO should follow if not exists
+      if (edge_does_not_exists_semantic_activated && ds->has_edge_version(e, version)) {
+        continue;
+      }
+      ds->insert_edge_version(e, version);
 //        i++;
 //        if (i % 1000 == 0) {
 //        cout << ".";
@@ -51,21 +50,17 @@ bool SnapshotTransaction::execute() {
 //      } catch (MultipleVersionException& e) {
 //         NOP
 //      }
-      }
-//    cout << endl<< "done inserting" << endl;
-      release_locks();
-      return true;
-    } else {
-      release_locks();
-      return false;  // TODO remove return code. Preconditions should throw
     }
-  } catch (exception& e) {
+//    cout << endl<< "done inserting" << endl;
+    release_locks();
+    return true;
+  } catch (exception &e) {
     release_locks();
     throw e;
   }
 }
 
-void SnapshotTransaction::register_precondition(Precondition* c) {
+void SnapshotTransaction::register_precondition(Precondition *c) {
   vertex_id_t lock_to_aquire = c->requires_vertex_lock();
   if (lock_to_aquire != numeric_limits<vertex_id_t>::max()) {
     locks_to_aquire.push_back(lock_to_aquire);
@@ -77,19 +72,16 @@ void SnapshotTransaction::register_precondition(Precondition* c) {
   preconditions.push_back(c);
 }
 
-bool SnapshotTransaction::assert_preconditions() {
+void SnapshotTransaction::assert_preconditions() {
   for (auto p: preconditions) {
-    if (!p->assert_it(*ds, version)) {
-      return false; // TODO should be handled with exceptions to allow for error messages?
-    }
+    p->assert_it(*ds, version);
   }
-  return true;
 }
 
 void SnapshotTransaction::aquire_locks() {
   sort(locks_to_aquire.begin(), locks_to_aquire.end());
   vertex_id_t last_lock = numeric_limits<vertex_id_t>::max();
-  for (const auto & v : locks_to_aquire) {  // Relies on locks_to_aquire being a sorted data structure
+  for (const auto &v : locks_to_aquire) {  // Relies on locks_to_aquire being a sorted data structure
     if (v != last_lock) {
       ds->aquire_vertex_lock(v);
       last_lock = v;
@@ -99,7 +91,7 @@ void SnapshotTransaction::aquire_locks() {
 
 void SnapshotTransaction::release_locks() {
   vertex_id_t last_lock = numeric_limits<vertex_id_t>::max();
-  for (auto & v : locks_to_aquire) {  // Relies on locks_to_aquire being a sorted data structure
+  for (auto &v : locks_to_aquire) {  // Relies on locks_to_aquire being a sorted data structure
     if (v != last_lock) {
       ds->release_vertex_lock(v);
       last_lock = v;
@@ -148,7 +140,7 @@ void SnapshotTransaction::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, 
 
 bool SnapshotTransaction::has_edge(edge_t edge) {
   ds->aquire_vertex_lock(edge.src);
-  auto ret =  ds->has_edge_version(edge, version);
+  auto ret = ds->has_edge_version(edge, version);
   ds->release_vertex_lock(edge.src);
   return ret;
 }

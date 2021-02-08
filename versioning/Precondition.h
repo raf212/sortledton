@@ -12,7 +12,7 @@ class Precondition {
 public:
     virtual ~Precondition();
 
-    virtual bool assert_it(VersionedTopologyInterface& ds, version_t version) = 0;
+    virtual void assert_it(VersionedTopologyInterface& ds, version_t version) = 0;
 
     /**
      * For preconditions requiring only a single vertex lock.

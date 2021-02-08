@@ -74,7 +74,7 @@ protected:
 private:
     void aquire_locks();
     void release_locks();
-    bool assert_preconditions();
+    void assert_preconditions();
 
     bool vertex_does_not_exists_semantic_activated = false;
     bool edge_does_not_exists_semantic_activated = false;
