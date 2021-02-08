@@ -22,28 +22,44 @@
 class TransactionManager {
 
 public:
-    explicit TransactionManager(uint threads);
+    /**
+     * Creates a transaction manager.
+     * @param max_threads the maximal number of threads used.
+     */
+    explicit TransactionManager(uint max_threads);
     ~TransactionManager();
 
-    size_t register_thread();
+    /**
+     * Registers a thread with the transaction manager.
+     * @param id the id to use out of the dense domain of 0 to max_threads
+     * @throws IllegalOperation if the thread id is already taken.
+     */
+    void register_thread(size_t id);
 
-    SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, version_t v, size_t thread_id);
-    SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, size_t thread_id);
-    void getSnapshotTransaction(VersionedTopologyInterface* ti, size_t thread_id, SnapshotTransaction& existing_transaction_object);
+    /**
+     * Deregisters a thread with the transaction manager.
+     * @param id the id to use out of the dense domain of 0 to max_threads
+     * @throws IllegalOperation if the thread id is not used taken.
+     */
+    void deregister_thread(size_t id);
 
-    void transactionCompleted(const Transaction& transaction, size_t thread_id);
+    SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, version_t v);
+    SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti);
+    void getSnapshotTransaction(VersionedTopologyInterface* ti, SnapshotTransaction& existing_transaction_object);
+
+    void transactionCompleted(const Transaction& transaction);
 
     version_t getMinActiveVersion();
     void update_min_version();
 private:
-    uint threads;
-    uint last_thread_id =0;
-    unordered_map<thread::id, size_t> thread_id_mapping;
-    mutex global_lock;
+    uint max_threads;
+    static thread_local size_t thread_id;
+    mutex thread_registry_lock;
+    vector<bool> thread_id_in_use;
 
     vector<version_t> active_snapshots;
     atomic<version_t> version {1};
-    version_t min_version { numeric_limits<version_t>::min()};
+    version_t min_version { numeric_limits<version_t>::min() };
 
     thread min_version_updater;
     atomic<bool> stopped;

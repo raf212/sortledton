@@ -5,7 +5,9 @@
 #include <iostream>
 #include "TransactionManager.h"
 
-SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface* ti, size_t thread_id) {
+thread_local size_t TransactionManager::thread_id = 0;
+
+SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface* ti) {
   if (active_snapshots[thread_id] != NO_TRANSACTION) {
     throw IllegalOperation("Cannot have more than one transaction open per thread.");
   }
@@ -14,8 +16,7 @@ SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopology
   return SnapshotTransaction(active_snapshots[thread_id], ti);
 }
 
-void TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, size_t thread_id,
-                                                               SnapshotTransaction &existing_transaction_object) {
+void TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, SnapshotTransaction &existing_transaction_object) {
   if (active_snapshots[thread_id] != NO_TRANSACTION) {
     throw IllegalOperation("Cannot have more than one transaction open per thread.");
   }
@@ -24,34 +25,34 @@ void TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, 
   existing_transaction_object.set_version(active_snapshots[thread_id]);
 }
 
-void TransactionManager::transactionCompleted(const Transaction &transaction, size_t thread_id) {
+void TransactionManager::transactionCompleted(const Transaction &transaction) {
   if (transaction.get_version() != active_snapshots[thread_id]) {
     throw IllegalOperation("Thread tried to complete transaction, it did not open.");
   }
   active_snapshots[thread_id] = NO_TRANSACTION;
 }
 
-SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, version_t v, size_t thread_id) {
+SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, version_t v) {
 //  cerr << "Warning: creating snapshot transaction with custom version, this is not save in connection with GC, use only if you know what you are doing." << endl;
   return SnapshotTransaction(v, ti);
 }
 
-TransactionManager::TransactionManager(uint threads) : threads(threads) {
-  stopped.store(false);
-  active_snapshots = vector<version_t>(threads, NO_TRANSACTION);
-  min_version_updater = thread(&TransactionManager::run_min_version_updater, this, MIN_VERSION_UPDATER_INTERVAL);
+TransactionManager::TransactionManager(uint max_threads) : max_threads(max_threads),
+  active_snapshots(max_threads, NO_TRANSACTION),
+  thread_id_in_use(max_threads, false) {
+    stopped.store(false);
+    min_version_updater = thread(&TransactionManager::run_min_version_updater, this, MIN_VERSION_UPDATER_INTERVAL);
 }
 
-size_t TransactionManager::register_thread() {
-  lock_guard<mutex> l(global_lock);
-  auto e = thread_id_mapping.find(this_thread::get_id());
-  if (e != thread_id_mapping.end()) {
-    return e->second;
+void TransactionManager::register_thread(size_t id) {
+  lock_guard<mutex> l(thread_registry_lock);
+  if (thread_id_in_use[id]) {
+    throw IllegalOperation("Tyring to reuse a thread id.");
   }
-  auto id = last_thread_id++;
-  thread_id_mapping.insert({this_thread::get_id(), id});
-  return id;
+  thread_id_in_use[id] = true;
+  thread_id = id;
 }
+
 
 version_t TransactionManager::getMinActiveVersion() {
   return min_version;
@@ -72,3 +73,15 @@ TransactionManager::~TransactionManager() {
   stopped.store(true);
   min_version_updater.join();
 }
+
+void TransactionManager::deregister_thread(size_t id) {
+  lock_guard<mutex> l(thread_registry_lock);
+  if (!thread_id_in_use[id]) {
+    throw IllegalOperation("Trying to deregister a thread that has not been registered");
+  }
+  if (active_snapshots[id] != NO_TRANSACTION) {
+    throw IllegalOperation("Trying to deregister a thread with an active transaction");
+  }
+  thread_id_in_use[id] = false;
+}
+
