@@ -29,6 +29,8 @@ public:
     explicit TransactionManager(uint max_threads);
     ~TransactionManager();
 
+    void reset_max_threads(uint max_threads);
+
     /**
      * Registers a thread with the transaction manager.
      * @param id the id to use out of the dense domain of 0 to max_threads

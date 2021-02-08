@@ -37,9 +37,8 @@ SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopology
   return SnapshotTransaction(v, ti);
 }
 
-TransactionManager::TransactionManager(uint max_threads) : max_threads(max_threads),
-  active_snapshots(max_threads, NO_TRANSACTION),
-  thread_id_in_use(max_threads, false) {
+TransactionManager::TransactionManager(uint max_threads) : max_threads(max_threads) {
+    reset_max_threads(max_threads);
     stopped.store(false);
     min_version_updater = thread(&TransactionManager::run_min_version_updater, this, MIN_VERSION_UPDATER_INTERVAL);
 }
@@ -85,3 +84,13 @@ void TransactionManager::deregister_thread(size_t id) {
   thread_id_in_use[id] = false;
 }
 
+void TransactionManager::reset_max_threads(uint max_threads) {
+  lock_guard<mutex> l(thread_registry_lock);
+  for (bool in_use : thread_id_in_use) {
+    if (in_use) {
+      throw IllegalOperation("Cannot change max_threads while any threads are registered");
+    }
+  }
+  active_snapshots = vector<version_t>(max_threads, NO_TRANSACTION);
+  thread_id_in_use = vector<bool>(max_threads, false);
+}
