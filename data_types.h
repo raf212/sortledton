@@ -10,8 +10,8 @@
 #include <unordered_set>
 #include <algorithm>
 
-typedef uint32_t vertex_id_t;
-
+// Used vertex identifier and destination data structure for all data structrues.
+typedef uint64_t vertex_id_t;
 typedef vertex_id_t dst_t;
 
 // Version used to indicate that this is the first version of any version chain. This does not need to be

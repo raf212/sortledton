@@ -712,9 +712,13 @@ void Driver::check_bfs(vertex_id_t start_vertex, vector<uint> &distances, versio
     assert(size == distances.size());
 
     uint e;
+    int i = 0;
     for (auto d : distances) {
-      f.read((char *) &e, sizeof(d));
+      f.read((char *) &e, sizeof(e));
+//      cout << "i " << i << " d " << d << " e " << e << endl;
       assert(d == e);
+
+      i++;
     }
 
     f.close();

@@ -26,6 +26,8 @@ vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface
   queue<vertex_id_t> work;
   work.push(start_vertex);
 
+  // TODO fix start vertex distance to 0
+
   ContigiousBlockIterator &iter = driver.getIter(ds); // TODO move getIter to data structure instead of driver
   while (!work.empty()) {
     vertex_id_t v = work.front();
