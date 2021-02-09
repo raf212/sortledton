@@ -10,32 +10,35 @@ NO_INSERT_DELETE="--insert_percentage 0.0 --delete_percentage 0.0"
 ALL_INSERT="--insert_percentage 0.99 --delete_percentage 0.0"
 
 mkdir -p $TARGET_PATH
-mkdir $TARGET_PATH/twitter
-mkdir $TARGET_PATH/higgs
-mkdir $TARGET_PATH/soc-bitcoin
-mkdir $TARGET_PATH/live-journal
-mkdir $TARGET_PATH/live-journal-full
-mkdir $TARGET_PATH/live-journal-full-insert
-mkdir $TARGET_PATH/dimacs-us
-mkdir $TARGET_PATH/graph500-22
-mkdir $TARGET_PATH/graph500-23
-mkdir $TARGET_PATH/graph500-24
-mkdir $TARGET_PATH/graph500-26
+mkdir -p $TARGET_PATH/twitter
+mkdir -p $TARGET_PATH/twitter-full-insert
+mkdir -p $TARGET_PATH/higgs
+mkdir -p $TARGET_PATH/higgs-full-insert
+mkdir -p $TARGET_PATH/soc-bitcoin
+mkdir -p $TARGET_PATH/live-journal
+mkdir -p $TARGET_PATH/live-journal-full
+mkdir -p $TARGET_PATH/live-journal-full-insert
+mkdir -p $TARGET_PATH/dimacs-us
+mkdir -p $TARGET_PATH/graph500-22
+mkdir -p $TARGET_PATH/graph500-23
+mkdir -p $TARGET_PATH/graph500-24
+mkdir -p $TARGET_PATH/graph500-26
 
 #mkdir $TARGET_PATH/rec-amz-books
 #mkdir $TARGET_PATH/yahoo-songs
 
-mkdir $TARGET_PATH/graph500-22-u
-mkdir $TARGET_PATH/live-journal-u
-mkdir $TARGET_PATH/example-u
-mkdir $TARGET_PATH/dimacs-us-u
+mkdir -p $TARGET_PATH/graph500-22-u
+mkdir -p $TARGET_PATH/live-journal-u
+mkdir -p $TARGET_PATH/example-u
+mkdir -p $TARGET_PATH/dimacs-us-u
 
 #./dataset_converter ${NO_INSERT_DELETE} --make_undirected --densify ${SRC_PATH}example-undirected.e ${TARGET_PATH}/example-u/
 
 #./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}out.higgs-twitter-social ${TARGET_PATH}higgs/
+#./dataset_converter ${ALL_INSERT} --make_directed --densify ${SRC_PATH}out.higgs-twitter-social ${TARGET_PATH}higgs-full-insert/
 #./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}out.soc-LiveJournal1 ${TARGET_PATH}live-journal/
 #./dataset_converter ${NO_INSERT_DELETE} --densify ${SRC_PATH}out.soc-LiveJournal1 ${TARGET_PATH}live-journal-full/
-./dataset_converter ${ALL_INSERT} --densify ${SRC_PATH}out.soc-LiveJournal1 ${TARGET_PATH}live-journal-full-insert/
+./dataset_converter ${ALL_INSERT} --make_directed --densify ${SRC_PATH}out.soc-LiveJournal1 ${TARGET_PATH}live-journal-full-insert/
 #./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}soc-bitcoin.edges ${TARGET_PATH}soc-bitcoin/
 #./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}graph500-22.e ${TARGET_PATH}/graph500-22/
 #./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}graph500-23.e ${TARGET_PATH}/graph500-23/
@@ -50,5 +53,7 @@ mkdir $TARGET_PATH/dimacs-us-u
 #
 #
 #./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}/out.twitter_mpi ${TARGET_PATH}/twitter/
+./dataset_converter ${ALL_INSERT} --make_directed --densify ${SRC_PATH}out.twitter_mpi ${TARGET_PATH}twitter-full-insert/
+
 #./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}graph500-26.e ${TARGET_PATH}/graph500-26/
 

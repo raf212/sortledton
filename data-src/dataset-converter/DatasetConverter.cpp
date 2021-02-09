@@ -44,14 +44,14 @@ void DatasetConverter::run() {
   size_t vertex_count;
   vector<temporal_edge_t> edge_list = parse_text_file(o, vertex_count);
 
-  size_t deletion_set_size = o.deletion_percentage * edge_list.size();
-  size_t insertion_set_size = o.insert_percentage * edge_list.size();
-
   if (o.make_undirected) {
     edge_list = make_undirected(edge_list);
   }
 
-  edge_list = clean_data(edge_list);
+  edge_list = clean_data(edge_list, o.make_directed);
+
+  size_t deletion_set_size = o.deletion_percentage * edge_list.size();
+  size_t insertion_set_size = o.insert_percentage * edge_list.size();
 
   if (o.make_undirected) {
     SortedCSRDataSource csr = convert_to_sorted_csr(edge_list.begin(), edge_list.end(), vertex_count);
@@ -339,7 +339,7 @@ vector<temporal_edge_t> DatasetConverter::make_undirected(vector<temporal_edge_t
 }
 
 
-vector<temporal_edge_t> DatasetConverter::clean_data(vector<temporal_edge_t> &edges) {
+vector<temporal_edge_t> DatasetConverter::clean_data(vector<temporal_edge_t> &edges, bool make_directed) {
   cout << "Cleaning data" << endl;
   vector<temporal_edge_t> clean;
   clean.reserve(edges.size());
@@ -347,6 +347,9 @@ vector<temporal_edge_t> DatasetConverter::clean_data(vector<temporal_edge_t> &ed
   unordered_set<temporal_edge_t, TemporalEdgeHash, TemporalEdgeEqual> dedup;
 
   for (auto e : edges) {
+    if (make_directed && e.dst < e.src) {
+      swap(e.src, e.dst);
+    }
     if (e.src != e.dst && dedup.find(e) == dedup.end()) {
       clean.push_back(e);
       dedup.insert(e);

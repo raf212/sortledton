@@ -72,7 +72,7 @@ private:
      *
      * @return
      */
-    vector<temporal_edge_t> clean_data(vector<temporal_edge_t>& edges);
+    vector<temporal_edge_t> clean_data(vector<temporal_edge_t>& edges, bool make_directed);
 
     void write_degree_information(SortedCSRDataSource& graph);
 };
