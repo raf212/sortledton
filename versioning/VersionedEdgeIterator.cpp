@@ -2,6 +2,8 @@
 // Created by per on 01.02.21.
 //
 
+#include <cassert>
+
 #include "VersionedEdgeIterator.h"
 
 VersionedEdgeIterator::VersionedEdgeIterator(VersioningBlockedSkipListAdjacencyList &ds) : ds(ds) {
@@ -9,8 +11,9 @@ VersionedEdgeIterator::VersionedEdgeIterator(VersioningBlockedSkipListAdjacencyL
 }
 
 bool VersionedEdgeIterator::has_next() {
+  assert(opened && "Iterator has not been opened");
   if (data == nullptr) {
-    ds.release_vertex_lock(src);
+    close();
     return false;
   }
   bool ret = move_to_next_edge_in_current_block();
@@ -47,13 +50,19 @@ bool VersionedEdgeIterator::move_to_next_edge_in_current_block() {
 }
 
 dst_t VersionedEdgeIterator::next() {
+  assert(opened && "Iterator has not been opened");
   return current_edge;
 }
 
 void
 VersionedEdgeIterator::initialize(vertex_id_t src, VAdjacencySetType type, void *adjacency_set, uint64_t set_size, version_t version) {
+  if (opened) {
+    close();
+  }
+
   this->src = src;
-  ds.aquire_vertex_lock(src);
+  open();
+
   this->version = version;
   if (adjacency_set == nullptr) {
     data = nullptr;
@@ -75,5 +84,29 @@ VersionedEdgeIterator::initialize(vertex_id_t src, VAdjacencySetType type, void 
         break;
       }
     }
+  }
+}
+
+void VersionedEdgeIterator::open() {
+  assert(!is_open());
+  ds.aquire_vertex_lock(src);
+  opened = true;
+}
+
+void VersionedEdgeIterator::close() {
+  if (is_open()) {
+    ds.release_vertex_lock(src);
+    opened = false;
+  }
+}
+
+bool VersionedEdgeIterator::is_open() {
+  return opened;
+}
+
+VersionedEdgeIterator::~VersionedEdgeIterator() {
+  if (opened) {
+    ds.release_vertex_lock(src);
+    opened = false;
   }
 }

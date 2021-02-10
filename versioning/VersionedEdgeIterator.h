@@ -12,8 +12,13 @@
 class VersionedEdgeIterator : public EdgeIterator {
 public:
     explicit VersionedEdgeIterator(VersioningBlockedSkipListAdjacencyList& ds);
+    ~VersionedEdgeIterator();
     // TODO make protected
     /**
+     * Initializes the iterator to iterate over a adjacency set.
+     *
+     * Also, closes it if its open.
+     * Also, opens the iterator.
      *
      * @param type
      * @param adjacency_set
@@ -25,18 +30,25 @@ public:
     bool has_next() override;
     dst_t next() override;
 
-private:
-    VersioningBlockedSkipListAdjacencyList& ds;
-    version_t  version;
-    dst_t src;
+    void open() override;
+    void close() override;
+    bool is_open() override;
 
-    VSkipListHeader* next_skip_list_block;
-    dst_t* data;
-    dst_t* current_block_end;
-    dst_t current_edge;
+private:
+    VersioningBlockedSkipListAdjacencyList& ds;  // The graph data structure this iterator belongs to.
+    version_t  version = NO_TRANSACTION;  // The version to read by this iterator
+    dst_t src = 0;  // The source of the adjacency list that is traversed.
+
+    bool opened = false;
+
+    VSkipListHeader* next_skip_list_block = nullptr; // Pointer to the next block up.
+    dst_t* data = nullptr;  // Pointer to the next item up.
+    dst_t* current_block_end = nullptr; // Pointer behind the end of the current block
+    dst_t current_edge = 0; // Current item
 
     bool move_to_next_edge_in_current_block();
 };
 
+typedef VersionedEdgeIterator sortledton_iterator;
 
 #endif //LIVE_GRAPH_TWO_VERSIONEDEDGEITERATOR_H

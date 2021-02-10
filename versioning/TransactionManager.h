@@ -45,6 +45,7 @@ public:
      */
     void deregister_thread(size_t id);
 
+    // TODO rename to fit naming convention.
     SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, version_t v);
     SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti);
     void getSnapshotTransaction(VersionedTopologyInterface* ti, SnapshotTransaction& existing_transaction_object);

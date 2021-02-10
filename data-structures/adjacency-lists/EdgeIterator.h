@@ -12,7 +12,9 @@ class EdgeIterator {
 public:
     virtual dst_t next() = 0;
     virtual bool has_next() = 0;
-
+    virtual void open() {};
+    virtual void close() {};
+    virtual bool is_open() { return true; };
 };
 
 

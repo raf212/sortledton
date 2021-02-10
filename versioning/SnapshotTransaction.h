@@ -72,6 +72,9 @@ protected:
     VersionedTopologyInterface* ds;
 
 private:
+    // TODO check how much performanc it cost to make this class thread safe by a mutex on each writing function.
+    // if this is to expensive reintroduce a thread safe readonly transaction and note about thread safety in the documentation.
+
     void aquire_locks();
     void release_locks();
     void assert_preconditions();

@@ -25,7 +25,6 @@
 // This mask is set on vertex index entries for unused vertices.
 #define VERTEX_NOT_USED_MASK (1L << 60)
 
-
 /**
  * The types of adjacency sets used.
  */
