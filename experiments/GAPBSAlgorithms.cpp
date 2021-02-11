@@ -197,5 +197,18 @@ GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neig
     }
   }
 
-  return vector<uint>(distances.begin(), distances.end());
+  // Translation for correct distnace return values.
+  int N = distances.size();
+  vector<uint> ret(N);
+#pragma omp parallel for
+  for (int i = 0; i < N; i++) {
+    if (distances[i] < 0) {
+      ret[i] = numeric_limits<uint>::max();
+    } else {
+      ret[i] = distances[i];
+    }
+  }
+
+
+  return ret;
 }

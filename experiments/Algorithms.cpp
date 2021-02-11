@@ -25,6 +25,7 @@ vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface
 
   uint maxDistance = numeric_limits<uint>::max();
   vector<uint> distances(ds.vertex_count(), numeric_limits<uint>::max());
+  distances[start_vertex] = 0;
   queue<vertex_id_t> work;
   work.push(start_vertex);
 
@@ -60,6 +61,7 @@ vector<uint> Algorithms::bfs_single_edge_interface(Driver &driver, TopologyInter
 
   uint maxDistance = numeric_limits<uint>::max();
   vector<uint> distances(ds.vertex_count(), numeric_limits<uint>::max());
+  distances[start_vertex] = 0;
   queue<vertex_id_t> work;
   work.push(start_vertex);
 
@@ -98,6 +100,7 @@ Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_
 
   size_t vertices_traversed = 0;
   vector<uint> distances(ds.vertex_count(), numeric_limits<uint>::max());
+  distances[start_vertex] = 0;
   uint maxDistance = numeric_limits<uint>::max();
 
   queue<vertex_id_t> work;
