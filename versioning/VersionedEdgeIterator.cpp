@@ -105,8 +105,10 @@ bool VersionedEdgeIterator::is_open() {
 }
 
 VersionedEdgeIterator::~VersionedEdgeIterator() {
-  if (opened) {
-    ds.release_vertex_lock(src);
-    opened = false;
-  }
+  // TODO problems here sometimes.
+
+//  if (opened) {
+//    ds.release_vertex_lock(src);
+//    opened = false;
+//  }
 }

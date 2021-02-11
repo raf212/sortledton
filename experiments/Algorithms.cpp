@@ -17,6 +17,8 @@
 #include <versioning/SnapshotTransaction.h>
 #include <versioning/VersioningBlockedSkipListAdjacencyList.h>
 #include <data_types.h>
+#include "GAPBSAlgorithms.h"
+
 
 vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
   size_t vertices_traversed = 0;
@@ -334,8 +336,10 @@ Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_
 }
 
 vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool raw_neighbourhood,
-                             bool aquire_locks) {
-  if (raw_neighbourhood) {
+                             bool aquire_locks, bool gapbs) {
+  if (gapbs) {
+    return GAPBSAlgorithms::bfs(ds, start_vertex, raw_neighbourhood);
+  } else if (raw_neighbourhood) {
     return bfs_raw_neighbourhood(driver, ds, start_vertex, aquire_locks);
   } else if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
     if (aquire_locks) {

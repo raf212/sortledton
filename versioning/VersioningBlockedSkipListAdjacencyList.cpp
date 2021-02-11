@@ -316,6 +316,7 @@ bool VersioningBlockedSkipListAdjacencyList::traverse_version_chain(edge_t edge,
   } else {  // We want an old version and there are multiple versions.
     throw MultipleVersionException();  // TODO multiple versions not yet supported
   }
+  // TODO double check could  it be that twitter has so many edges that the version id is so high that it indicates multiple versions?
 }
 
 

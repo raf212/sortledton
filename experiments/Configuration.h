@@ -53,7 +53,8 @@ enum Experiments {
     NEIGHBOUR_2,
     COMMUNITY_DETECTION,
     STORAGE,
-    GC
+    GC,
+    GAPBS_BFS
 };
 
 class Dataset {

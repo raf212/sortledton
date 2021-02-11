@@ -10,6 +10,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g -shared-libgcc")
 
 find_package(TBB COMPONENTS tbbmalloc tbbmalloc_proxy)
 find_package (Threads)
+find_package(OpenMP)
 
 add_subdirectory(tests)
 
@@ -79,7 +80,8 @@ set(SRC
         versioning/TransactionManager.cpp versioning/TransactionManager.h
         versioning/VertexExistsPrecondition.cpp versioning/VertexExistsPrecondition.h
         versioning/EdgeDoesNotExistsPrecondition.cpp versioning/EdgeDoesNotExistsPrecondition.h
-        versioning/VersionedEdgeIterator.cpp versioning/VersionedEdgeIterator.h)
+        versioning/VersionedEdgeIterator.cpp versioning/VersionedEdgeIterator.h experiments/GAPBSAlgorithms.cpp experiments/GAPBSAlgorithms.h
+        third-party/gapbs.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp
@@ -92,15 +94,21 @@ set(DATASET_CONVERTER_SRC
 add_executable(dataset_converter data-src/dataset-converter/main.cpp ${DATASET_CONVERTER_SRC})
 add_executable(bitset_analysis dataset_bitset_analyser.cpp ${SRC})
 target_link_libraries (bitset_analysis Threads::Threads)
+target_link_libraries(bitset_analysis OpenMP::OpenMP_CXX)
+
 
 add_executable(Google_Tests_run ${TESTS} ${DATASET_CONVERTER_SRC} ${SRC})
 target_link_libraries(Google_Tests_run gtest gtest_main gmock)
+target_link_libraries(Google_Tests_run OpenMP::OpenMP_CXX)
+
 
 add_executable(live_graph_two main.cpp ${SRC})
 target_link_libraries (live_graph_two Threads::Threads)
 target_link_libraries(live_graph_two ${TBB_LIBRARIES})
+target_link_libraries(live_graph_two OpenMP::OpenMP_CXX)
 
 add_library(sortledton STATIC ${SRC})
+target_link_libraries(sortledton OpenMP::OpenMP_CXX)
 target_link_libraries (sortledton Threads::Threads)
 target_link_libraries(sortledton ${TBB_LIBRARIES})
 set_target_properties(sortledton PROPERTIES VERSION ${PROJECT_VERSION})

@@ -215,6 +215,8 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       transaction = tm.getSnapshotTransaction(versioned_data_structure);
       data_structure = &transaction;
     }
+
+    bool gapbs = false;
     switch (e.first) {
       case (NEIGHBOUR_2): {
         run_neighbourhood_2_experiment(*data_structure, neighbourhood_2_sources, run_on_raw_neighbourhood);
@@ -223,12 +225,14 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
         }
         break;
       }
+      case (GAPBS_BFS):
+        gapbs = true;  // Fallthrough
       case (BFS): {
         bool aquire_locks = false;
         if (!e.second.empty()) {
           aquire_locks = stoi(e.second[0]);
         }
-        run_bfs_experiment(*data_structure, run_on_raw_neighbourhood, aquire_locks, inserts_run);
+        run_bfs_experiment(*data_structure, run_on_raw_neighbourhood, aquire_locks, inserts_run, gapbs);
         if (versioned_data_structure != nullptr) {
           tm.transactionCompleted(transaction);
         }
@@ -329,8 +333,8 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
 }
 
 void
-Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool aquire_locks,
-                           bool after_inserts) {
+Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool aquire_locks, bool after_inserts,
+                           bool gapbs) {
   BFSSourceSelector ss(*this, config.base, ds);
   vertex_id_t start_vertex = ss.get_source();
 
@@ -343,7 +347,7 @@ Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood,
   for (int rep = 0; rep < config.repetitions; rep++) {
     // BFS
     auto start = chrono::steady_clock::now();
-    distances = Algorithms::bfs(*this, ds, start_vertex, run_on_raw_neighbourhood, aquire_locks);
+    distances = Algorithms::bfs(*this, ds, start_vertex, run_on_raw_neighbourhood, aquire_locks, gapbs);
     auto end = chrono::steady_clock::now();
 
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
@@ -367,7 +371,7 @@ Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood,
   auto traversed_vertices = Algorithms::traversed_vertices(ds, distances);
   cout << "Traversed vertices " << traversed_vertices << " from " << ds.vertex_count() << " "
        << (float) traversed_vertices / (float) ds.vertex_count() * 100 << "%" << endl;
-  double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
+  double average = ((double) sum(run_times)) / (double) run_times.size() / 1000;
   cout << "BFS run in average in " << average << " milliseconds " << endl;
 }
 
@@ -398,12 +402,15 @@ void run_inserts_in_transactions(size_t thread_id, TransactionManager &tm, EdgeL
   const int batch_size = 3000;
 
   const int total_work = el.edges.size();
-  SnapshotTransaction tx = tm.getSnapshotTransaction(ds, thread_id);
+  SnapshotTransaction tx = tm.getSnapshotTransaction(ds);
   while (insert_position.load() < total_work) {
     int work = insert_position.fetch_add(batch_size);
     int work_end = min(total_work, work + batch_size);
 
     while (work < work_end) {
+      auto e = el.edges[work];
+      auto opposite = edge_t { e.dst, e.src };
+      tx.insert_edge(opposite);
       tx.insert_edge(el.edges[work]);
       tx.execute();
       tm.transactionCompleted(tx);
