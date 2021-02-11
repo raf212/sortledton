@@ -510,7 +510,6 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   auto start = chrono::steady_clock::now();
   if (threads == 1) {
     SnapshotTransaction tx = tm.getSnapshotTransaction(ds);
-    assert(tx.edge_count() == base_edge_count);
 
     for (auto e : el.edges) {
       if (config.undirected) {
@@ -887,9 +886,9 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_
     size_t neighbourhood_size;
     for (int i = 0; i < size; i++) {
       // TODO found a heisenbug here
-//      f.read((char *) &neighbourhood_size, sizeof(neighbourhood_size));
-//      auto neighourhood_size_actual = ds.neighbourhood_size(i);
-//      assert(neighourhood_size_actual == neighbourhood_size);
+      f.read((char *) &neighbourhood_size, sizeof(neighbourhood_size));
+      size_t neighourhood_size_actual = ds.neighbourhood_size(i);
+      assert(neighourhood_size_actual == neighbourhood_size);
     }
 
     f.close();
