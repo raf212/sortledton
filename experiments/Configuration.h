@@ -118,6 +118,15 @@ public:
 
     bool release = false;
 
+    /**
+     * Uses undirected insert mode, meaning each edge is inserted in both directions and the graph is validated as
+     * an undirected graph.
+     *
+     * This requires the input dataset to match, in other words, each edge in the edge stream should exists only in one
+     * direction. CSR like base datasets are not supported yet.
+     */
+    bool undirected = false;
+
     bool validate_datastructures = false;
 
     uint insert_threads = 1;

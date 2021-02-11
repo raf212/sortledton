@@ -199,7 +199,9 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     transaction = tm.getSnapshotTransaction(versioned_data_structure);
     data_structure = &transaction;
   }
+
   load_base_dataset(*data_structure, base);
+
   if (versioned_data_structure != nullptr) {
     tm.transactionCompleted(transaction);
   }
@@ -379,7 +381,7 @@ void Driver::load_base_dataset(TopologyInterface &ds, SortedCSRDataSource &base)
   ds.bulkload(base);
 }
 
-void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &ds) {
+void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &ds, bool undirected) {
   // Effects the batch size on performance have never been tested. I tested it only for the versioned data structure.
   // But it is likely that it applies for this case as well, in particular, since jobs here are smaller/take less time.
   const int batch_size = 3000;
@@ -390,14 +392,19 @@ void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &
     int work_end = min(total_work, work + batch_size);
 
     while (work < work_end) {
-      ds.insert_safe(el.edges[work]);
+      auto e = el.edges[work];
+      if (undirected) {
+        edge_t opposite = {e.dst, e.src};
+        ds.insert_safe(opposite);
+      }
+      ds.insert_safe(e);
       work++;
     }
   }
 }
 
 void run_inserts_in_transactions(size_t thread_id, TransactionManager &tm, EdgeList &el, atomic_uint &insert_position,
-                                 VersionedTopologyInterface *ds, uint total_partitions, uint partition) {
+                                 VersionedTopologyInterface *ds, uint total_partitions, uint partition, bool undirected) {
   tm.register_thread(thread_id);
   const int batch_size = 3000;
 
@@ -409,9 +416,11 @@ void run_inserts_in_transactions(size_t thread_id, TransactionManager &tm, EdgeL
 
     while (work < work_end) {
       auto e = el.edges[work];
-      auto opposite = edge_t { e.dst, e.src };
-      tx.insert_edge(opposite);
-      tx.insert_edge(el.edges[work]);
+      if (undirected) {
+        auto opposite = edge_t { e.dst, e.src };
+        tx.insert_edge(opposite);
+      }
+      tx.insert_edge(e);
       tx.execute();
       tm.transactionCompleted(tx);
       tm.getSnapshotTransaction(ds, tx);
@@ -442,6 +451,10 @@ Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, Edg
   auto start = chrono::steady_clock::now();
   if (threads == 1) {
     for (auto e : el.edges) {
+      if (config.undirected) {
+        edge_t opposite = {e.dst, e.src};
+        ds.insert_edge(opposite);
+      }
       ds.insert_edge(e);
     }
   } else {
@@ -453,7 +466,7 @@ Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, Edg
     }
 
     for (int i = 0; i < threads; i++) {
-      ts.emplace_back(run_inserts, ref(el), ref(insert_index), ref(ds));
+      ts.emplace_back(run_inserts, ref(el), ref(insert_index), ref(ds), config.undirected);
     }
 
     for (auto &t : ts) {
@@ -487,8 +500,12 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
     assert(tx.edge_count() == base_edge_count);
 
     for (auto e : el.edges) {
+      if (config.undirected) {
+        auto opposite = edge_t{e.dst, e.src};
+        tx.insert_edge(opposite);
+      }
       tx.insert_edge(e);
-      tx.execute();  // TODO handle execution failure due to precondition.
+      tx.execute();
       tm.transactionCompleted(tx);
       tm.getSnapshotTransaction(ds, tx);
     }
@@ -499,7 +516,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
     uint partition = 0;
     for (int i = 1; i < threads + 1; i++) {
       ts.emplace_back(run_inserts_in_transactions, i, ref(tm), ref(el), ref(insert_index), ds, config.insert_threads,
-                      partition);
+                      partition, config.undirected);
       partition++;
     }
 
@@ -798,7 +815,19 @@ unordered_set<dst_t> Driver::get_neighbours(TopologyInterface &ds, vertex_id_t v
 void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_count) {
   cout << "Validating insert experiment" << endl;
 
-  assert(ds.edge_count() == el.edges.size() + base_edge_count);
+  auto edge_count = ds.edge_count();
+  auto expected_edge_count = el.edges.size() + base_edge_count;
+  if (config.undirected) {
+    // TODO support undirected mode in data structure?
+//    edge_count /= 2;
+//    expected_edge_count = el.edges.size();
+//     Undirectedness and base datasets are not really well supported. There could be an uneven number of edges even in an undirected graph.
+//    assert(edge_count == expected_edge_count || edge_count + 1 == expected_edge_count);
+  } else {
+    assert(edge_count == expected_edge_count);
+  }
+
+
 
   auto i = 0;
   for (auto e : el.edges) {
@@ -807,6 +836,10 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_
 //      cout << ".";
 //    }
     assert(ds.has_edge(e));
+    if (config.undirected) {
+      edge_t opposite = { e.dst, e.src };
+      assert(ds.has_edge(opposite));
+    }
   }
 
 
@@ -850,7 +883,7 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_
 
   vector<uint> distances;
   if (typeid(ds) == typeid(SnapshotTransaction)) {
-    distances = Algorithms::bfs(*this, ds, start_vertex, true, false);
+    distances = Algorithms::bfs(*this, ds, start_vertex, true, false, false);
   } else {
     distances = Algorithms::bfs(*this, ds, start_vertex);
   }

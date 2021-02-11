@@ -25,6 +25,7 @@ void Config::initialize(int argc, char **argv) {
             {"repetitions", required_argument, 0, 'r'},
             {"release_run", no_argument, 0, 'l'},
             {"prefetch_blocks", required_argument, 0, 'p'},
+            {"undirected", no_argument, 0, 'u'},
             {"insert_threads", required_argument, 0, 't'}
 
     };
@@ -67,6 +68,9 @@ void Config::initialize(int argc, char **argv) {
         break;
       case 'r':
         repetitions = stoi(optarg);
+        break;
+      case 'u':
+        undirected = true;
         break;
       case 'v':
         validate_datastructures = true;
