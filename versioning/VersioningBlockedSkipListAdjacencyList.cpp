@@ -1117,63 +1117,62 @@ void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id
   }
 }
 
-// TODO reactivate
 // TODO include backtrace in my project
 void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(vertex_id_t v, version_t version) {
-//  switch (get_set_type(v, version)) {
-//    case VSKIP_LIST: {
-//      auto start = (VSkipListHeader *) raw_neighbourhood_version(v, version);
-//
-//      auto i = start;
-//      VSkipListHeader* before = nullptr;
-//      VSkipListHeader* blocks[SKIP_LIST_LEVELS];
-//      for (int j = 0; j < SKIP_LIST_LEVELS; j++) {
-//        blocks[j] = start;
-//      }
-//
-//      while (i != nullptr) {
-//        assert(i->size <= block_size);
-//        // If not the last block, the last block could contain less than b_size / 2 elements after bulkloading.
-//        // && if not the first block because the first block might have less than block_size / 2 elemetns because I only move elements forwards in GC
-//        if (i->next_levels[0] != nullptr && i != start) {
-//          // TODO fix that the fact that the last block is less than half full after bulkloading.
-////          assert( block_size / 2 - 3 <= i->size);  // TODO there's a bug such that some blocks are slightly smaller than block_size / 2
-//        }
-//
-//        auto data = get_data_pointer(i);
-//        auto end = data + i->size;
-//
-//        assert_block_consistency(data, end, version);
-//
-//        if (is_versioned(*(end - 2))) {
-//          assert(i->max == make_unversioned(*(end - 2)));
-//        } else {
-//          assert(i->max == make_unversioned(*(end - 1)));
-//        }
-//
-//        for (auto l = 0; l < SKIP_LIST_LEVELS; l++) {
-//          if (i->next_levels[l] != nullptr) {
-//            if (i != start) {
-//              assert(blocks[l]->next_levels[l] == i);
-//            }
-//            blocks[l] = i;
-//            auto min_after = get_min_from_skip_list_header(i->next_levels[l]);
-//            assert(i->max < min_after);
-//          }
-//        }
-//        assert(before == i->before);
-//        before = i;
-//        i = i->next_levels[0];
-//      }
-//      break;
-//    }
-//    case VSINGLE_BLOCK: {
-//      auto start = (dst_t*) raw_neighbourhood_version(v, version);
-//      auto end = start + ((uint64_t) raw_neighbourhood_size_entry(v) & ~ SIZE_VERSION_MASK);
-//      assert_block_consistency(start, end, version);
-//      break;
-//    }
-//  }
+  switch (get_set_type(v, version)) {
+    case VSKIP_LIST: {
+      auto start = (VSkipListHeader *) raw_neighbourhood_version(v, version);
+
+      auto i = start;
+      VSkipListHeader* before = nullptr;
+      VSkipListHeader* blocks[SKIP_LIST_LEVELS];
+      for (int j = 0; j < SKIP_LIST_LEVELS; j++) {
+        blocks[j] = start;
+      }
+
+      while (i != nullptr) {
+        assert(i->size <= block_size);
+        // If not the last block, the last block could contain less than b_size / 2 elements after bulkloading.
+        // && if not the first block because the first block might have less than block_size / 2 elemetns because I only move elements forwards in GC
+        if (i->next_levels[0] != nullptr && i != start) {
+          // TODO fix that the fact that the last block is less than half full after bulkloading.
+//          assert( block_size / 2 - 3 <= i->size);  // TODO there's a bug such that some blocks are slightly smaller than block_size / 2
+        }
+
+        auto data = get_data_pointer(i);
+        auto end = data + i->size;
+
+        assert_block_consistency(data, end, version);
+
+        if (is_versioned(*(end - 2))) {
+          assert(i->max == make_unversioned(*(end - 2)));
+        } else {
+          assert(i->max == make_unversioned(*(end - 1)));
+        }
+
+        for (auto l = 0; l < SKIP_LIST_LEVELS; l++) {
+          if (i->next_levels[l] != nullptr) {
+            if (i != start) {
+              assert(blocks[l]->next_levels[l] == i);
+            }
+            blocks[l] = i;
+            auto min_after = get_min_from_skip_list_header(i->next_levels[l]);
+            assert(i->max < min_after);
+          }
+        }
+        assert(before == i->before);
+        before = i;
+        i = i->next_levels[0];
+      }
+      break;
+    }
+    case VSINGLE_BLOCK: {
+      auto start = (dst_t*) raw_neighbourhood_version(v, version);
+      auto end = start + ((uint64_t) raw_neighbourhood_size_entry(v) & ~ SIZE_VERSION_MASK);
+      assert_block_consistency(start, end, version);
+      break;
+    }
+  }
 
 }
 
