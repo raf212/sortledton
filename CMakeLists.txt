@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 14)
 #set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -DBITS32)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -DBITS64)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O2 -g -shared-libgcc")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -shared-libgcc")
 
 find_package(TBB COMPONENTS tbbmalloc tbbmalloc_proxy)
 find_package (Threads)
@@ -108,6 +108,10 @@ add_executable(live_graph_two main.cpp ${SRC})
 target_link_libraries (live_graph_two Threads::Threads)
 target_link_libraries(live_graph_two ${TBB_LIBRARIES})
 target_link_libraries(live_graph_two OpenMP::OpenMP_CXX)
+
+add_executable(vector_vs_blockek_linked_list  vector_vs_blockek_linked_list.h vector_vs_blockek_linked_list.cpp)
+target_link_libraries(live_graph_two ${TBB_LIBRARIES})
+
 
 add_library(sortledton STATIC ${SRC})
 target_link_libraries(sortledton OpenMP::OpenMP_CXX)
