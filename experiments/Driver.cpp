@@ -7,6 +7,7 @@
 #include <chrono>
 #include <random>
 #include <iomanip>
+#include <omp.h>
 
 #include <data-structures/CSR.h>
 #include <data-structures/VectorAdjacencyLists.h>
@@ -47,6 +48,18 @@ vector<vector<vertex_id_t>> Driver::select_2_neighbourhood_src(const SortedCSRDa
 
 
 void Driver::run() {
+  if (config.omp_threads != 0) {
+    cout << "Setting OMP thread number to " << config.omp_threads << endl;
+    omp_set_num_threads(config.omp_threads);
+  }
+#pragma omp parallel
+  {
+    if (omp_get_thread_num() == 0) {
+      cout << "Using " << omp_get_num_threads() << " OMP threads." << endl;
+    }
+  }
+
+
   cout << "Starting to run experiments." << endl;
 
   cout << "Reading base dataset " << config.base.path << endl;
@@ -200,7 +213,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   }
 
   if (config.undirected && versioned_data_structure != nullptr) {
-    auto temp = dynamic_cast<VersioningBlockedSkipListAdjacencyList*>(versioned_data_structure);
+    auto temp = dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(versioned_data_structure);
     temp->reserve_vertices(base.vertex_count());
     for (int i = 0; i < base.vertex_count(); i++) {
       temp->insert_vertex_version(i, FIRST_VERSION);
@@ -416,7 +429,8 @@ void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &
 }
 
 void run_inserts_in_transactions(size_t thread_id, TransactionManager &tm, EdgeList &el, atomic_uint &insert_position,
-                                 VersionedTopologyInterface *ds, uint total_partitions, uint partition, bool undirected) {
+                                 VersionedTopologyInterface *ds, uint total_partitions, uint partition,
+                                 bool undirected) {
   tm.register_thread(thread_id);
   const int batch_size = 3000;
 
@@ -429,7 +443,7 @@ void run_inserts_in_transactions(size_t thread_id, TransactionManager &tm, EdgeL
     while (work < work_end) {
       auto e = el.edges[work];
       if (undirected) {
-        auto opposite = edge_t { e.dst, e.src };
+        auto opposite = edge_t{e.dst, e.src};
         tx.insert_edge(opposite);
       }
       tx.insert_edge(e);
@@ -694,7 +708,7 @@ ContigiousBlockIterator &Driver::getIter(TopologyInterface &ds) {
     vectorIterators.push_back(VectorBatchedEdgeIterator());
     return vectorIterators[vectorIterators.size() - 1];
   } else {
-      throw NotImplemented();
+    throw NotImplemented();
   }
 }
 
@@ -703,7 +717,8 @@ EdgeIterator &Driver::getSingleEdgeIter(TopologyInterface &ds) {
     filteredBlockIterators.push_back(FilteredVectorIterator());
     return filteredBlockIterators[filteredBlockIterators.size() - 1];
   } else if (typeid(ds) == typeid(SnapshotTransaction)) {
-    versionedIterators.push_back(VersionedEdgeIterator(dynamic_cast<VersioningBlockedSkipListAdjacencyList&>(*dynamic_cast<SnapshotTransaction&>(ds).raw_ds())));
+    versionedIterators.push_back(VersionedEdgeIterator(
+            dynamic_cast<VersioningBlockedSkipListAdjacencyList &>(*dynamic_cast<SnapshotTransaction &>(ds).raw_ds())));
     return versionedIterators[versionedIterators.size() - 1];
   } else {
     throw NotImplemented();
@@ -841,7 +856,6 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_
   }
 
 
-
   auto i = 0;
   for (auto e : el.edges) {
     i++;
@@ -850,7 +864,7 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_
 //    }
     assert(ds.has_edge(e));
     if (config.undirected) {
-      edge_t opposite = { e.dst, e.src };
+      edge_t opposite = {e.dst, e.src};
       assert(ds.has_edge(opposite));
     }
   }
@@ -1198,7 +1212,8 @@ void Driver::show_storage_sizes(string ds_name, TopologyInterface &ds) {
   ds.report_storage_size();
 }
 
-void Driver::run_gc_experiment(TransactionManager& tm, VersionedTopologyInterface& ds, bool inserts_run, EdgeList &inserts) {
+void
+Driver::run_gc_experiment(TransactionManager &tm, VersionedTopologyInterface &ds, bool inserts_run, EdgeList &inserts) {
   cout << "Running GC experiment " << endl;
 
   tm.update_min_version();
@@ -1223,11 +1238,14 @@ void Driver::run_gc_experiment(TransactionManager& tm, VersionedTopologyInterfac
 #endif
 
   cout << endl << "GC run in " << milliseconds << " milliseconds " << endl;
-  cout << "Collected " << dynamic_cast<VersioningBlockedSkipListAdjacencyList&>(ds).gced_edges << " edge versions" << endl;
-  cout << "Merged " << dynamic_cast<VersioningBlockedSkipListAdjacencyList&>(ds).gc_merges << " skip list blocks" << endl;
-  cout << "Changed  " << dynamic_cast<VersioningBlockedSkipListAdjacencyList&>(ds).gc_to_single_block << " skip list blocks to single blocks" << endl;
+  cout << "Collected " << dynamic_cast<VersioningBlockedSkipListAdjacencyList &>(ds).gced_edges << " edge versions"
+       << endl;
+  cout << "Merged " << dynamic_cast<VersioningBlockedSkipListAdjacencyList &>(ds).gc_merges << " skip list blocks"
+       << endl;
+  cout << "Changed  " << dynamic_cast<VersioningBlockedSkipListAdjacencyList &>(ds).gc_to_single_block
+       << " skip list blocks to single blocks" << endl;
 }
 
-void Driver::check_gc_experiment(VersionedTopologyInterface& ds) {
+void Driver::check_gc_experiment(VersionedTopologyInterface &ds) {
 }
 

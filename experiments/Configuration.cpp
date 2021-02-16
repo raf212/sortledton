@@ -26,7 +26,8 @@ void Config::initialize(int argc, char **argv) {
             {"release_run", no_argument, 0, 'l'},
             {"prefetch_blocks", required_argument, 0, 'p'},
             {"undirected", no_argument, 0, 'u'},
-            {"insert_threads", required_argument, 0, 't'}
+            {"insert_threads", required_argument, 0, 't'},
+            {"omp_threads", required_argument, 0, 'o'}
 
     };
 
@@ -41,6 +42,9 @@ void Config::initialize(int argc, char **argv) {
         break;
       case 'p':
         prefetch_blocks = stoi(optarg);
+        break;
+      case 'o':
+        omp_threads = stoi(optarg);
         break;
       case 'l':
         release = true;

@@ -131,6 +131,8 @@ public:
 
     uint insert_threads = 1;
 
+    uint omp_threads = 0;
+
     void initialize(int argc, char **argv);
 
 private:

@@ -143,7 +143,7 @@ namespace { // anonymous
 vector<uint>
 GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neighbourhood, int alpha, int beta) {
   cout << "Using GAPBS" << endl;
-//  omp_set_num_threads(1);
+
   if (typeid(ti) != typeid(SnapshotTransaction &)) {
     throw NotImplemented();
   }
