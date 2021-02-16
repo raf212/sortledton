@@ -12,7 +12,7 @@
 
 
 
-#ifdef BITS64
+//#ifdef BITS64
 // Used vertex identifier and destination data structure for all data structrues.
   typedef uint64_t vertex_id_t;
   typedef vertex_id_t dst_t;
@@ -30,7 +30,7 @@
   typedef uint64_t version_t;
   #define MORE_VERSION_MASK (1L << 62)
   #define DELETION_MASK (1L << 61)
-#endif
+//#endif
 #ifdef BITS32
 // Used vertex identifier and destination data structure for all data structrues.
   typedef uint32_t vertex_id_t;
