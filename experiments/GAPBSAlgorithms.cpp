@@ -155,8 +155,6 @@ GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neig
 
   auto tx = dynamic_cast<SnapshotTransaction &>(ti);
   auto ds = dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(tx.raw_ds());
-  ds->gc_all();
-  cout << "gced" << endl;
 
   pvector<int64_t> distances = InitDistances(tx);
   distances[start_vertex] = 0;
