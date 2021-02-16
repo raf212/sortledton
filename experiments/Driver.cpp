@@ -194,7 +194,6 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     }
   }
 
-  cout << "Loading base dataset." << endl;
   if (versioned_data_structure != nullptr) {
     transaction = tm.getSnapshotTransaction(versioned_data_structure);
     data_structure = &transaction;
@@ -885,7 +884,7 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_
 
     size_t neighbourhood_size;
     for (int i = 0; i < size; i++) {
-      // TODO found a heisenbug here
+//       TODO found a heisenbug here
       f.read((char *) &neighbourhood_size, sizeof(neighbourhood_size));
       size_t neighourhood_size_actual = ds.neighbourhood_size(i);
       assert(neighourhood_size_actual == neighbourhood_size);
@@ -1218,6 +1217,7 @@ void Driver::run_gc_experiment(TransactionManager& tm, VersionedTopologyInterfac
     // TODO add function to return the thread ID.
     auto tx = tm.getSnapshotTransaction(&ds);
     check_insert(tx, inserts, 0);
+    tm.transactionCompleted(tx);
   }
   check_gc_experiment(ds);
 #endif
