@@ -134,6 +134,7 @@ private:
 
     atomic<uint> calls_to_add_edge { 0 };
     atomic<uint> vertex_count { 0 };
+    atomic<uint> max_vertex { 0 };
 
     size_t block_size;
     const float bulk_load_fill_rate = 1.0;

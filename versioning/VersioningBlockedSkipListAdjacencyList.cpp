@@ -67,6 +67,7 @@ void VersioningBlockedSkipListAdjacencyList::bulkload(const SortedCSRDataSource 
     adjacency_index.push_back((void *) (end - start));
   }
   vertex_count.store(src.vertex_count());
+  max_vertex.store(src.vertex_count());
 }
 
 void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start, const dst_t *end) {
@@ -496,7 +497,7 @@ VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(s
 
 size_t VersioningBlockedSkipListAdjacencyList::vertex_count_version(version_t version) {
   // TODO vertex versions not supported yet.
-  return vertex_count.load();
+  return max_vertex.load() + 1; // TODO correct once dynamic vertices have been implemented
 }
 
 void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_version(vertex_id_t src, version_t version) {
@@ -1253,6 +1254,7 @@ void VersioningBlockedSkipListAdjacencyList::reserve_vertices(size_t max_vertice
   vertex_cas_locks.swap(m1);
 
   vertex_count.store(0);
+  max_vertex.store(0);
 }
 
 void VersioningBlockedSkipListAdjacencyList::insert_vertex_version(vertex_id_t v, version_t version) {
@@ -1262,6 +1264,10 @@ void VersioningBlockedSkipListAdjacencyList::insert_vertex_version(vertex_id_t v
   adjacency_index[v * 2] = nullptr;
   adjacency_index[v * 2 + 1] = 0;
   vertex_count.fetch_add(1);
+  for(auto atom_val=max_vertex.load();
+      atom_val < v &&
+      !max_vertex.compare_exchange_weak(atom_val, v);
+          );
 }
 
 bool VersioningBlockedSkipListAdjacencyList::has_vertex_version(vertex_id_t v, version_t version) {
