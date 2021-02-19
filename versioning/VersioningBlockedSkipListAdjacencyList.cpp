@@ -903,11 +903,12 @@ void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_size_entry(verte
 }
 
 void VersioningBlockedSkipListAdjacencyList::gc_all() {
-  auto vertices = get_max_vertex();
+  // TODO needs max vertex not vertex count
+  auto vertices = vertex_count_version(FIRST_VERSION);
   for (vertex_id_t v = 0; v < vertices; v++) {
-    gc_vertex(v);
-
-    // TODO sizes are still missing
+    if (has_vertex_version(v, FIRST_VERSION)) {
+      gc_vertex(v);
+    }
   }
 }
 

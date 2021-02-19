@@ -211,7 +211,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
     transaction = tm.getSnapshotTransaction(versioned_data_structure);
     data_structure = &transaction;
   }
-
+  cout << base.vertex_count() << endl;
   if (config.undirected && versioned_data_structure != nullptr) {
     auto temp = dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(versioned_data_structure);
     temp->reserve_vertices(base.vertex_count());
