@@ -6,6 +6,10 @@
 
 #include "VersionedEdgeIterator.h"
 
+#define likely(x)       __builtin_expect((x),1)
+#define unlikely(x)     __builtin_expect((x),0)
+
+
 VersionedEdgeIterator::VersionedEdgeIterator(VersioningBlockedSkipListAdjacencyList &ds) : ds(ds) {
 
 }
@@ -16,6 +20,15 @@ bool VersionedEdgeIterator::has_next() {
     close();
     return false;
   }
+
+  if (!is_versioned) {
+    return has_next_fast();
+  } else {
+    return has_next_versioned();
+  }
+}
+
+bool VersionedEdgeIterator::has_next_versioned() {
   bool ret = move_to_next_edge_in_current_block();
   while (!ret && next_skip_list_block != nullptr) {
     data = next_skip_list_block->data;
@@ -27,6 +40,25 @@ bool VersionedEdgeIterator::has_next() {
     ds.release_vertex_lock(src);
   }
   return ret;
+}
+
+bool VersionedEdgeIterator::has_next_fast() {
+  if (data < current_block_end) {
+    current_edge = *data;
+    data += 1;
+    return true;
+  } else if (next_skip_list_block != nullptr) {
+    data = next_skip_list_block->data;
+    current_block_end = data + next_skip_list_block->size;
+    next_skip_list_block = next_skip_list_block->next_levels[0];
+
+    current_edge = *data;
+    data += 1;
+    return true;
+  } else {
+    ds.release_vertex_lock(src);
+    return false;
+  }
 }
 
 bool VersionedEdgeIterator::move_to_next_edge_in_current_block() {
@@ -55,11 +87,12 @@ dst_t VersionedEdgeIterator::next() {
 }
 
 void
-VersionedEdgeIterator::initialize(vertex_id_t src, VAdjacencySetType type, void *adjacency_set, uint64_t set_size, version_t version) {
+VersionedEdgeIterator::initialize(vertex_id_t src, VAdjacencySetType type, void *adjacency_set, uint64_t set_size, version_t version, bool is_versioned) {
   if (opened) {
     close();
   }
 
+  this->is_versioned = is_versioned;
   this->src = src;
   open();
 

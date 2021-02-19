@@ -25,7 +25,7 @@ public:
      * @param set_size only set to a meaningful value if type is VSINGLE_BLOCK.
      * @param version
      */
-    void initialize(vertex_id_t src, VAdjacencySetType type, void* adjacency_set, uint64_t set_size, version_t version);
+    void initialize(vertex_id_t src, VAdjacencySetType type, void* adjacency_set, uint64_t set_size, version_t version, bool is_versioned);
 
     bool has_next() override;
     dst_t next() override;
@@ -36,6 +36,7 @@ public:
 
 private:
     VersioningBlockedSkipListAdjacencyList& ds;  // The graph data structure this iterator belongs to.
+    bool is_versioned = true;
     version_t  version = NO_TRANSACTION;  // The version to read by this iterator
     dst_t src = 0;  // The source of the adjacency list that is traversed.
 
@@ -45,6 +46,9 @@ private:
     dst_t* data = nullptr;  // Pointer to the next item up.
     dst_t* current_block_end = nullptr; // Pointer behind the end of the current block
     dst_t current_edge = 0; // Current item
+
+    bool has_next_versioned();
+    bool has_next_fast();
 
     bool move_to_next_edge_in_current_block();
 };

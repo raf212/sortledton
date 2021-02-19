@@ -1201,7 +1201,8 @@ dst_t VersioningBlockedSkipListAdjacencyList::get_min_from_skip_list_header(VSki
 }
 
 void VersioningBlockedSkipListAdjacencyList::neighbourhood_version(vertex_id_t src, EdgeIterator& iter, version_t version) {
-  dynamic_cast<VersionedEdgeIterator&>(iter).initialize(src, get_set_type(src, version), raw_neighbourhood_version(src, version), ((uint64_t) raw_neighbourhood_size_entry(src)) & ~SIZE_VERSION_MASK, version);
+  bool is_versioned = size_is_versioned(src);
+  dynamic_cast<VersionedEdgeIterator&>(iter).initialize(src, get_set_type(src, version), raw_neighbourhood_version(src, version), ((uint64_t) raw_neighbourhood_size_entry(src)) & ~SIZE_VERSION_MASK, version, is_versioned);
 }
 
 VersioningBlockedSkipListAdjacencyList::~VersioningBlockedSkipListAdjacencyList() {
