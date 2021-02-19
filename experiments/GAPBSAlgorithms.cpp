@@ -49,7 +49,7 @@ namespace { // anonymous
       const int64_t N = tx.vertex_count();
       int64_t awake_count = 0;
       next.reset();
-#pragma omp parallel for reduction(+ : awake_count) schedule(dynamic, 1024) firstprivate(tx)
+#pragma omp parallel for reduction(+ : awake_count) schedule(dynamic, 1024)
       for (int64_t u = 0; u < N; u++) {
         if (distances[u] < 0) { // the node has not been visited yet
           bool done = false;
@@ -172,7 +172,6 @@ GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neig
   int64_t distance = 1; // current distance
   while (!queue.empty()) {
     if (scout_count > edges_to_check / alpha) {
-//      cout << "BU step" << endl;
       int64_t awake_count, old_awake_count;
       QueueToBitmap(queue, front);
       awake_count = queue.size();
@@ -187,7 +186,6 @@ GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neig
       BitmapToQueue(tx, front, queue);
       scout_count = 1;
     } else {
-//      cout << "TD step" << endl;
       edges_to_check -= scout_count;
       scout_count = TDStep(ds, tx, distances, distance, queue);
       queue.slide_window();
