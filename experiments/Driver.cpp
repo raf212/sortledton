@@ -215,9 +215,6 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
   if (config.undirected && versioned_data_structure != nullptr) {
     auto temp = dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(versioned_data_structure);
     temp->reserve_vertices(base.vertex_count());
-    for (int i = 0; i < base.vertex_count(); i++) {
-      temp->insert_vertex_version(i, FIRST_VERSION);
-    }
   } else {
     cout << "Loading base dataset." << endl;
     load_base_dataset(*data_structure, base);
@@ -428,7 +425,8 @@ void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &
   }
 }
 
-void run_inserts_in_transactions(size_t thread_id, TransactionManager &tm, EdgeList &el, atomic_uint &insert_position,
+void
+run_inserts_in_transactions(size_t thread_id, TransactionManager &tm, EdgeList &el, atomic_uint &insert_position,
                                  VersionedTopologyInterface *ds, uint total_partitions, uint partition,
                                  bool undirected) {
   tm.register_thread(thread_id);
@@ -442,6 +440,9 @@ void run_inserts_in_transactions(size_t thread_id, TransactionManager &tm, EdgeL
 
     while (work < work_end) {
       auto e = el.edges[work];
+      tx.use_vertex_does_not_exists_semantics();
+      tx.insert_vertex(e.src);
+      tx.insert_vertex(e.dst);
       if (undirected) {
         auto opposite = edge_t{e.dst, e.src};
         tx.insert_edge(opposite);
@@ -525,6 +526,9 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
     SnapshotTransaction tx = tm.getSnapshotTransaction(ds);
 
     for (auto e : el.edges) {
+      tx.use_vertex_does_not_exists_semantics();
+      tx.insert_vertex(e.src);
+      tx.insert_vertex(e.dst);
       if (config.undirected) {
         auto opposite = edge_t{e.dst, e.src};
         tx.insert_edge(opposite);
@@ -746,7 +750,7 @@ void Driver::check_bfs(vertex_id_t start_vertex, vector<uint> &distances, versio
       assert(false);
     }
 
-    auto size = distances.size();
+    size_t size = distances.size();
     f.write((char *) &size, sizeof(size));
 
     for (auto d : distances) {
