@@ -846,82 +846,82 @@ unordered_set<dst_t> Driver::get_neighbours(TopologyInterface &ds, vertex_id_t v
 }
 
 void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_count) {
-//  cout << "Validating insert experiment" << endl;
-//  // TODO reactivate
-//  auto edge_count = ds.edge_count();
-//  auto expected_edge_count = el.edges.size() + base_edge_count;
-//  if (config.undirected) {
-//    // TODO support undirected mode in data structure?
-////    edge_count /= 2;
-////    expected_edge_count = el.edges.size();
-////     Undirectedness and base datasets are not really well supported. There could be an uneven number of edges even in an undirected graph.
-////    assert(edge_count == expected_edge_count || edge_count + 1 == expected_edge_count);
-//  } else {
-//    assert(edge_count == expected_edge_count);
-//  }
-//
-//
-//  auto i = 0;
-//  for (auto e : el.edges) {
-//    i++;
-////    if (i % 1000 == 0) {
-////      cout << ".";
-////    }
-//    assert(ds.has_edge(e));
-//    if (config.undirected) {
-//      edge_t opposite = {e.dst, e.src};
-//      assert(ds.has_edge(opposite));
-//    }
-//  }
-//
-//
-//  const string gold_standard_file_sizes =
-//          config.gold_standard_directory + "/insert_adjacency_set_sizes_" + config.base.get_name() + ".goldStandard";
-//  if (!file_exists(gold_standard_file_sizes)) {
-//    cout << "Writing new gold standard for: " << gold_standard_file_sizes << endl;
-//    ofstream f(gold_standard_file_sizes, ofstream::binary | ofstream::out);
-//
-//    if (!f.good()) {
-//      assert(false);
-//    }
-//
-//    size_t size = ds.vertex_count();
-//    f.write((char *) &size, sizeof(size));
-//
-//    for (auto v = 0; v < ds.vertex_count(); v++) {
-//      size_t neighbourhood_size = ds.neighbourhood_size(v);
-//      f.write((char *) &neighbourhood_size, sizeof(neighbourhood_size));
-//    }
-//    f.close();
-//  } else {
-//    ifstream f(gold_standard_file_sizes, ifstream::in | ifstream::binary);
-//
-//    size_t size;
-//    f.read((char *) &size, sizeof(size));
-//
-//    assert(size == ds.vertex_count());
-//
-//    size_t neighbourhood_size;
-//    for (int i = 0; i < size; i++) {
-////       TODO found a heisenbug here
-//      f.read((char *) &neighbourhood_size, sizeof(neighbourhood_size));
-//      size_t neighourhood_size_actual = ds.neighbourhood_size(i);
-//      assert(neighourhood_size_actual == neighbourhood_size);
-//    }
-//
-//    f.close();
-//  }
-//
-//  BFSSourceSelector ss(*this, config.base, ds);
-//  vertex_id_t start_vertex = ss.get_source();
-//
-//  vector<uint> distances;
-//  if (typeid(ds) == typeid(SnapshotTransaction)) {
-//    distances = Algorithms::bfs(*this, ds, start_vertex, true, false, false);
-//  } else {
-//    distances = Algorithms::bfs(*this, ds, start_vertex);
-//  }
-//  check_bfs(start_vertex, distances, 1);
+  cout << "Validating insert experiment" << endl;
+  // TODO reactivate
+  auto edge_count = ds.edge_count();
+  auto expected_edge_count = el.edges.size() + base_edge_count;
+  if (config.undirected) {
+    // TODO support undirected mode in data structure?
+//    edge_count /= 2;
+//    expected_edge_count = el.edges.size();
+//     Undirectedness and base datasets are not really well supported. There could be an uneven number of edges even in an undirected graph.
+//    assert(edge_count == expected_edge_count || edge_count + 1 == expected_edge_count);
+  } else {
+    assert(edge_count == expected_edge_count);
+  }
+
+
+  auto i = 0;
+  for (auto e : el.edges) {
+    i++;
+    if (i % 1000 == 0) {
+      cout << ".";
+    }
+    assert(ds.has_edge(e));
+    if (config.undirected) {
+      edge_t opposite = {e.dst, e.src};
+      assert(ds.has_edge(opposite));
+    }
+  }
+
+
+  const string gold_standard_file_sizes =
+          config.gold_standard_directory + "/insert_adjacency_set_sizes_" + config.base.get_name() + ".goldStandard";
+  if (!file_exists(gold_standard_file_sizes)) {
+    cout << "Writing new gold standard for: " << gold_standard_file_sizes << endl;
+    ofstream f(gold_standard_file_sizes, ofstream::binary | ofstream::out);
+
+    if (!f.good()) {
+      assert(false);
+    }
+
+    size_t size = ds.vertex_count();
+    f.write((char *) &size, sizeof(size));
+
+    for (auto v = 0; v < ds.vertex_count(); v++) {
+      size_t neighbourhood_size = ds.neighbourhood_size(v);
+      f.write((char *) &neighbourhood_size, sizeof(neighbourhood_size));
+    }
+    f.close();
+  } else {
+    ifstream f(gold_standard_file_sizes, ifstream::in | ifstream::binary);
+
+    size_t size;
+    f.read((char *) &size, sizeof(size));
+
+    assert(size == ds.vertex_count());
+
+    size_t neighbourhood_size;
+    for (int i = 0; i < size; i++) {
+//       TODO found a heisenbug here
+      f.read((char *) &neighbourhood_size, sizeof(neighbourhood_size));
+      size_t neighourhood_size_actual = ds.neighbourhood_size(i);
+      assert(neighourhood_size_actual == neighbourhood_size);
+    }
+
+    f.close();
+  }
+
+  BFSSourceSelector ss(*this, config.base, ds);
+  vertex_id_t start_vertex = ss.get_source();
+
+  vector<uint> distances;
+  if (typeid(ds) == typeid(SnapshotTransaction)) {
+    distances = Algorithms::bfs(*this, ds, start_vertex, true, false, false);
+  } else {
+    distances = Algorithms::bfs(*this, ds, start_vertex);
+  }
+  check_bfs(start_vertex, distances, 1);
 }
 
 void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts) {
