@@ -64,27 +64,28 @@ public:
 
     size_t vertex_count() override;
 
-    vertex_id_t insert_vertex() override { throw NotImplemented(); };
-
-    void delete_vertex() override { throw NotImplemented(); };
+    bool insert_vertex(vertex_id_t v) override { throw NotImplemented(); };
+    bool delete_vertex(vertex_id_t v) override { throw NotImplemented(); };
 
     size_t edge_count() override { throw NotImplemented(); };
-    void insert_edge(edge_t edge) override;
+    bool insert_edge(edge_t edge) override;
     bool insert_safe(edge_t edge) override { throw NotImplemented(); };
 
-    void delete_edge(edge_t edge) override { throw NotImplemented(); };
+    bool delete_edge(edge_t edge) override { throw NotImplemented(); };
 
-    size_t neighbourhood_size(vertex_id_t src) override;
+    size_t neighbourhood_size_p(vertex_id_t src) override;
 
-    void neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) override;
-    void neighbourhood(vertex_id_t src, EdgeIterator &iter) override { throw NotImplemented(); };
+    void neighbourhood_p(vertex_id_t src, BatchedEdgeIterator &iter) override;
+    void neighbourhood_p(vertex_id_t src, EdgeIterator &iter) override { throw NotImplemented(); };
     void* raw_neighbourhood(vertex_id_t src) override;
 
-    void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) override {
+    void intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) override {
       throw NotImplemented();
     };
 
-    bool has_edge(edge_t e) override;
+    bool has_edge_p(edge_t e) override;
+
+    bool has_vertex_p(vertex_id_t v) override { throw NotImplemented(); };
 
     void bulkload(const SortedCSRDataSource &src) override;
 

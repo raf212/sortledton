@@ -19,7 +19,7 @@ HashSetSimulatorAdjacencyList::HashSetSimulatorAdjacencyList(float fill_rate) : 
 
 
 
-void HashSetSimulatorAdjacencyList::neighbourhood(vertex_id_t src, EdgeIterator &iter) {
+void HashSetSimulatorAdjacencyList::neighbourhood_p(vertex_id_t src, EdgeIterator &iter) {
   auto &i = static_cast<FilteredVectorIterator &>(iter);
   i.initialize(adjacency_index[src] + 1, *adjacency_index[src]);
 }
@@ -67,7 +67,7 @@ void HashSetSimulatorAdjacencyList::bulkload(const SortedCSRDataSource &src) {
   }
 }
 
-void HashSetSimulatorAdjacencyList::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
+void HashSetSimulatorAdjacencyList::intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
   throw NotImplemented();
 }
 

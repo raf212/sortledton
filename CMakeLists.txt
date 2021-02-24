@@ -14,7 +14,7 @@ find_package(TBB COMPONENTS tbbmalloc tbbmalloc_proxy)
 find_package (Threads)
 find_package(OpenMP)
 
-add_subdirectory(tests)
+#add_subdirectory(tests)
 
 include_directories(.)
 include_directories(data-structures)
@@ -99,9 +99,9 @@ target_link_libraries (bitset_analysis Threads::Threads)
 target_link_libraries(bitset_analysis OpenMP::OpenMP_CXX)
 
 
-add_executable(Google_Tests_run ${TESTS} ${DATASET_CONVERTER_SRC} ${SRC})
-target_link_libraries(Google_Tests_run gtest gtest_main gmock)
-target_link_libraries(Google_Tests_run OpenMP::OpenMP_CXX)
+#add_executable(Google_Tests_run ${TESTS} ${DATASET_CONVERTER_SRC} ${SRC})
+#target_link_libraries(Google_Tests_run gtest gtest_main gmock)
+#target_link_libraries(Google_Tests_run OpenMP::OpenMP_CXX)
 
 
 add_executable(live_graph_two main.cpp ${SRC})

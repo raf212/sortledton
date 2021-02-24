@@ -16,14 +16,6 @@ public :
     virtual void use_vertex_does_not_exists_semantics() = 0;
     virtual void use_edge_does_not_exists_semantics() = 0;
 
-    // TODO lower to Topology interface
-    virtual bool has_vertex(vertex_id_t v) = 0;
-    virtual void insert_vertex(vertex_id_t v) = 0;
-    virtual void delete_vertex(vertex_id_t v) = 0;
-
-    vertex_id_t insert_vertex() override { throw NotImplemented(); };
-    void delete_vertex() override { throw NotImplemented(); };
-
     bool insert_safe(edge_t e) override { throw NotImplemented(); }
 
     virtual version_t get_version() const = 0;

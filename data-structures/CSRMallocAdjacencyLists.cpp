@@ -54,12 +54,12 @@ CSRMallocAdjacencyLists::~CSRMallocAdjacencyLists() {
   free(csr);
 }
 
-void CSRMallocAdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) {
+void CSRMallocAdjacencyLists::neighbourhood_p(vertex_id_t src, BatchedEdgeIterator &iter) {
   auto& i = static_cast<VectorBatchedEdgeIterator&>(iter);
   i.initialize(adjacency_index[2 * src], (size_t) adjacency_index[2 * src + 1]);
 }
 
-void CSRMallocAdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
+void CSRMallocAdjacencyLists::intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
   throw NotImplemented("Misses a swap");
 //  if (unordered) {
 //    throw NotImplemented("Intersection of unordered list is not implemented.");
@@ -79,6 +79,6 @@ void *CSRMallocAdjacencyLists::raw_neighbourhood(vertex_id_t src) {
   return adjacency_index[2 * src];
 }
 
-size_t CSRMallocAdjacencyLists::neighbourhood_size(vertex_id_t src) {
+size_t CSRMallocAdjacencyLists::neighbourhood_size_p(vertex_id_t src) {
   return (size_t) adjacency_index[2 * src + 1];
 }

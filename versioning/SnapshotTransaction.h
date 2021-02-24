@@ -27,19 +27,19 @@ public:
 
     size_t vertex_count() override;
 
-    bool has_vertex(vertex_id_t v) override;
-    void insert_vertex(vertex_id_t v) override;
-    void delete_vertex(vertex_id_t v) override;
+    bool has_vertex_p(vertex_id_t v) override;
+    bool insert_vertex(vertex_id_t v) override;
+    bool delete_vertex(vertex_id_t v) override;
 
     size_t edge_count() override;
-    void insert_edge(edge_t edge) override;
-    void delete_edge(edge_t edge) override;
+    bool insert_edge(edge_t edge) override;
+    bool delete_edge(edge_t edge) override;
 
-    size_t neighbourhood_size(vertex_id_t src) override;
+    size_t neighbourhood_size_p(vertex_id_t src) override;
 
-    void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) override { throw NotImplemented(); };
+    void neighbourhood_p(vertex_id_t src, BatchedEdgeIterator& iter) override { throw NotImplemented(); };
 
-    void neighbourhood(vertex_id_t src, EdgeIterator& iter) override;
+    void neighbourhood_p(vertex_id_t src, EdgeIterator& iter) override;
 
     /**
      * Cannot be used. Use raw_ds instead.
@@ -55,9 +55,9 @@ public:
      */
     VersionedTopologyInterface* raw_ds();
 
-    void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) override;
+    void intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) override;
 
-    bool has_edge(edge_t edge) override;
+    bool has_edge_p(edge_t edge) override;
 
     void bulkload(const SortedCSRDataSource& src) override;
 

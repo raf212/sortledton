@@ -12,7 +12,7 @@
 
 #include "adjacency-lists/VectorBatchedEdgeIterator.h"
 
-void MallocAdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) {
+void MallocAdjacencyLists::neighbourhood_p(vertex_id_t src, BatchedEdgeIterator &iter) {
   auto &i = static_cast<VectorBatchedEdgeIterator &>(iter);
   if (use_hash_index) {
     auto e = hash_index.find(src);
@@ -53,7 +53,7 @@ void MallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
   }
 }
 
-void MallocAdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
+void MallocAdjacencyLists::intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
   throw NotImplemented();
 
 //  dst_t* a_start;
@@ -96,7 +96,7 @@ size_t MallocAdjacencyLists::vertex_count() {
   }
 }
 
-size_t MallocAdjacencyLists::neighbourhood_size(vertex_id_t src) {
+size_t MallocAdjacencyLists::neighbourhood_size_p(vertex_id_t src) {
   if (use_hash_index) {
     auto ns = hash_index.find(src);
     if (ns != hash_index.end()) {

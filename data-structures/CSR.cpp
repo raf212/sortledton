@@ -13,12 +13,12 @@ void CSR::bulkload(const SortedCSRDataSource &src) {
   adjacency_lists = src.adjacency_lists;
 }
 
-void CSR::neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) {
+void CSR::neighbourhood_p(vertex_id_t src, BatchedEdgeIterator &iter) {
   auto &vbi = static_cast<VectorBatchedEdgeIterator &>(iter);
   vbi.initialize(&adjacency_lists[0] + adjacency_index[src], adjacency_index[src + 1] - adjacency_index[src]);
 }
 
-void CSR::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
+void CSR::intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
   out.clear();
 
   dst_t *start_a = &adjacency_lists[0] + adjacency_index[a];
@@ -57,13 +57,13 @@ void CSR::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &o
   }
 }
 
-bool CSR::has_edge(edge_t edge) {
+bool CSR::has_edge_p(edge_t edge) {
   dst_t *last = &adjacency_lists[adjacency_index[edge.src + 1]];
   dst_t *first = &adjacency_lists[adjacency_index[edge.src]];
   return find(first, last, edge.dst) != last;
 }
 
-size_t CSR::neighbourhood_size(vertex_id_t src) {
+size_t CSR::neighbourhood_size_p(vertex_id_t src) {
   return adjacency_index[src + 1] - adjacency_index[src];
 }
 

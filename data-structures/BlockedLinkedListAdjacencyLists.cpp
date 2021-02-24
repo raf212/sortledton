@@ -134,11 +134,11 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
   }
 }
 
-void BlockedLinkedListAdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) {
+void BlockedLinkedListAdjacencyLists::neighbourhood_p(vertex_id_t src, BatchedEdgeIterator &iter) {
   throw NotImplemented();
 }
 
-void BlockedLinkedListAdjacencyLists::insert_edge(edge_t edge) {
+bool BlockedLinkedListAdjacencyLists::insert_edge(edge_t edge) {
 
     throw NotImplemented(); // Does not work for new 1 block sized lists
 
@@ -210,11 +210,11 @@ void BlockedLinkedListAdjacencyLists::insert_edge(edge_t edge) {
   }
 }
 
-bool BlockedLinkedListAdjacencyLists::has_edge(edge_t e) {
+bool BlockedLinkedListAdjacencyLists::has_edge_p(edge_t e) {
   throw NotImplemented();
 }
 
-size_t BlockedLinkedListAdjacencyLists::neighbourhood_size(vertex_id_t src) {
+size_t BlockedLinkedListAdjacencyLists::neighbourhood_size_p(vertex_id_t src) {
   if (size_in_index) {
     return (size_t) adjacency_index[src * 2 + 1];
   } else {

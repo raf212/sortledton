@@ -3,7 +3,7 @@
 
 #include <data-src/DataSource.h>
 #include <data-src/SortedCSRDataSource.h>
-#include "../data_types.h"
+#include <data_types.h>
 #include "adjacency-lists/BatchedEdgeIterator.h"
 #include "adjacency-lists/EdgeIterator.h"
 
@@ -31,24 +31,35 @@ public:
 //    TopologyInterface();
     virtual ~TopologyInterface();
 
+    virtual vertex_id_t logical_id(vertex_id_t id);
+    virtual vertex_id_t physical_id(vertex_id_t id);
+
     virtual size_t vertex_count() = 0;
-
-    virtual vertex_id_t insert_vertex() = 0;  // TODO needs interfance change
-    virtual void delete_vertex() = 0;  // TODO needs interface change
-
     virtual size_t edge_count() = 0;
-    virtual void insert_edge(edge_t edge) = 0;
+
+    virtual bool insert_vertex(vertex_id_t v) = 0;
+    virtual bool delete_vertex(vertex_id_t v) = 0;
+
+    virtual bool insert_edge(edge_t edge) = 0;
     virtual bool insert_safe(edge_t edge) = 0;
-    virtual void delete_edge(edge_t edge) = 0;
+    virtual bool delete_edge(edge_t edge) = 0;
 
-    virtual size_t neighbourhood_size(vertex_id_t src) = 0;
+    virtual bool has_vertex(vertex_id_t v);
+    virtual bool has_vertex_p(vertex_id_t v) = 0;
 
-    virtual void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) = 0;
-    virtual void neighbourhood(vertex_id_t src, EdgeIterator& iter) = 0;
+    virtual size_t neighbourhood_size(vertex_id_t src);
+    virtual size_t neighbourhood_size_p(vertex_id_t src) = 0;
+
+    virtual void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter);
+    virtual void neighbourhood_p(vertex_id_t src, BatchedEdgeIterator& iter) = 0;
+    virtual void neighbourhood(vertex_id_t src, EdgeIterator& iter);
+    virtual void neighbourhood_p(vertex_id_t src, EdgeIterator& iter) = 0;
     virtual void* raw_neighbourhood(vertex_id_t src) = 0;
-    virtual void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) = 0;
+    virtual void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t>& out);
+    virtual void intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) = 0;
 
-    virtual bool has_edge(edge_t edge) = 0;
+    virtual bool has_edge(edge_t edge);
+    virtual bool has_edge_p(edge_t edge) = 0;
 
     virtual void bulkload(const SortedCSRDataSource& src) = 0;
 

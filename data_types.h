@@ -11,7 +11,6 @@
 #include <algorithm>
 
 
-
 //#ifdef BITS64
 // Used vertex identifier and destination data structure for all data structrues.
   typedef uint64_t vertex_id_t;
@@ -70,6 +69,9 @@ version_t timestamp(version_t v);
 struct edge_t {
     vertex_id_t src;
     dst_t dst;
+
+    edge_t() : src(0), dst(0) {};
+    edge_t(vertex_id_t src, dst_t dst) : src(src), dst(dst) {};
 
     bool operator==(const edge_t other) const {
       return src == other.src && dst == other.dst;

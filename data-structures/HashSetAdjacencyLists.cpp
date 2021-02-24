@@ -27,11 +27,11 @@ size_t HashSetAdjacencyLists::vertex_count() {
   return adjacency_index.size();
 }
 
-size_t HashSetAdjacencyLists::neighbourhood_size(vertex_id_t src) {
+size_t HashSetAdjacencyLists::neighbourhood_size_p(vertex_id_t src) {
   return adjacency_index[src]->size();
 }
 
-void HashSetAdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
+void HashSetAdjacencyLists::intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
   auto a_s = neighbourhood_size(a);
   auto b_s = neighbourhood_size(b);
 

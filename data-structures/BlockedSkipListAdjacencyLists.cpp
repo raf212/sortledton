@@ -27,7 +27,7 @@
 }
 
 
-void BlockedSkipListAdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIterator &iter) {
+void BlockedSkipListAdjacencyLists::neighbourhood_p(vertex_id_t src, BatchedEdgeIterator &iter) {
   switch (get_set_type(src)) {
     case SKIP_LIST:
       return static_cast<BlockedBatchedEdgeIterator &>(iter).initialize((SkipListHeader *) adjacency_index[2 * src]);
@@ -144,7 +144,7 @@ void *BlockedSkipListAdjacencyLists::write_to_blocks(const dst_t *start, const d
   }
 }
 
-void BlockedSkipListAdjacencyLists::insert_edge(edge_t edge) {
+bool BlockedSkipListAdjacencyLists::insert_edge(edge_t edge) {
   if (unordered) {
     throw NotImplemented();
   }
@@ -153,14 +153,17 @@ void BlockedSkipListAdjacencyLists::insert_edge(edge_t edge) {
 
   // Insert to empty list
   if (adjacency_list == nullptr) {
-    return insert_empty(edge);
+    insert_empty(edge);
+    return true;
   } else {
     switch (get_set_type(edge.src)) {
       case SINGLE_BLOCK: {
-        return insert_single_block(edge);
+        insert_single_block(edge);
+        return true;
       }
       case SKIP_LIST: {
-        return insert_skip_list(edge);
+        insert_skip_list(edge);
+        return true;
       }
     }
 
@@ -217,7 +220,7 @@ BlockedSkipListAdjacencyLists::find_block1(SkipListHeader *pHeader, dst_t elemen
   }
 }
 
-bool BlockedSkipListAdjacencyLists::has_edge(edge_t edge) {
+bool BlockedSkipListAdjacencyLists::has_edge_p(edge_t edge) {
   switch (get_set_type(edge.src)) {
     case SKIP_LIST: {
       vector<SkipListHeader *> v(levels);
@@ -242,7 +245,7 @@ bool BlockedSkipListAdjacencyLists::insert_safe(edge_t edge) {
   return true;
 }
 
-void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
+void BlockedSkipListAdjacencyLists::intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
   auto s_a = neighbourhood_size(a);
   auto s_b = neighbourhood_size(b);
 
@@ -355,7 +358,7 @@ void BlockedSkipListAdjacencyLists::intersect_neighbourhood(vertex_id_t a, verte
 
 }
 
-size_t BlockedSkipListAdjacencyLists::neighbourhood_size(vertex_id_t src) {
+size_t BlockedSkipListAdjacencyLists::neighbourhood_size_p(vertex_id_t src) {
   return (size_t) adjacency_index[2 * src + 1];
 }
 

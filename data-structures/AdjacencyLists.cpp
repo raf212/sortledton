@@ -16,31 +16,31 @@ void AdjacencyLists::bulkload(const SortedCSRDataSource& src) {
   }
 }
 
-vertex_id_t AdjacencyLists::insert_vertex() {
+bool AdjacencyLists::insert_vertex(vertex_id_t v) {
   throw NotImplemented();
 }
 
-void AdjacencyLists::delete_vertex() {
+bool AdjacencyLists::delete_vertex(vertex_id_t v) {
   throw NotImplemented();
 }
 
-void AdjacencyLists::insert_edge(edge_t edge) {
+bool AdjacencyLists::insert_edge(edge_t edge) {
   adjacency_index[edge.src]->insert_edge(edge.dst);
 }
 
-void AdjacencyLists::delete_edge(edge_t edge) {
+bool AdjacencyLists::delete_edge(edge_t edge) {
   adjacency_index[edge.src]->delete_edge(edge.dst);
 }
 
-void AdjacencyLists::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
+void AdjacencyLists::intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
   adjacency_index[a]->intersect(*adjacency_index[b], out);
 }
 
-void AdjacencyLists::neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter) {
+void AdjacencyLists::neighbourhood_p(vertex_id_t src, BatchedEdgeIterator& iter) {
   adjacency_index[src]->initialize_iterator(iter);
 }
 
-bool AdjacencyLists::has_edge(edge_t e) {
+bool AdjacencyLists::has_edge_p(edge_t e) {
   return adjacency_index[e.src]->has_neighbour(e.dst);
 }
 

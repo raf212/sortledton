@@ -864,9 +864,9 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_
   auto i = 0;
   for (auto e : el.edges) {
     i++;
-    if (i % 1000 == 0) {
-      cout << ".";
-    }
+//    if (i % 1000 == 0) {
+//      cout << ".";
+//    }
     assert(ds.has_edge(e));
     if (config.undirected) {
       edge_t opposite = {e.dst, e.src};
