@@ -17,6 +17,7 @@ bool SnapshotTransaction::execute() {
 
   try {
     assert_preconditions();
+    assert_std_preconditions();
     for (auto v: vertices_to_delete) {
       if (vertex_does_not_exists_semantic_activated && !ds->has_vertex_version_p(v, version)) {
         continue;
@@ -223,4 +224,50 @@ vertex_id_t SnapshotTransaction::physical_id(vertex_id_t v) {
 
 vertex_id_t SnapshotTransaction::logical_id(vertex_id_t v) {
   return ds->logical_id(v);
+}
+
+void SnapshotTransaction::assert_std_preconditions() {
+
+  // Vertices of each edge to insert need to exists.
+  for (auto e : edges_to_insert) {
+    // TODO is that to slow?
+    if (!ds->has_vertex_version_p(e.src, version) && find(vertices_to_insert.begin(), vertices_to_insert.end(), e.src) == vertices_to_insert.end()) {
+      throw VertexDoesNotExistsException(e.src);
+    }
+    if (!ds->has_vertex_version_p(e.dst, version) && find(vertices_to_insert.begin(), vertices_to_insert.end(), e.src) == vertices_to_insert.end()) {
+      throw VertexDoesNotExistsException(e.dst);
+    }
+  }
+
+  if (!vertex_does_not_exists_semantic_activated) {
+    // New vertices cannot exist already
+    for (auto v : vertices_to_insert) {
+      if (ds->has_vertex_version_p(v, version)) {
+        throw VertexExistsException(v);
+      }
+    }
+
+    // Vertices to delete have to exists
+    for (auto v : vertices_to_delete) {
+      if (!ds->has_vertex_version_p(v, version)) {
+        throw VertexDoesNotExistsException(v);
+      }
+    }
+  }
+
+  if (!edge_does_not_exists_semantic_activated) {
+    // New edges cannot exist already
+    for (auto e : edges_to_insert) {
+      if (ds->has_edge_version_p(e, version)) {
+        throw EdgeExistsException(e);
+      }
+    }
+
+    // Edges to delete have to exists
+    for (auto e : edges_to_delete) {
+      if (!ds->has_edge_version_p(e, version)) {
+        throw EdgeDoesNotExistsException(e);
+      }
+    }
+  }
 }

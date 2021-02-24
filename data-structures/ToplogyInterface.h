@@ -13,6 +13,13 @@ public:
     explicit EdgeExistsException(edge_t e) : edge(e) {  };
 };
 
+class EdgeDoesNotExistsException : exception {
+public:
+    const edge_t edge;
+    explicit EdgeDoesNotExistsException(edge_t e) : edge(e) {  };
+};
+
+
 class VertexExistsException : exception {
 public:
     const vertex_id_t vertex;

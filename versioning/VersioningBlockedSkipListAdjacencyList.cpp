@@ -149,9 +149,6 @@ bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
   __builtin_prefetch((void *) ((uint64_t) adjacency_list & ~EDGE_SET_TYPE_MASK));
   __builtin_prefetch((void *) ((uint64_t) ((dst_t *) adjacency_list + 1) & ~SIZE_VERSION_MASK));
 
-  if (has_edge_version_p(edge, version)) {
-    throw EdgeExistsException(edge);
-  }
   calls_to_add_edge.fetch_add(1); // TODO remove again
 
   // Insert to empty list
