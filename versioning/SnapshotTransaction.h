@@ -23,6 +23,9 @@ public:
 
     void register_precondition(Precondition* c);
 
+    vertex_id_t physical_id(vertex_id_t v) override;
+    vertex_id_t logical_id(vertex_id_t v) override;
+
     bool execute();
 
     size_t vertex_count() override;

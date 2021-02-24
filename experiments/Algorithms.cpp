@@ -340,23 +340,36 @@ Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_
 
 vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool raw_neighbourhood,
                              bool aquire_locks, bool gapbs) {
+  start_vertex = ds.physical_id(start_vertex);  // Logical to physical translation
+  vector<uint> physical_result;
+  vector<uint> logical_result;
   if (gapbs) {
-    return GAPBSAlgorithms::bfs(ds, start_vertex, raw_neighbourhood);
+    physical_result = GAPBSAlgorithms::bfs(ds, start_vertex, raw_neighbourhood);
   } else if (raw_neighbourhood) {
-    return bfs_raw_neighbourhood(driver, ds, start_vertex, aquire_locks);
+    physical_result = bfs_raw_neighbourhood(driver, ds, start_vertex, aquire_locks);
   } else if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
     if (aquire_locks) {
       throw NotImplemented();
     }
-    return bfs_single_edge_interface(driver, ds, start_vertex);
+    physical_result = bfs_single_edge_interface(driver, ds, start_vertex);
   } else if (typeid(ds) == typeid(SnapshotTransaction)) {
-    return bfs_single_edge_interface(driver, ds, start_vertex);
+    physical_result = bfs_single_edge_interface(driver, ds, start_vertex);
   } else {
     if (aquire_locks) {
       throw NotImplemented();
     }
-    return bfs_batched_interface(driver, ds, start_vertex);
+    physical_result = bfs_batched_interface(driver, ds, start_vertex);
   }
+
+  // Translation to logical
+  // TODO parallelize
+  // TODO rephrase once we have vertex iterators.
+  logical_result.resize(physical_result.size());
+  auto V = ds.vertex_count();
+  for (auto v = 0; v <  V; v++) {
+    logical_result[ds.logical_id(v)] = physical_result[v];
+  }
+  return logical_result;
 }
 
 unordered_map<vertex_id_t, size_t> Algorithms::neighbourhood_2(Driver &driver,

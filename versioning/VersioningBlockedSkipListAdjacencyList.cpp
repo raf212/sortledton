@@ -142,7 +142,7 @@ dst_t *VersioningBlockedSkipListAdjacencyList::get_data_pointer(VSkipListHeader 
   return (dst_t *) ((char *) header + skip_list_header_size());
 }
 
-void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version) {
+bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version) {
   void *adjacency_list = raw_neighbourhood_version(edge.src, version);
   __builtin_prefetch((void *) ((uint64_t) adjacency_list & ~EDGE_SET_TYPE_MASK));
   __builtin_prefetch((void *) ((uint64_t) ((dst_t *) adjacency_list + 1) & ~SIZE_VERSION_MASK));
@@ -154,14 +154,17 @@ void VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
 
   // Insert to empty list
   if (unlikely(adjacency_list == nullptr)) {
-    return insert_empty(edge, version);
+    insert_empty(edge, version);
+    return true;
   } else {
     switch (get_set_type(edge.src, version)) {
       case SINGLE_BLOCK: {
-        return insert_single_block(edge, version);
+        insert_single_block(edge, version);
+        return true;
       }
       case SKIP_LIST: {
-        return insert_skip_list(edge, version);
+        insert_skip_list(edge, version);
+        return true;
       }
     }
   }
@@ -214,7 +217,7 @@ VersioningBlockedSkipListAdjacencyList::find_block1(VSkipListHeader *pHeader, ds
 //  return pHeader;
 }
 
-bool VersioningBlockedSkipListAdjacencyList::has_edge_version(edge_t edge, version_t version) {
+bool VersioningBlockedSkipListAdjacencyList::has_edge_version_p(edge_t edge, version_t version) {
   dst_t *pos;
   dst_t *end;
   switch (get_set_type(edge.src, version)) {
@@ -321,7 +324,7 @@ bool VersioningBlockedSkipListAdjacencyList::traverse_version_chain(edge_t edge,
 }
 
 
-void VersioningBlockedSkipListAdjacencyList::intersect_neighbourhood_version(vertex_id_t a, vertex_id_t b,
+void VersioningBlockedSkipListAdjacencyList::intersect_neighbourhood_version_p(vertex_id_t a, vertex_id_t b,
                                                                              vector<dst_t> &out, version_t version) {
   throw NotImplemented();
 //  auto s_a = neighbourhood_size(a);
@@ -436,7 +439,7 @@ void VersioningBlockedSkipListAdjacencyList::intersect_neighbourhood_version(ver
 
 }
 
-size_t VersioningBlockedSkipListAdjacencyList::neighbourhood_size_version(vertex_id_t src, version_t version) {
+size_t VersioningBlockedSkipListAdjacencyList::neighbourhood_size_version_p(vertex_id_t src, version_t version) {
   switch (get_set_type(src, version)) {
     case VSKIP_LIST: {
       if (!size_is_versioned(src)) {
@@ -815,7 +818,7 @@ void VersioningBlockedSkipListAdjacencyList::report_storage_size() {
 //  cout << setw(30) << "Total: " << right << setw(20) << (edges + vertices) / 1000000 << endl;
 }
 
-void VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock(vertex_id_t vertex_lock) {
+void VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock_p(vertex_id_t vertex_lock) {
 //  auto old_value = (uint64_t) adjacency_index[vertex_lock * 2];
 
 //  while (true) {
@@ -837,7 +840,7 @@ void VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock(vertex_id_t vert
 
 }
 
-void VersioningBlockedSkipListAdjacencyList::release_vertex_lock(vertex_id_t v) {
+void VersioningBlockedSkipListAdjacencyList::release_vertex_lock_p(vertex_id_t v) {
 //  vertex_cas_locks[v].clear(std::memory_order_acquire);
 //    __atomic_store()
 //    void* unlocked = (void*) ((uint64_t) adjacency_index[v * 2] & ~LOCK_MASK);
@@ -1200,7 +1203,7 @@ dst_t VersioningBlockedSkipListAdjacencyList::get_min_from_skip_list_header(VSki
   return make_unversioned(get_data_pointer(header)[0]);
 }
 
-void VersioningBlockedSkipListAdjacencyList::neighbourhood_version(vertex_id_t src, EdgeIterator& iter, version_t version) {
+void VersioningBlockedSkipListAdjacencyList::neighbourhood_version_p(vertex_id_t src, EdgeIterator& iter, version_t version) {
   bool is_versioned = size_is_versioned(src);
   dynamic_cast<VersionedEdgeIterator&>(iter).initialize(src, get_set_type(src, version), raw_neighbourhood_version(src, version), ((uint64_t) raw_neighbourhood_size_entry(src)) & ~SIZE_VERSION_MASK, version, is_versioned);
 }
@@ -1259,9 +1262,9 @@ void VersioningBlockedSkipListAdjacencyList::reserve_vertices(size_t max_vertice
   max_vertex.store(0);
 }
 
-void VersioningBlockedSkipListAdjacencyList::insert_vertex_version(vertex_id_t v, version_t version) {
+bool VersioningBlockedSkipListAdjacencyList::insert_vertex_version(vertex_id_t v, version_t version) {
   if (has_vertex_version(v, version)) {
-    throw VertexExistsException(v);
+    return false;
   }
   adjacency_index[v * 2] = nullptr;
   adjacency_index[v * 2 + 1] = 0;
@@ -1270,9 +1273,10 @@ void VersioningBlockedSkipListAdjacencyList::insert_vertex_version(vertex_id_t v
       atom_val < v &&
       !max_vertex.compare_exchange_weak(atom_val, v);
           );
+  return true;
 }
 
-bool VersioningBlockedSkipListAdjacencyList::has_vertex_version(vertex_id_t v, version_t version) {
+bool VersioningBlockedSkipListAdjacencyList::has_vertex_version_p(vertex_id_t v, version_t version) {
   return !((uint64_t) adjacency_index[2 * v] & VERTEX_NOT_USED_MASK);
 }
 
@@ -1288,4 +1292,12 @@ size_t VersioningBlockedSkipListAdjacencyList::edge_count_version(version_t vers
     release_vertex_lock(v);
   }
   return sum;
+}
+
+void VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock(vertex_id_t vertex_lock) {
+  aquire_vertex_lock_p(physical_id(vertex_lock));
+}
+
+void VersioningBlockedSkipListAdjacencyList::release_vertex_lock(vertex_id_t v) {
+  release_vertex_lock_p(physical_id(v));
 }

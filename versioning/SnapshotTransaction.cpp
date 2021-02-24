@@ -104,48 +104,52 @@ size_t SnapshotTransaction::vertex_count() {
 }
 
 bool SnapshotTransaction::insert_vertex(vertex_id_t v) {
+  v = physical_id(v);
   locks_to_aquire.push_back(v);
   vertices_to_insert.push_back(v);
   return false;
 }
 
 bool SnapshotTransaction::delete_vertex(vertex_id_t v) {
+  v = physical_id(v);
   locks_to_aquire.push_back(v);
   vertices_to_delete.push_back(v);
   return false;
 }
 
 bool SnapshotTransaction::insert_edge(edge_t edge) {
+  edge = edge_t(physical_id(edge.src), physical_id(edge.dst));
   locks_to_aquire.push_back(edge.src);
   edges_to_insert.push_back(edge);
   return false;
 }
 
 bool SnapshotTransaction::delete_edge(edge_t edge) {
+  edge = edge_t(physical_id(edge.src), physical_id(edge.dst));
   locks_to_aquire.push_back(edge.src);
   edges_to_delete.push_back(edge);
   return false;
 }
 
 size_t SnapshotTransaction::neighbourhood_size_p(vertex_id_t src) {
-  ds->aquire_vertex_lock(src);
-  auto ret = ds->neighbourhood_size_version(src, version);
-  ds->release_vertex_lock(src);
+  ds->aquire_vertex_lock_p(src);
+  auto ret = ds->neighbourhood_size_version_p(src, version);
+  ds->release_vertex_lock_p(src);
   return ret;
 }
 
 void SnapshotTransaction::intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {
-  ds->aquire_vertex_lock(min(a, b));
-  ds->aquire_vertex_lock(max(a, b));
-  ds->intersect_neighbourhood_version(a, b, out, version);
-  ds->release_vertex_lock(a);
-  ds->release_vertex_lock(b);
+  ds->aquire_vertex_lock_p(min(a, b));
+  ds->aquire_vertex_lock_p(max(a, b));
+  ds->intersect_neighbourhood_version_p(a, b, out, version);
+  ds->release_vertex_lock_p(a);
+  ds->release_vertex_lock_p(b);
 }
 
 bool SnapshotTransaction::has_edge_p(edge_t edge) {
-  ds->aquire_vertex_lock(edge.src);
-  auto ret = ds->has_edge_version(edge, version);
-  ds->release_vertex_lock(edge.src);
+  ds->aquire_vertex_lock_p(edge.src);
+  auto ret = ds->has_edge_version_p(edge, version);
+  ds->release_vertex_lock_p(edge.src);
   return ret;
 }
 
@@ -191,13 +195,13 @@ void SnapshotTransaction::set_version(version_t v) {
 }
 
 void SnapshotTransaction::neighbourhood_p(vertex_id_t src, EdgeIterator &iter) {
-  ds->neighbourhood_version(src, iter, version);
+  ds->neighbourhood_version_p(src, iter, version);
 }
 
 bool SnapshotTransaction::has_vertex_p(vertex_id_t v) {
-  ds->aquire_vertex_lock(v);
-  bool ret = ds->has_vertex_version(v, version);
-  ds->release_vertex_lock(v);
+  ds->aquire_vertex_lock_p(v);
+  bool ret = ds->has_vertex_version_p(v, version);
+  ds->release_vertex_lock_p(v);
   return ret;
 }
 
@@ -211,4 +215,12 @@ void SnapshotTransaction::use_vertex_does_not_exists_semantics() {
 
 void SnapshotTransaction::use_edge_does_not_exists_semantics() {
   edge_does_not_exists_semantic_activated = true;
+}
+
+vertex_id_t SnapshotTransaction::physical_id(vertex_id_t v) {
+  return ds->physical_id(v);
+}
+
+vertex_id_t SnapshotTransaction::logical_id(vertex_id_t v) {
+  return ds->logical_id(v);
 }

@@ -55,7 +55,7 @@ namespace { // anonymous
           bool done = false;
 
           sortledton_iterator iter(*ds);
-          tx.neighbourhood(u, iter);
+          tx.neighbourhood_p(u, iter);
           while (!done && iter.has_next()) {
             dst_t n = iter.next();
             if (front.get_bit(n)) {
@@ -86,7 +86,7 @@ namespace { // anonymous
 
 
           sortledton_iterator iter(*ds);
-          tx.neighbourhood(u, iter);
+          tx.neighbourhood_p(u, iter);
           while (iter.has_next()) {
             dst_t destination = iter.next();
             int64_t curr_val = distances[destination];
@@ -131,7 +131,7 @@ namespace { // anonymous
 
 #pragma omp parallel for
       for (int64_t n = 0; n < N; n++) {
-        int64_t out_degree = tx.neighbourhood_size(n);
+        int64_t out_degree = tx.neighbourhood_size_p(n);
         distances[n] = out_degree != 0 ? -out_degree : -1;
       }
       return distances;
@@ -168,7 +168,7 @@ GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neig
   Bitmap front(vertex_count);
   front.reset();
   int64_t edges_to_check = tx.edge_count();  // TODO this could be a slow down given my implementation, we could sum up the adjacency set sizes in a parallel for loop
-  int64_t scout_count = tx.neighbourhood_size(start_vertex);
+  int64_t scout_count = tx.neighbourhood_size_p(start_vertex);
   int64_t distance = 1; // current distance
   while (!queue.empty()) {
     if (scout_count > edges_to_check / alpha) {

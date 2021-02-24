@@ -56,31 +56,35 @@ public:
     void reserve_vertices(size_t max_vertices);
 
     size_t vertex_count_version(version_t version) override;
+    size_t edge_count_version(version_t version) override;
 
     // TODO vertex versioning not yet supported
-    bool has_vertex_version(vertex_id_t v, version_t version) override;
+    bool has_vertex_version_p(vertex_id_t v, version_t version) override;
 
     // TODO versioning not yet supported
-    void insert_vertex_version(vertex_id_t v, version_t version) override;
-    void delete_vertex_version(vertex_id_t v, version_t version) override { throw NotImplemented(); };
+    bool insert_vertex_version(vertex_id_t v, version_t version) override;
+    bool delete_vertex_version(vertex_id_t v, version_t version) override { throw NotImplemented(); };
 
-    size_t edge_count_version(version_t version) override;
-    void insert_edge_version(edge_t edge, version_t version) override;
-    void delete_edge_version(edge_t edge, version_t version) override { throw NotImplemented(); };
+    size_t neighbourhood_size_version_p(vertex_id_t src, version_t version) override;
 
-    size_t neighbourhood_size_version(vertex_id_t src, version_t version) override;
-
-    void neighbourhood_version(vertex_id_t src, EdgeIterator& iter, version_t version) override;
+    void neighbourhood_version(vertex_id_t src, EdgeIterator& iter, version_t version) override { throw NotImplemented(); };
+    void neighbourhood_version_p(vertex_id_t src, EdgeIterator& iter, version_t version) override;
     void* raw_neighbourhood_version(vertex_id_t src, version_t version) override;
     VAdjacencySetType get_set_type(vertex_id_t v, version_t version);
     void* raw_neighbourhood_size_entry(vertex_id_t v);
 
-    void intersect_neighbourhood_version(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) override;
+    void intersect_neighbourhood_version(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) override { throw NotImplemented(); };
+    void intersect_neighbourhood_version_p(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) override;
 
-    bool has_edge_version(edge_t edge, version_t version) override;
+    bool has_edge_version_p(edge_t edge, version_t version) override;
+
+    bool insert_edge_version(edge_t edge, version_t version) override;
+    bool delete_edge_version(edge_t edge, version_t version) override { throw NotImplemented(); };
 
     void aquire_vertex_lock(vertex_id_t vertex_lock) override;
     void release_vertex_lock(vertex_id_t v) override;
+    void aquire_vertex_lock_p(vertex_id_t vertex_lock) override;
+    void release_vertex_lock_p(vertex_id_t v) override;
 
     void report_storage_size() override;
 
