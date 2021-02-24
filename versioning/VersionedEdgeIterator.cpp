@@ -37,7 +37,7 @@ bool VersionedEdgeIterator::has_next_versioned() {
     ret = move_to_next_edge_in_current_block();
   }
   if (!ret) {
-    ds.release_vertex_lock(src);
+    ds.release_vertex_lock_p(src);
   }
   return ret;
 }
@@ -56,7 +56,7 @@ bool VersionedEdgeIterator::has_next_fast() {
     data += 1;
     return true;
   } else {
-    ds.release_vertex_lock(src);
+    ds.release_vertex_lock_p(src);
     return false;
   }
 }
@@ -122,13 +122,13 @@ VersionedEdgeIterator::initialize(vertex_id_t src, VAdjacencySetType type, void 
 
 void VersionedEdgeIterator::open() {
   assert(!is_open());
-  ds.aquire_vertex_lock(src);
+  ds.aquire_vertex_lock_p(src);
   opened = true;
 }
 
 void VersionedEdgeIterator::close() {
   if (is_open()) {
-    ds.release_vertex_lock(src);
+    ds.release_vertex_lock_p(src);
     opened = false;
   }
 }

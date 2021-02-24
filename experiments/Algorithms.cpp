@@ -72,7 +72,7 @@ vector<uint> Algorithms::bfs_single_edge_interface(Driver &driver, TopologyInter
 
     vertices_traversed++;
 
-    ds.neighbourhood(v, iter);
+    ds.neighbourhood_p(v, iter);
     while (iter.has_next()) {
       dst_t n = iter.next();
       if (distances[n] == maxDistance) {
@@ -367,7 +367,11 @@ vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t 
   logical_result.resize(physical_result.size());
   auto V = ds.vertex_count();
   for (auto v = 0; v <  V; v++) {
-    logical_result[ds.logical_id(v)] = physical_result[v];
+    if (logical_result.size() < ds.logical_id(v)  || ds.logical_id(v) < 0) {
+      cerr << "Warning returned logical id outside of range" << endl;
+    } else {
+      logical_result[ds.logical_id(v)] = physical_result[v];
+    }
   }
   return logical_result;
 }

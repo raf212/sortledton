@@ -18,19 +18,19 @@ bool SnapshotTransaction::execute() {
   try {
     assert_preconditions();
     for (auto v: vertices_to_delete) {
-      if (vertex_does_not_exists_semantic_activated && !ds->has_vertex_version(v, version)) {
+      if (vertex_does_not_exists_semantic_activated && !ds->has_vertex_version_p(v, version)) {
         continue;
       }
       ds->delete_vertex_version(v, version);
     }
     for (auto v : vertices_to_insert) {
-      if (vertex_does_not_exists_semantic_activated && ds->has_vertex_version(v, version)) {
+      if (vertex_does_not_exists_semantic_activated && ds->has_vertex_version_p(v, version)) {
         continue;
       }
       ds->insert_vertex_version(v, version);
     }
     for (auto e : edges_to_delete) {
-      if (edge_does_not_exists_semantic_activated && !ds->has_edge_version(e, version)) {
+      if (edge_does_not_exists_semantic_activated && !ds->has_edge_version_p(e, version)) {
         continue;
       }
       ds->delete_edge_version(e, version);
@@ -38,7 +38,7 @@ bool SnapshotTransaction::execute() {
     auto i = 0;
     for (auto e : edges_to_insert) {
 //      try {
-      if (edge_does_not_exists_semantic_activated && ds->has_edge_version(e, version)) {
+      if (edge_does_not_exists_semantic_activated && ds->has_edge_version_p(e, version)) {
         continue;
       }
       ds->insert_edge_version(e, version);

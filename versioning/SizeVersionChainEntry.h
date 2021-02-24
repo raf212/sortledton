@@ -21,7 +21,7 @@ public:
      * @param version version to read.
      * @return a pointer to the entry for version
      */
-    SizeVersionChainEntry* traverse(version_t version);
+    SizeVersionChainEntry* traverse(version_t version, uint depth);
 };
 
 

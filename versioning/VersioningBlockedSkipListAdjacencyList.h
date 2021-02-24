@@ -55,6 +55,9 @@ public:
 
     void reserve_vertices(size_t max_vertices);
 
+    vertex_id_t physical_id(vertex_id_t v) override;
+    vertex_id_t logical_id(vertex_id_t v) override;
+
     size_t vertex_count_version(version_t version) override;
     size_t edge_count_version(version_t version) override;
 

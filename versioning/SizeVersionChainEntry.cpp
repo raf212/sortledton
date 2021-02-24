@@ -4,9 +4,16 @@
 
 #include "SizeVersionChainEntry.h"
 
-SizeVersionChainEntry *SizeVersionChainEntry::traverse(version_t version) {
+#include <cassert>
+
+SizeVersionChainEntry *SizeVersionChainEntry::traverse(version_t version, uint depth = 0) {
   while (this->next != nullptr && this->version > version) {
-    return this->traverse(version);
+    if (depth < 20) {
+      return this->traverse(version, depth + 1);
+    } else {
+      assert(false);
+    }
+
   }
   return this;
 }
