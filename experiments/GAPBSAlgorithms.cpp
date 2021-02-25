@@ -44,8 +44,6 @@ namespace { // anonymous
     static int64_t
     BUStep(VersioningBlockedSkipListAdjacencyList *ds, SnapshotTransaction &tx, pvector<int64_t> &distances,
            int64_t distance, Bitmap &front, Bitmap &next) {
-      version_t trans_timestamp = tx.get_version();
-
       const int64_t N = tx.max_physical_vertex();
       int64_t awake_count = 0;
       next.reset();
@@ -75,7 +73,6 @@ namespace { // anonymous
     TDStep(VersioningBlockedSkipListAdjacencyList *ds, SnapshotTransaction &tx, pvector<int64_t> &distances,
            int64_t distance, SlidingQueue<int64_t> &queue) {
       int64_t scout_count = 0;
-      version_t trans_timestamp = tx.get_version();
 
 #pragma omp parallel firstprivate(tx)
       {

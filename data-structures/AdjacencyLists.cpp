@@ -26,10 +26,12 @@ bool AdjacencyLists::delete_vertex(vertex_id_t v) {
 
 bool AdjacencyLists::insert_edge(edge_t edge) {
   adjacency_index[edge.src]->insert_edge(edge.dst);
+  return true;
 }
 
 bool AdjacencyLists::delete_edge(edge_t edge) {
   adjacency_index[edge.src]->delete_edge(edge.dst);
+  return true;
 }
 
 void AdjacencyLists::intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) {

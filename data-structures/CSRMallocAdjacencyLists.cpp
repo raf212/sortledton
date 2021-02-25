@@ -13,7 +13,7 @@
 void CSRMallocAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
   size_t csr_size = 0;
 
-  for (int i = 0; i < src.adjacency_index.size() - 1; i++) {
+  for (auto i = 0u; i < src.adjacency_index.size() - 1; i++) {
     auto size = src.adjacency_index[i + 1] - src.adjacency_index[i];
     if (size < malloc_limit) {
       csr_size += size;

@@ -11,7 +11,7 @@
 unordered_map<vertex_id_t, size_t> TwoNeighbour::neighbourhood_2_batched_interface(Driver &driver,
                                                                                    TopologyInterface &ds,
                                                                                    const vector<vertex_id_t> &sources) {
-  ContigiousBlockIterator &neighbour_neighbours = driver.getIter(ds);
+  __attribute__((unused)) ContigiousBlockIterator &neighbour_neighbours = driver.getIter(ds);
   ContigiousBlockIterator &neighbours = driver.getIter(ds);
   ContigiousBlockIterator &neighbours_3 = driver.getIter(ds);
 
@@ -95,15 +95,13 @@ TwoNeighbour::neighbourhood_2_raw_neighbourhood(Driver &driver, TopologyInterfac
       neighbour_counts.insert(make_pair(s, count));
     }
   } else if (typeid(ds) == typeid(MallocAdjacencyLists)) {
-    auto &d = dynamic_cast<HashSetSimulatorAdjacencyList &>(ds);
-    dst_t empty = numeric_limits<dst_t>::max();
 
     for (const auto &s : sources) {
       visited.clear();
 
       size_t count = 0;
 
-      auto n = (dst_t *) d.raw_neighbourhood(s);
+      auto n = (dst_t *) ds.raw_neighbourhood(s);
       auto n_end = n + 1 + *n;
       n++;
 
@@ -112,7 +110,7 @@ TwoNeighbour::neighbourhood_2_raw_neighbourhood(Driver &driver, TopologyInterfac
           visited.insert(*n);
           count++;
 
-          auto n_n = (dst_t *) d.raw_neighbourhood(*n);
+          auto n_n = (dst_t *) ds.raw_neighbourhood(*n);
           auto n_n_end = n_n + *n_n + 1;
           n_n++;
 

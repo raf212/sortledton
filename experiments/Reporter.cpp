@@ -32,7 +32,7 @@ void Reporter::add_repetition(Experiments experiment, int repetition,
     }
   }
 
-  for (int i = 0; i < header.size(); i++) {
+  for (uint i = 0; i < header.size(); i++) {
     if (i < 6) {  // do not write anything for the first 5 headers.
       continue;
     }

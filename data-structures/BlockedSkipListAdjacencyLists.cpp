@@ -42,7 +42,7 @@ void BlockedSkipListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
   vector<mutex> m(src.vertex_count());
   vertex_mutices.swap(m);
 
-  for (int i = 0; i < src.vertex_count(); i++) {
+  for (uint i = 0; i < src.vertex_count(); i++) {
     auto start = src.adjacency_lists.data() + src.adjacency_index[i];
     auto end = &src.adjacency_lists[0] + src.adjacency_index[i + 1];
 
@@ -59,7 +59,7 @@ void BlockedSkipListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
 }
 
 void *BlockedSkipListAdjacencyLists::write_to_blocks(const dst_t *start, const dst_t *end) {
-  auto size = end - start;
+  uint size = end - start;
   if (size == 0) {
     return nullptr;
   } else if (size <= block_size) {
@@ -88,7 +88,7 @@ void *BlockedSkipListAdjacencyLists::write_to_blocks(const dst_t *start, const d
       }
       last_block = block;
 
-      block->size = block_fill < end - start ? block_fill : end - start;
+      block->size = block_fill < (uint) (end - start) ? block_fill : (uint) (end - start);
 
       dst_t *block_data = block->data;
       memcpy((void *) block_data, (void *) start, block->size * sizeof(dst_t));
@@ -98,7 +98,7 @@ void *BlockedSkipListAdjacencyLists::write_to_blocks(const dst_t *start, const d
         block->max = *(block_data + block->size - 1);
       } else {
         block->min = -1;
-        block->max - -1;
+        block->max = -1;
       }
 
       start += block->size;
@@ -109,7 +109,7 @@ void *BlockedSkipListAdjacencyLists::write_to_blocks(const dst_t *start, const d
     auto i = first_block;
 
     while (i != nullptr) {
-      dst_t *j = i->data;
+//      dst_t *j = i->data;
 
       //      dst_t min = -1;
       //      dst_t max = 0;
@@ -130,7 +130,7 @@ void *BlockedSkipListAdjacencyLists::write_to_blocks(const dst_t *start, const d
     vector<SkipListHeader *> level_blocks(levels, first_block);
     while (i != nullptr) {
       auto height = get_height();
-      for (int l = 0; l < levels; l++) {
+      for (uint l = 0; l < levels; l++) {
         i->next_levels[l] = nullptr;
         if (i != first_block && l < height) {
           level_blocks[l]->next_levels[l] = i;
@@ -164,6 +164,9 @@ bool BlockedSkipListAdjacencyLists::insert_edge(edge_t edge) {
       case SKIP_LIST: {
         insert_skip_list(edge);
         return true;
+      }
+      default: {
+        throw NotImplemented();
       }
     }
 
@@ -233,6 +236,9 @@ bool BlockedSkipListAdjacencyLists::has_edge_p(edge_t edge) {
       auto start = (dst_t *) adjacency_index[2 * edge.src];
       auto end = (dst_t *) adjacency_index[2 * edge.src] + (size_t) adjacency_index[2 * edge.src + 1];
       return find(start, end, edge.dst) != end;
+    }
+    default: {
+      throw NotImplemented();
     }
   }
 
@@ -364,7 +370,7 @@ size_t BlockedSkipListAdjacencyLists::neighbourhood_size_p(vertex_id_t src) {
 
 BlockedSkipListAdjacencyLists::BlockedSkipListAdjacencyLists(size_t block_size, size_t levels, bool unordered,
                                                              size_t max_edges, size_t max_vertices) :
-        block_size(block_size), unordered(unordered), levels(levels) {
+        unordered(unordered), block_size(block_size), levels(levels) {
   if (round_up_power_of_two(block_size) != block_size) {
     throw ConfigurationError("Block size needs to be a power of two.");
   }
@@ -425,7 +431,7 @@ void BlockedSkipListAdjacencyLists::insert_single_block(edge_t edge) {
       new_block->max = block[size - 1];
 
       new_block->next = nullptr;
-      for (int l = 0; l < levels; l++) {
+      for (uint l = 0; l < levels; l++) {
         new_block->next_levels[l] = nullptr;
       }
 
@@ -503,7 +509,7 @@ void BlockedSkipListAdjacencyLists::insert_skip_list(edge_t edge) {
     memcpy((void *) new_block->data, (void *) (data + split), split * sizeof(dst_t));
 
     auto height = get_height();
-    for (int l = 0; l < levels; l++) {
+    for (uint l = 0; l < levels; l++) {
       if (l < height) {
         new_block->next_levels[l] = blocks_per_level[l]->next_levels[l];
         blocks_per_level[l]->next_levels[l] = new_block;
@@ -547,7 +553,7 @@ void BlockedSkipListAdjacencyLists::report_storage_size() {
   size_t edges_multi_block_header = 0;     // Only the header of multi blocks.
   size_t edges_multi_block_strictly = 0;   // Strictly needed storage for edges in multi blocks, so without the storage overhead of using a fixed size.
 
-  for (auto v = 0; v < vertex_count(); v++) {
+  for (auto v = 0u; v < vertex_count(); v++) {
     if (get_set_type(v) == SINGLE_BLOCK) {
       edges_single_block_strictly += neighbourhood_size(v) * sizeof(dst_t);
       edges_single_block += round_up_power_of_two(neighbourhood_size(v)) * sizeof(dst_t);

@@ -17,7 +17,7 @@ void VectorAdjacencyList::insert_edge(dst_t edge) {
 }
 
 void VectorAdjacencyList::delete_edge(dst_t edge) {
-  int i = 0;
+  uint i = 0;
   while (i < neighbourhood.size()) {
     if (neighbourhood[i] == edge) {
       break;

@@ -315,7 +315,6 @@ Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_
       }
     }
   } else if (typeid(ds) == typeid(CSR)) {
-    CSR &csr = dynamic_cast<CSR &>(ds);
     while (!work.empty()) {
       vertex_id_t v = work.front();
       work.pop();
@@ -366,9 +365,9 @@ vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t 
   // TODO rephrase once we have vertex iterators.
   logical_result.resize(4846609, numeric_limits<uint>::max());
   auto V = ds.max_physical_vertex();
-  for (auto v = 0; v <  V; v++) {
+  for (uint v = 0; v <  V; v++) {
     if (ds.has_vertex_p(v)) {
-      if (logical_result.size() < ds.logical_id(v) || ds.logical_id(v) < 0) {
+      if (logical_result.size() < ds.logical_id(v)) {
         cerr << "Warning returned logical id outside of range" << ds.logical_id(v) << endl;
       } else {
         logical_result[ds.logical_id(v)] = physical_result[v];

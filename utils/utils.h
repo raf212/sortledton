@@ -25,7 +25,7 @@ n sum(const vector<n>& v) {
     s += l;
   }
   return s;
-};
+}
 
 
 template<typename k, typename v>
@@ -56,7 +56,7 @@ unordered_set<V> get_values_from_multimap(unordered_multimap<K, V> map, K key) {
     i++;
   }
   return r;
-};
+}
 
 uint round_up_power_of_two(uint v);
 

@@ -7,7 +7,7 @@
 #include <iostream>
 
 NonContigiousMemoryPool::NonContigiousMemoryPool(size_t max_size) {
-  for (int i = min_size; i <= max_size; i++) {
+  for (uint i = min_size; i <= max_size; i++) {
     pools.emplace_back(500, 1L<<i, 500, true, false);
   }
   if (max_size <= min_size) {
@@ -16,9 +16,9 @@ NonContigiousMemoryPool::NonContigiousMemoryPool(size_t max_size) {
 }
 
 void *NonContigiousMemoryPool::get_memory(size_t size) {
-  size_t pool_index = round(ceil(log2(size))) - min_size;
+  int pool_index = round(ceil(log2(size))) - min_size;
 
-  if (pools.size() <= pool_index) {
+  if (pools.size() <= (uint) pool_index) {
     return malloc(size);
   } else if (pool_index < 0) {
     pool_index = 0;

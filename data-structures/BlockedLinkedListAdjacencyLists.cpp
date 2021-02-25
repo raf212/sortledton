@@ -16,7 +16,7 @@ void BlockedLinkedListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
     adjacency_index.reserve(src.vertex_count());
   }
 
-  for (int i = 0; i < src.vertex_count(); i++) {
+  for (uint i = 0; i < src.vertex_count(); i++) {
     auto start = src.adjacency_lists.data() + src.adjacency_index[i];
     auto end = &src.adjacency_lists[0] + src.adjacency_index[i + 1];
 
@@ -40,7 +40,7 @@ void BlockedLinkedListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
 }
 
 BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start, const dst_t *end) {
-  auto size = end - start;
+  uint size = end - start;
   if (size == 0) {
     return nullptr;
   } else if (size < block_size) {  // Fits into one block
@@ -61,7 +61,7 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
       size_t data_size = end - start;
 
       uint chosen_pool = 0;
-      for (int i = 1; i < pools.size(); i++) {
+      for (uint i = 1; i < pools.size(); i++) {
         if (pool_sizes[i] <= data_size) {
           chosen_pool = i;
         }
@@ -82,7 +82,7 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
       }
       last_block = block;
 
-      block->size = block_capacity < end - start ? block_capacity : end - start;
+      block->size = block_capacity < (uint) (end - start) ? block_capacity : end - start;
 
       dst_t *block_data = block->data;
       memcpy((void *) block_data, (void *) start, block->size * sizeof(dst_t));
@@ -92,7 +92,7 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
         block->max = *(block_data + block->size - 1);
       } else {
         block->min = -1;
-        block->max - -1;
+        block->max = -1;
       }
 
       start += block->size;
@@ -104,7 +104,7 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
     auto i = first_block;
 
     while (i != nullptr) {
-      dst_t* j = i->data;
+//      dst_t* j = i->data;
 
 //      dst_t min = -1;
 //      dst_t max = 0;
@@ -126,7 +126,7 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
       i = i->next;
     }
 
-    if (size < block_size && 0 < size) {
+    if (size < block_size && 0u < size) {
       assert(list_length == 1);
     }
 

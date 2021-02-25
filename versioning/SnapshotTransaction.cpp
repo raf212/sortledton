@@ -31,7 +31,7 @@ bool SnapshotTransaction::execute() {
       }
       ds->delete_edge_version(p_edge, version);
     }
-    auto i = 0;
+//    auto i = 0;
     for (auto e : edges_to_insert) {
       edge_t p_edge (ds->physical_id(e.src), ds->physical_id(e.dst));
 
@@ -179,11 +179,11 @@ SnapshotTransaction::~SnapshotTransaction() {
 }
 
 void SnapshotTransaction::bulkload(const SortedCSRDataSource &src) {
-  for (auto v = 0; v < ds->vertex_count_version(version); v++) {
+  for (auto v = 0u; v < ds->vertex_count_version(version); v++) {
     ds->aquire_vertex_lock(v);
   }
   ds->bulkload(src);
-  for (auto v = 0; v < ds->vertex_count_version(version); v++) {
+  for (auto v = 0u; v < ds->vertex_count_version(version); v++) {
     ds->release_vertex_lock(v);
   }
 }
@@ -281,8 +281,8 @@ void SnapshotTransaction::rollback() {
     switch (rb.type) {
       case (RollbackAction::INSERT_VERTEX): {
         ds->rollback_vertex_insert(rb.vertex);
-      }
-      default: {
+        break;
+      } default: {
         throw NotImplemented();
       }
     }

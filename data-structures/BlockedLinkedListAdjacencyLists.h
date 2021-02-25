@@ -37,7 +37,7 @@ public:
      * @param adjust_size if true, there will be one block pool for each size up to <block_size> and bulkloading will choose the best fit. That's the smallest that fits all vertices or the largest size.
      */
     BlockedLinkedListAdjacencyLists(size_t block_size, bool unordered, size_t max_edges, size_t max_vertices, bool adjust_size, bool size_in_index):
-    block_size(block_size), unordered(unordered), size_in_index(size_in_index) {
+    unordered(unordered), size_in_index(size_in_index), block_size(block_size) {
       if (block_size % 2 != 0) {
         throw ConfigurationError("We rely on the block to be an even number.");
       }
@@ -48,7 +48,7 @@ public:
         }
 
         uint i = 5;
-        while ((1<<i) < block_size) {
+        while ((1u<<i) < block_size) {
           uint bs = 1 << i;
           pools.emplace_back(1000, bs * sizeof(dst_t) + sizeof(BlockHeader), 500, true, true);
           pool_sizes.push_back(bs);

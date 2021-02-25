@@ -73,7 +73,7 @@ void VersioningBlockedSkipListAdjacencyList::bulkload(const SortedCSRDataSource 
 }
 
 void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start, const dst_t *end) {
-  auto size = end - start;
+  uint size = end - start;
   if (size == 0) {
     return nullptr;
   } else if (size <= block_size) {
@@ -100,7 +100,7 @@ void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start
       last_block = block;
 
       block->data = get_data_pointer(block);
-      block->size = block_fill < end - start ? block_fill : end - start;
+      block->size = block_fill < (uint) (end - start) ? block_fill : end - start;
 
       dst_t *block_data = get_data_pointer(block);
       memcpy((void *) block_data, (void *) start, block->size * sizeof(dst_t));
@@ -115,7 +115,7 @@ void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start
     vector<VSkipListHeader *> level_blocks(SKIP_LIST_LEVELS, first_block);
     while (i != nullptr) {
       auto height = get_height();
-      for (int l = 1; l < SKIP_LIST_LEVELS; l++) {
+      for (uint l = 1; l < SKIP_LIST_LEVELS; l++) {
         i->next_levels[l] = nullptr;
         if (i != first_block && l < height) {
           level_blocks[l]->next_levels[l] = i;
@@ -126,7 +126,7 @@ void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start
     }
 
     auto b = first_block;
-    auto a_size = 0;
+    uint a_size = 0;
     while (b != nullptr) {
       for (auto i = 0; i < b->size; i++) {
         a_size++;
@@ -162,6 +162,9 @@ bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
       case SKIP_LIST: {
         insert_skip_list(edge, version);
         return true;
+      }
+      default: {
+        throw NotImplemented();
       }
     }
   }
@@ -478,8 +481,10 @@ size_t VersioningBlockedSkipListAdjacencyList::neighbourhood_size_version_p(vert
       }
       break;
     }
+    default: {
+      throw NotImplemented();
+    }
   }
-
 }
 
 bool VersioningBlockedSkipListAdjacencyList::size_is_versioned(vertex_id_t v) {
@@ -488,7 +493,7 @@ bool VersioningBlockedSkipListAdjacencyList::size_is_versioned(vertex_id_t v) {
 
 VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size,
                                                                                TransactionManager &tm)
-        : block_size(block_size), tm(tm) {
+        : tm(tm), block_size(block_size) {
   if (round_up_power_of_two(block_size) != block_size) {
     throw ConfigurationError("Block size needs to be a power of two.");
   }
@@ -675,7 +680,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
   assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
 #endif
   // Handle a full block
-  if (block_size <= i->size + 1) {
+  if (block_size <= (uint) (i->size + 1)) {
     auto data = get_data_pointer(i);
     auto split = block_size / 2;
 
@@ -706,7 +711,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     }
 
     auto height = get_height();
-    for (int l = 1; l < SKIP_LIST_LEVELS; l++) {
+    for (uint l = 1; l < SKIP_LIST_LEVELS; l++) {
       if (l < height) {
         if (blocks_per_level[l]->next_levels[l] != i) {
           new_block->next_levels[l] = blocks_per_level[l]->next_levels[l];
@@ -867,7 +872,7 @@ VersioningBlockedSkipListAdjacencyList::construct_version_chain_from_block(verte
   sort(versions_to_construct.begin(), versions_to_construct.end());
 
   auto chain = new SizeVersionChainEntry(FIRST_VERSION, neighbourhood_size_version_p(v, min_version), nullptr);
-  for (auto i = 0; i < versions_to_construct.size(); i++) {
+  for (uint i = 0; i < versions_to_construct.size(); i++) {
     chain = new SizeVersionChainEntry(versions_to_construct[i], neighbourhood_size_version_p(v, versions_to_construct[i]),
                                       chain);
   }
@@ -1154,7 +1159,6 @@ void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(v
 }
 
 void VersioningBlockedSkipListAdjacencyList::assert_block_consistency(dst_t *start, dst_t *end, version_t min_version) {
-  auto size = end - start;
   dst_t before = 0;
   for (auto i = start; i < end; i++) {
     auto e = *i;
@@ -1183,7 +1187,7 @@ void VersioningBlockedSkipListAdjacencyList::neighbourhood_version_p(vertex_id_t
 VersioningBlockedSkipListAdjacencyList::~VersioningBlockedSkipListAdjacencyList() {
   gc_all();  // Make the data structure completely unversioned.
 
-  for (auto v = 0; v < get_max_vertex(); v++) {
+  for (auto v = 0u; v < get_max_vertex(); v++) {
     free_adjacency_set(v);
   }
 }
@@ -1243,7 +1247,7 @@ size_t VersioningBlockedSkipListAdjacencyList::edge_count_version(version_t vers
 }
 
 bool VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock(vertex_id_t v) {
-  adjacency_index.aquire_vertex_lock(v);
+  return adjacency_index.aquire_vertex_lock(v);
 }
 
 void VersioningBlockedSkipListAdjacencyList::release_vertex_lock(vertex_id_t v) {
@@ -1263,7 +1267,7 @@ void VersioningBlockedSkipListAdjacencyList::rollback_vertex_insert(vertex_id_t 
 }
 
 bool VersioningBlockedSkipListAdjacencyList::has_vertex_version(vertex_id_t v, version_t version) {
-  adjacency_index.has_vertex(v);
+  return adjacency_index.has_vertex(v);
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::max_physical_vertex() {

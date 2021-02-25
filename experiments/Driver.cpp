@@ -39,7 +39,7 @@ vector<vector<vertex_id_t>> Driver::select_2_neighbourhood_src(const SortedCSRDa
   vector<vector<vertex_id_t>> out;
 
   TwoNeighbourSourceSelector s(src);
-  for (int r = 0; r < config.repetitions; r++) {
+  for (uint r = 0; r < config.repetitions; r++) {
     out.push_back(s.get_sources(count));
   }
 
@@ -370,7 +370,7 @@ Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood,
   vector<uint> distances;
 
   vector<size_t> run_times;
-  for (int rep = 0; rep < config.repetitions; rep++) {
+  for (uint rep = 0; rep < config.repetitions; rep++) {
     // BFS
     auto start = chrono::steady_clock::now();
     distances = Algorithms::bfs(*this, ds, start_vertex, run_on_raw_neighbourhood, aquire_locks, gapbs);
@@ -408,9 +408,9 @@ void Driver::load_base_dataset(TopologyInterface &ds, SortedCSRDataSource &base)
 void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &ds, bool undirected) {
   // Effects the batch size on performance have never been tested. I tested it only for the versioned data structure.
   // But it is likely that it applies for this case as well, in particular, since jobs here are smaller/take less time.
-  const int batch_size = 3000;
+  const uint batch_size = 3000;
 
-  const int total_work = el.edges.size();
+  const uint total_work = el.edges.size();
   while (insert_position.load() < total_work) {
     int work = insert_position.fetch_add(batch_size);
     int work_end = min(total_work, work + batch_size);
@@ -432,9 +432,9 @@ run_inserts_in_transactions(size_t thread_id, TransactionManager &tm, EdgeList &
                                  VersionedTopologyInterface *ds, uint total_partitions, uint partition,
                                  bool undirected) {
   tm.register_thread(thread_id);
-  const int batch_size = 3000;
+  const uint batch_size = 3000;
 
-  const int total_work = el.edges.size();
+  const uint total_work = el.edges.size();
   SnapshotTransaction tx = tm.getSnapshotTransaction(ds);
   while (insert_position.load() < total_work) {
     int work = insert_position.fetch_add(batch_size);
@@ -494,7 +494,7 @@ Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, Edg
       throw ConfigurationError("Cannot run batch insertions with transactions as off yet.");
     }
 
-    for (int i = 0; i < threads; i++) {
+    for (uint i = 0; i < threads; i++) {
       ts.emplace_back(run_inserts, ref(el), ref(insert_index), ref(ds), config.undirected);
     }
 
@@ -545,7 +545,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
     atomic<uint> insert_index(0);
     vector<thread> ts;
     uint partition = 0;
-    for (int i = 1; i < threads + 1; i++) {
+    for (uint i = 1; i < threads + 1; i++) {
       ts.emplace_back(run_inserts_in_transactions, i, ref(tm), ref(el), ref(insert_index), ds, config.insert_threads,
                       partition, config.undirected);
       partition++;
@@ -582,16 +582,16 @@ void Driver::run_triangle_counting_experiment(TopologyInterface &ds) {
   vector<size_t> run_times;
   size_t triangles;
   vector<dst_t> out;
-  for (int rep = 0; rep < config.repetitions; rep++) {
+  for (uint rep = 0; rep < config.repetitions; rep++) {
     auto start = chrono::steady_clock::now();
 
     triangles = 0;
 
     if (typeid(ds) == typeid(HashSetAdjacencyLists)) {
-      for (int a = 0; a < ds.max_physical_vertex(); a++) {
+      for (uint a = 0; a < ds.max_physical_vertex(); a++) {
         auto a_neighbours = (robin_hood::unordered_flat_set<dst_t> *) ds.raw_neighbourhood(a);
 
-        for (auto b : *a_neighbours) {
+        for (dst_t b : *a_neighbours) {
           if (a < b) {
             ds.intersect_neighbourhood(a, b, out);
             for (auto c : out) {
@@ -610,7 +610,7 @@ void Driver::run_triangle_counting_experiment(TopologyInterface &ds) {
       ContigiousBlockIterator &a_neighbours = getIter(ds);
 
 //#pragma omp for reduction(+ : triangles) schedule(dynamic, 64)
-      for (int a = 0; a < ds.max_physical_vertex(); a++) {
+      for (uint a = 0; a < ds.max_physical_vertex(); a++) {
         ds.neighbourhood(a, a_neighbours);
 
         while (a_neighbours.has_next()) {
@@ -658,7 +658,7 @@ void Driver::run_neighbourhood_2_experiment(TopologyInterface &ds,
 
   vector<size_t> run_times;
 
-  for (int rep = 0; rep < config.repetitions; rep++) {
+  for (uint rep = 0; rep < config.repetitions; rep++) {
     auto start = chrono::steady_clock::now();
     unordered_map<vertex_id_t, size_t> neighbour_counts = Algorithms::neighbourhood_2(*this, ds, sources[rep],
                                                                                       run_raw_neighbourhood);
@@ -769,7 +769,7 @@ void Driver::check_bfs(vertex_id_t start_vertex, vector<uint> &distances, versio
 //    assert(size == distances.size());
 
     uint e;
-    int i = 0;
+    uint i = 0;
     for (auto d : distances) {
       if (i < size) {
         f.read((char *) &e, sizeof(e));
@@ -849,84 +849,84 @@ unordered_set<dst_t> Driver::get_neighbours(TopologyInterface &ds, vertex_id_t v
 }
 
 void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_count) {
-//  cout << "Validating insert experiment" << endl;
-//  // TODO reactivate
-//  auto edge_count = ds.edge_count();
-//  auto expected_edge_count = el.edges.size() + base_edge_count;
-//  if (config.undirected) {
-//    // TODO support undirected mode in data structure?
-////    edge_count /= 2;
-////    expected_edge_count = el.edges.size();
-////     Undirectedness and base datasets are not really well supported. There could be an uneven number of edges even in an undirected graph.
-////    assert(edge_count == expected_edge_count || edge_count + 1 == expected_edge_count);
-//  } else {
-//    assert(edge_count == expected_edge_count);
-//  }
-//
-//
-//  auto i = 0;
-//  for (auto e : el.edges) {
-//    i++;
-////    if (i % 1000 == 0) {
-////      cout << ".";
-////    }
-//    assert(ds.has_edge(e));
-//    if (config.undirected) {
-//      edge_t opposite = {e.dst, e.src};
-//      assert(ds.has_edge(opposite));
+  cout << "Validating insert experiment" << endl;
+  // TODO reactivate
+  auto edge_count = ds.edge_count();
+  auto expected_edge_count = el.edges.size() + base_edge_count;
+  if (config.undirected) {
+    // TODO support undirected mode in data structure?
+//    edge_count /= 2;
+//    expected_edge_count = el.edges.size();
+//     Undirectedness and base datasets are not really well supported. There could be an uneven number of edges even in an undirected graph.
+//    assert(edge_count == expected_edge_count || edge_count + 1 == expected_edge_count);
+  } else {
+    assert(edge_count == expected_edge_count);
+  }
+
+
+  auto i = 0;
+  for (auto e : el.edges) {
+    i++;
+//    if (i % 1000 == 0) {
+//      cout << ".";
 //    }
-//  }
-//
-//
-//  const string gold_standard_file_sizes =
-//          config.gold_standard_directory + "/insert_adjacency_set_sizes_" + config.base.get_name() + ".goldStandard";
-//  if (!file_exists(gold_standard_file_sizes)) {
-//    cout << "Writing new gold standard for: " << gold_standard_file_sizes << endl;
-//    ofstream f(gold_standard_file_sizes, ofstream::binary | ofstream::out);
-//
-//    if (!f.good()) {
-//      assert(false);
-//    }
-//
-//    size_t size = ds.vertex_count();
-//    f.write((char *) &size, sizeof(size));
-//
-//    // TODO reprhase once we have vertex iterators
-//    for (auto v = 0; v < ds.vertex_count(); v++) {
-//      size_t neighbourhood_size = ds.neighbourhood_size_p(v);
-//      f.write((char *) &neighbourhood_size, sizeof(neighbourhood_size));
-//    }
-//    f.close();
-//  } else {
-//    ifstream f(gold_standard_file_sizes, ifstream::in | ifstream::binary);
-//
-//    size_t size;
-//    f.read((char *) &size, sizeof(size));
-//
-//    // TODO reactivate
-////    assert(size == ds.vertex_count());
-//
+    assert(ds.has_edge(e));
+    if (config.undirected) {
+      edge_t opposite = {e.dst, e.src};
+      assert(ds.has_edge(opposite));
+    }
+  }
+
+
+  const string gold_standard_file_sizes =
+          config.gold_standard_directory + "/insert_adjacency_set_sizes_" + config.base.get_name() + ".goldStandard";
+  if (!file_exists(gold_standard_file_sizes)) {
+    cout << "Writing new gold standard for: " << gold_standard_file_sizes << endl;
+    ofstream f(gold_standard_file_sizes, ofstream::binary | ofstream::out);
+
+    if (!f.good()) {
+      assert(false);
+    }
+
+    size_t size = ds.vertex_count();
+    f.write((char *) &size, sizeof(size));
+
+    // TODO reprhase once we have vertex iterators
+    for (uint v = 0; v < ds.vertex_count(); v++) {
+      size_t neighbourhood_size = ds.neighbourhood_size_p(v);
+      f.write((char *) &neighbourhood_size, sizeof(neighbourhood_size));
+    }
+    f.close();
+  } else {
+    ifstream f(gold_standard_file_sizes, ifstream::in | ifstream::binary);
+
+    size_t size;
+    f.read((char *) &size, sizeof(size));
+
+    // TODO reactivate
+//    assert(size == ds.vertex_count());
+
 //    size_t neighbourhood_size;
-//    for (int i = 0; i < size; i++) {
-////       TODO found a heisenbug here
-////      f.read((char *) &neighbourhood_size, sizeof(neighbourhood_size));
-////      size_t neighourhood_size_actual = ds.neighbourhood_size_p(i);
-////      assert(neighourhood_size_actual == neighbourhood_size);
-//    }
-//
-//    f.close();
-//  }
-//
-//  BFSSourceSelector ss(*this, config.base, ds);
-//  vertex_id_t start_vertex = ss.get_source();
-//
-//  vector<uint> distances;
-//  if (typeid(ds) == typeid(SnapshotTransaction)) {
-//    distances = Algorithms::bfs(*this, ds, start_vertex, true, false, false);
-//  } else {
-//    distances = Algorithms::bfs(*this, ds, start_vertex);
-//  }
-//  check_bfs(start_vertex, distances, 1);
+    for (uint i = 0; i < size; i++) {
+//       TODO found a heisenbug here
+//      f.read((char *) &neighbourhood_size, sizeof(neighbourhood_size));
+//      size_t neighourhood_size_actual = ds.neighbourhood_size_p(i);
+//      assert(neighourhood_size_actual == neighbourhood_size);
+    }
+
+    f.close();
+  }
+
+  BFSSourceSelector ss(*this, config.base, ds);
+  vertex_id_t start_vertex = ss.get_source();
+
+  vector<uint> distances;
+  if (typeid(ds) == typeid(SnapshotTransaction)) {
+    distances = Algorithms::bfs(*this, ds, start_vertex, true, false, false);
+  } else {
+    distances = Algorithms::bfs(*this, ds, start_vertex);
+  }
+  check_bfs(start_vertex, distances, 1);
 }
 
 void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts) {
@@ -959,7 +959,7 @@ void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_
 
     vertex_id_t v;
     size_t c;
-    for (int i = 0; i < size; i++) {
+    for (uint i = 0; i < size; i++) {
       f.read((char *) &v, sizeof(v));
       f.read((char *) &c, sizeof(c));
 
@@ -1008,14 +1008,11 @@ void Driver::run_community_detection(TopologyInterface &ds) {
 
   size_t vertex_count = ds.max_physical_vertex();
 
-  for (int rep = 0; rep < config.repetitions; rep++) {
+  for (uint rep = 0; rep < config.repetitions; rep++) {
     auto start = chrono::steady_clock::now();
 
     vector<bool> active1(vertex_count, true);
     vector<bool> active2(vertex_count, false);
-
-    auto &active_old = active1;
-    auto &active_new = active2;
 
     vector<vertex_id_t> labels1(vertex_count);
     vector<vertex_id_t> labels2(vertex_count);
@@ -1057,7 +1054,7 @@ void Driver::run_community_detection(TopologyInterface &ds) {
         }
 
         vertex_id_t new_label;
-        auto max_count = 0;
+        auto max_count = 0u;
         for (auto lc : label_counts) {
           if (max_count < lc.second) {
             max_count = lc.second;
@@ -1155,7 +1152,7 @@ void Driver::run_page_rank_experiment(TopologyInterface &ds, bool run_on_raw_nei
   vector<float> scores;
 
   vector<size_t> run_times;
-  for (int rep = 0; rep < config.repetitions; rep++) {
+  for (uint rep = 0; rep < config.repetitions; rep++) {
     // BFS
     auto start = chrono::steady_clock::now();
     scores = Algorithms::page_rank(*this, ds, run_on_raw_neighbourhood);

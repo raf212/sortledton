@@ -30,9 +30,9 @@ BlockMemoryPool::~BlockMemoryPool() {
 }
 
 BlockMemoryPool::BlockMemoryPool(BlockMemoryPool &&other) noexcept:
-        pools(std::move(other.pools)), size(other.size), block_size(other.block_size),
-        free_list(std::move(other.free_list)), shuffle_free_list(other.shuffle_free_list),
-        grow_rate(other.grow_rate), align_memory(other.align_memory) {
+        pools(std::move(other.pools)), size(other.size),
+        grow_rate(other.grow_rate),  block_size(other.block_size), shuffle_free_list(other.shuffle_free_list),  align_memory(other.align_memory), free_list(std::move(other.free_list))
+         {
   other.size = 0;
 }
 
@@ -85,7 +85,7 @@ void BlockMemoryPool::add_pool(size_t additional_blocks) {
     }
   } else {
     auto ptr = pool;
-    for (int i = 0; i < additional_blocks; i++) {
+    for (uint i = 0; i < additional_blocks; i++) {
       free_list.push_back(ptr);
       ptr += block_size;
     }

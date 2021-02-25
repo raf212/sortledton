@@ -45,7 +45,7 @@ string get_home_dir() {
 string string_join(const string &join, const vector<string> &list) {
   stringstream ss;
 
-  for (int i = 0; i < list.size(); i++) {
+  for (auto i = 0u; i < list.size(); i++) {
     if (i != 0) {
       ss << join;
     }

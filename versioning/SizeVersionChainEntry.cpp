@@ -19,6 +19,6 @@ SizeVersionChainEntry *SizeVersionChainEntry::traverse(version_t version, uint d
 }
 
 SizeVersionChainEntry::SizeVersionChainEntry(version_t version, uint32_t current_size, SizeVersionChainEntry *next)
-                                             : version(version), next(next), current_size(current_size) {
+                                             : next(next), version(version), current_size(current_size) {
 
 }
