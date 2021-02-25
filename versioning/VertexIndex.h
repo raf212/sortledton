@@ -144,13 +144,13 @@ private:
 
       }
     }
+
     template<typename T>
     void grow_vector_if_smaller(tbb::concurrent_vector<T> &v, size_t s) {
       if (v.capacity() <= s) {  // Only synchronize with other threads if potentially necessary
         scoped_lock<mutex> l(growing_vector_mutex);
         if (v.capacity() <= s) {
           v.grow_to_at_least(v.capacity() * 2);
-          cout << "Growing vectors" << endl;
         }
 
       }
