@@ -39,3 +39,7 @@ bool TopologyInterface::has_edge(edge_t edge) {
 bool TopologyInterface::has_vertex(vertex_id_t v) {
   return has_vertex_p(physical_id(v));
 }
+
+size_t TopologyInterface::max_physical_vertex() {
+  return vertex_count(); // Assumes dense vertex sets
+}

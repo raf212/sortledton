@@ -496,7 +496,7 @@ VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(s
 
 size_t VersioningBlockedSkipListAdjacencyList::vertex_count_version(version_t version) {
   // TODO vertex versions not supported yet.
-  return adjacency_index.get_high_water_mark(); // TODO correct once dynamic vertices have been implemented
+  return adjacency_index.get_vertex_count(version);
 }
 
 void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_version(vertex_id_t src, version_t version) {
@@ -1264,4 +1264,8 @@ void VersioningBlockedSkipListAdjacencyList::rollback_vertex_insert(vertex_id_t 
 
 bool VersioningBlockedSkipListAdjacencyList::has_vertex_version(vertex_id_t v, version_t version) {
   adjacency_index.has_vertex(v);
+}
+
+size_t VersioningBlockedSkipListAdjacencyList::max_physical_vertex() {
+  return adjacency_index.get_high_water_mark();
 }

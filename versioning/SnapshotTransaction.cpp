@@ -288,3 +288,7 @@ void SnapshotTransaction::rollback() {
     }
   }
 }
+
+size_t SnapshotTransaction::max_physical_vertex() {
+  return ds->max_physical_vertex();
+}

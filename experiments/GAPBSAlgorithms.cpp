@@ -46,7 +46,7 @@ namespace { // anonymous
            int64_t distance, Bitmap &front, Bitmap &next) {
       version_t trans_timestamp = tx.get_version();
 
-      const int64_t N = tx.vertex_count();
+      const int64_t N = tx.max_physical_vertex();
       int64_t awake_count = 0;
       next.reset();
 #pragma omp parallel for reduction(+ : awake_count) schedule(dynamic, 1024)
@@ -111,7 +111,7 @@ namespace { // anonymous
     }
 
     static void BitmapToQueue(SnapshotTransaction &tx, const Bitmap &bm, SlidingQueue<int64_t> &queue) {
-      const int64_t N = tx.vertex_count();
+      const int64_t N = tx.max_physical_vertex();
 
 #pragma omp parallel
       {
@@ -126,7 +126,7 @@ namespace { // anonymous
     }
 
     static pvector<int64_t> InitDistances(SnapshotTransaction &tx) {
-      const int64_t N = tx.vertex_count();
+      const int64_t N = tx.max_physical_vertex();
       pvector<int64_t> distances(N);
 
 #pragma omp parallel for
@@ -159,7 +159,7 @@ GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neig
   pvector<int64_t> distances = InitDistances(tx);
   distances[start_vertex] = 0;
 
-  uint64_t vertex_count = tx.vertex_count();
+  uint64_t vertex_count = tx.max_physical_vertex();
   SlidingQueue<int64_t> queue(vertex_count);
   queue.push_back(start_vertex);
   queue.slide_window();

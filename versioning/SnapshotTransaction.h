@@ -47,6 +47,7 @@ public:
     bool execute();
 
     size_t vertex_count() override;
+    size_t max_physical_vertex() override;
 
     bool has_vertex_p(vertex_id_t v) override;
     bool insert_vertex(vertex_id_t v) override;

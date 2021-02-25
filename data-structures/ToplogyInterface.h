@@ -42,6 +42,7 @@ public:
     virtual vertex_id_t physical_id(vertex_id_t id);
 
     virtual size_t vertex_count() = 0;
+    virtual size_t max_physical_vertex();
     virtual size_t edge_count() = 0;
 
     virtual bool insert_vertex(vertex_id_t v) = 0;

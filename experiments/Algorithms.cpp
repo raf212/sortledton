@@ -24,7 +24,7 @@ vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface
   size_t vertices_traversed = 0;
 
   uint maxDistance = numeric_limits<uint>::max();
-  vector<uint> distances(ds.vertex_count(), numeric_limits<uint>::max());
+  vector<uint> distances(ds.max_physical_vertex(), numeric_limits<uint>::max());
   distances[start_vertex] = 0;
   queue<vertex_id_t> work;
   work.push(start_vertex);
@@ -60,7 +60,7 @@ vector<uint> Algorithms::bfs_single_edge_interface(Driver &driver, TopologyInter
   size_t vertices_traversed = 0;
 
   uint maxDistance = numeric_limits<uint>::max();
-  vector<uint> distances(ds.vertex_count(), numeric_limits<uint>::max());
+  vector<uint> distances(ds.max_physical_vertex(), numeric_limits<uint>::max());
   distances[start_vertex] = 0;
   queue<vertex_id_t> work;
   work.push(start_vertex);
@@ -99,7 +99,7 @@ Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_
   }
 
   size_t vertices_traversed = 0;
-  vector<uint> distances(ds.vertex_count(), numeric_limits<uint>::max());
+  vector<uint> distances(ds.max_physical_vertex(), numeric_limits<uint>::max());
   distances[start_vertex] = 0;
   uint maxDistance = numeric_limits<uint>::max();
 
@@ -365,7 +365,7 @@ vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t 
   // TODO parallelize
   // TODO rephrase once we have vertex iterators.
   logical_result.resize(4846609, numeric_limits<uint>::max());
-  auto V = ds.vertex_count();
+  auto V = ds.max_physical_vertex();
   for (auto v = 0; v <  V; v++) {
     if (ds.has_vertex_p(v)) {
       if (logical_result.size() < ds.logical_id(v) || ds.logical_id(v) < 0) {

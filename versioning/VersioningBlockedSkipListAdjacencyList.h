@@ -32,6 +32,7 @@ public:
     vertex_id_t logical_id(vertex_id_t v) override;
 
     size_t vertex_count_version(version_t version) override;
+    size_t max_physical_vertex() override;
     size_t edge_count_version(version_t version) override;
 
     // TODO vertex versioning not yet supported

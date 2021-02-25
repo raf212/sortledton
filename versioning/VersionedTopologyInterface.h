@@ -20,7 +20,10 @@ public:
     virtual vertex_id_t physical_id(vertex_id_t id);
 
     virtual size_t vertex_count_version(version_t version) = 0;
+    virtual size_t max_physical_vertex() = 0;
     virtual size_t edge_count_version(version_t version) = 0;
+
+
 
 
     virtual bool has_vertex_version(vertex_id_t v, version_t version);
