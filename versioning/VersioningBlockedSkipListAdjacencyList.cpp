@@ -18,7 +18,7 @@
 #define MIN_BLOCK_SIZE 2u
 #define COLLECT_VERSIONS_ON_INSERT 1
 
-#define ASSERT_CONSISTENCY  1
+#define ASSERT_CONSISTENCY  0
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)

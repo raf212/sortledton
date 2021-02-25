@@ -35,8 +35,9 @@ bool VertexIndex::insert_vertex(vertex_id_t id, version_t version) {
     if (!free_list.try_pop(p_id)) {
       p_id = high_water_mark.fetch_add(1);
 
-      grow_vector_if_smaller(index, p_id * 2 + 1);  // TODO Should I do this earlier and assynchronous
-      grow_vector_if_smaller(physical_to_logical, p_id);
+      grow_vector_if_smaller(index, p_id * 2 + 1, (void*) (0ul | VERTEX_NOT_USED_MASK));  // TODO Should I do this earlier and assynchronous
+      grow_vector_if_smaller(physical_to_logical, p_id, (0ul | VERTEX_NOT_USED_MASK));
+      grow_vector_if_smaller(vertex_mutices, p_id);
     }
 
     w->second = p_id;
@@ -94,8 +95,8 @@ bool VertexIndex::aquire_vertex_lock(const vertex_id_t v) {
 }
 
 void VertexIndex::reserve(size_t max_vertices) {
-  vector<mutex> m(max_vertices);
-  vertex_mutices.swap(m);
+//  vector<mutex> m(max_vertices);
+//  vertex_mutices.swap(m);
 }
 
 void VertexIndex::release_vertex_lock(vertex_id_t v) {

@@ -11,6 +11,7 @@
 #include <atomic>
 #include <optional>
 #include <vector>
+#include <iostream>
 
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_vector.h>
@@ -32,7 +33,7 @@ using namespace std;
 
 #define SKIP_LIST_LEVELS 6
 
-#define INITIAL_VECTOR_SIZE 524288
+#define INITIAL_VECTOR_SIZE 131072
 
 /**
  * The types of adjacency sets used.
@@ -43,11 +44,11 @@ enum VAdjacencySetType {
 };
 
 struct VSkipListHeader {
-    VSkipListHeader* before;  // TODO remove
-    dst_t* data;
+    VSkipListHeader *before;  // TODO remove
+    dst_t *data;
     uint16_t size;  // Number of destinations stored in this block.
     dst_t max;
-    VSkipListHeader* next_levels[SKIP_LIST_LEVELS];  // a fixed number of pointers for all levels.
+    VSkipListHeader *next_levels[SKIP_LIST_LEVELS];  // a fixed number of pointers for all levels.
 };
 
 struct VertexVersionChainEntry;
@@ -77,32 +78,40 @@ struct VertexVersionChainEntry;
 //    VertexEntry e;
 //};
 
-typedef tbb::concurrent_hash_map<vertex_id_t , vertex_id_t> l_t_p_table;
+typedef tbb::concurrent_hash_map<vertex_id_t, vertex_id_t> l_t_p_table;
 
 class VertexIndex {
 public:
     VertexIndex();
-    VertexIndex(const VertexIndex&) =delete;
-    VertexIndex& operator=(const VertexIndex&) =delete;
+
+    VertexIndex(const VertexIndex &) = delete;
+
+    VertexIndex &operator=(const VertexIndex &) = delete;
 
     optional<vertex_id_t> physical_id(vertex_id_t v);
+
     vertex_id_t logical_id(vertex_id_t v);
 
     bool has_vertex(vertex_id_t v);
 
     bool insert_vertex(vertex_id_t id, version_t version);
+
     bool remove_vertex(vertex_id_t id, version_t version);
 
     void aquire_vertex_lock_p(vertex_id_t v);
+
     void release_vertex_lock_p(vertex_id_t v);
 
     bool aquire_vertex_lock(const vertex_id_t v);
+
     void release_vertex_lock(const vertex_id_t v);
 
-    void* const & operator[](size_t index) const;
-    void*& operator[](size_t index);
+    void *const &operator[](size_t index) const;
+
+    void *&operator[](size_t index);
 
     size_t get_vertex_count(version_t version);
+
     size_t get_high_water_mark();
 
     void reserve(size_t max_vertices);
@@ -110,31 +119,43 @@ public:
     void rollback_vertex_insert(vertex_id_t v);
 
 private:
-    atomic_uint high_water_mark { 0u };  // The next physical vertex id, not yet in use.
-    atomic_uint vertex_count { 0u };
+    atomic_uint high_water_mark{0u};  // The next physical vertex id, not yet in use.
+    atomic_uint vertex_count{0u};
 
     mutex growing_vector_mutex;
 
-    vector<mutex> vertex_mutices;
+    tbb::concurrent_vector<mutex> vertex_mutices{INITIAL_VECTOR_SIZE};
 
-    tbb::concurrent_vector<void*> index { INITIAL_VECTOR_SIZE, (void*) (0L | VERTEX_NOT_USED_MASK) };
+    tbb::concurrent_vector<void *> index{INITIAL_VECTOR_SIZE, (void *) (0L | VERTEX_NOT_USED_MASK)};
 
-    l_t_p_table logical_to_physical { INITIAL_VECTOR_SIZE };
+    l_t_p_table logical_to_physical{INITIAL_VECTOR_SIZE};
     tbb::concurrent_vector<vertex_id_t> physical_to_logical;  // Cannot use initializer (size, default value) here because it will create a vector of size 2
 
     tbb::concurrent_queue<vertex_id_t> free_list {};
 
-    template <typename T>
-    void grow_vector_if_smaller(tbb::concurrent_vector<T>& v, size_t s) {
+
+    template<typename T>
+    void grow_vector_if_smaller(tbb::concurrent_vector<T> &v, size_t s, T init_value) {
       if (v.capacity() <= s) {  // Only synchronize with other threads if potentially necessary
-        {
-          scoped_lock<mutex> l(growing_vector_mutex);
-          if (v.capacity() <= s) {
-            v.grow_to_at_least(v.capacity() * 2, (T) (0L | VERTEX_NOT_USED_MASK));
-          }
+        scoped_lock<mutex> l(growing_vector_mutex);
+        if (v.capacity() <= s) {
+          v.grow_to_at_least(v.capacity() * 2, init_value);
         }
+
       }
     }
+    template<typename T>
+    void grow_vector_if_smaller(tbb::concurrent_vector<T> &v, size_t s) {
+      if (v.capacity() <= s) {  // Only synchronize with other threads if potentially necessary
+        scoped_lock<mutex> l(growing_vector_mutex);
+        if (v.capacity() <= s) {
+          v.grow_to_at_least(v.capacity() * 2);
+          cout << "Growing vectors" << endl;
+        }
+
+      }
+    }
+
 };
 
 
