@@ -317,7 +317,6 @@ bool VersioningBlockedSkipListAdjacencyList::traverse_version_chain(edge_t edge,
   } else {  // We want an old version and there are multiple versions.
     throw MultipleVersionException();  // TODO multiple versions not yet supported
   }
-  // TODO double check could  it be that twitter has so many edges that the version id is so high that it indicates multiple versions?
 }
 
 
@@ -958,7 +957,7 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list(vertex_id_t v) {
       version_remaining |= gc_skip_list_block(&i, before, after, min_version, blocks, 0);
       if (i != nullptr) {
         before = i;
-        i = i->next_levels[0];  // TODO remove
+        i = i->next_levels[0];
       } else {
         i = after;
       }
@@ -1060,7 +1059,7 @@ void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHea
   to->size += from->size;
   to->max = from->max;
   for (auto l = 0; l < SKIP_LIST_LEVELS; l++) {
-    if (to->next_levels[l] == from) {  // TODO remove
+    if (to->next_levels[l] == from) {
       to->next_levels[l] = from->next_levels[l];
     }
     if (blocks[l]->next_levels[l] == from) {
@@ -1096,7 +1095,6 @@ void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id
   }
 }
 
-// TODO include backtrace in my project
 void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(vertex_id_t v, version_t version) {
   switch (get_set_type(v, version)) {
     case VSKIP_LIST: {

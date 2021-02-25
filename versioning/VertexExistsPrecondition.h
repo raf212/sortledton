@@ -13,7 +13,7 @@ public:
   explicit VertexExistsPrecondition(vertex_id_t v);
   ~VertexExistsPrecondition();
   void assert_it(VersionedTopologyInterface& ds, version_t version) override;
-  vector<vertex_id_t> requires_vertex_locks() override;  // TODO provide default
+  vector<vertex_id_t> requires_vertex_locks() override;
   vertex_id_t requires_vertex_lock() override;
 
 private:
