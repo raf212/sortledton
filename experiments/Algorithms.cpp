@@ -220,7 +220,7 @@ Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_
       work.pop();
 
       vertices_traversed++;
-      raw_ds->aquire_vertex_lock(v);
+      raw_ds->aquire_vertex_lock_p(v);
       if (raw_ds->get_set_type(v, trans_timestamp)) {
         dst_t *ns = (dst_t *) raw_ds->raw_neighbourhood_version(v, trans_timestamp);
         uint64_t size = (uint64_t) raw_ds->raw_neighbourhood_size_entry(v) & ~SIZE_VERSION_MASK;
@@ -273,7 +273,7 @@ Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_
           block = block->next_levels[0];
         }
       }
-      raw_ds->release_vertex_lock(v);
+      raw_ds->release_vertex_lock_p(v);
     }
   } else if (typeid(ds) == typeid(BlockedSkipListAdjacencyLists)) {
     auto block_size = dynamic_cast<BlockedSkipListAdjacencyLists &>(ds).get_block_size();
@@ -364,13 +364,15 @@ vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t 
   // Translation to logical
   // TODO parallelize
   // TODO rephrase once we have vertex iterators.
-  logical_result.resize(physical_result.size());
+  logical_result.resize(4846609, numeric_limits<uint>::max());
   auto V = ds.vertex_count();
   for (auto v = 0; v <  V; v++) {
-    if (logical_result.size() < ds.logical_id(v)  || ds.logical_id(v) < 0) {
-      cerr << "Warning returned logical id outside of range" << endl;
-    } else {
-      logical_result[ds.logical_id(v)] = physical_result[v];
+    if (ds.has_vertex_p(v)) {
+      if (logical_result.size() < ds.logical_id(v) || ds.logical_id(v) < 0) {
+        cerr << "Warning returned logical id outside of range" << ds.logical_id(v) << endl;
+      } else {
+        logical_result[ds.logical_id(v)] = physical_result[v];
+      }
     }
   }
   return logical_result;

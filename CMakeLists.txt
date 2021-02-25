@@ -3,7 +3,7 @@ project(live_graph_two VERSION 0.1 DESCRIPTION "Data structure supporting transa
 
 list(APPEND CMAKE_MODULE_PATH "~/cmake_modules/FindTBB")
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 #set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -DBITS32)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -DBITS64)
@@ -83,7 +83,9 @@ set(SRC
         versioning/VertexExistsPrecondition.cpp versioning/VertexExistsPrecondition.h
         versioning/EdgeDoesNotExistsPrecondition.cpp versioning/EdgeDoesNotExistsPrecondition.h
         versioning/VersionedEdgeIterator.cpp versioning/VersionedEdgeIterator.h experiments/GAPBSAlgorithms.cpp experiments/GAPBSAlgorithms.h
-        third-party/gapbs.h)
+        third-party/gapbs.h
+        versioning/VertexIndex.cpp
+        versioning/VertexIndex.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp

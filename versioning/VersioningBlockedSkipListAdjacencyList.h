@@ -14,38 +14,11 @@
 #include <versioning/SizeVersionChainEntry.h>
 #include "VersionedTopologyInterface.h"
 
-#define SKIP_LIST_LEVELS 6
-
-// The mask indicating if a size entry in the index is versioned.
-#define SIZE_VERSION_MASK (1L << 63)
-// The 2nd bit of the adjacency set pointer in the index is used to indicate the VAdjacencySetType.
-// Set means the edge set is of type VSINGLE_BLOCK, unset means it is of type VSKIP_LIST
-#define EDGE_SET_TYPE_MASK (1L << 62)
-#define LOCK_MASK (1L << 61)
-// This mask is set on vertex index entries for unused vertices.
-#define VERTEX_NOT_USED_MASK (1L << 60)
-
-/**
- * The types of adjacency sets used.
- */
-enum VAdjacencySetType {
-    VSKIP_LIST,    // A blocked skip list defined in VSkipListHeader
-    VSINGLE_BLOCK  // An array of edges prepended by the number of edges and versions in their.
-};
-
-struct VSkipListHeader {
-    VSkipListHeader* before;  // TODO remove
-    dst_t* data;
-    uint16_t size;  // Number of destinations stored in this block.
-    dst_t max;
-    VSkipListHeader* next_levels[SKIP_LIST_LEVELS];  // a fixed number of pointers for all levels.
-};
+#include "VertexIndex.h"
 
 class MultipleVersionException : exception {
 
 };
-
-
 
 class VersioningBlockedSkipListAdjacencyList : public VersionedTopologyInterface {
 
@@ -62,6 +35,7 @@ public:
     size_t edge_count_version(version_t version) override;
 
     // TODO vertex versioning not yet supported
+    bool has_vertex_version(vertex_id_t v, version_t version) override;
     bool has_vertex_version_p(vertex_id_t v, version_t version) override;
 
     // TODO versioning not yet supported
@@ -84,7 +58,7 @@ public:
     bool insert_edge_version(edge_t edge, version_t version) override;
     bool delete_edge_version(edge_t edge, version_t version) override { throw NotImplemented(); };
 
-    void aquire_vertex_lock(vertex_id_t vertex_lock) override;
+    bool aquire_vertex_lock(vertex_id_t v) override;
     void release_vertex_lock(vertex_id_t v) override;
     void aquire_vertex_lock_p(vertex_id_t vertex_lock) override;
     void release_vertex_lock_p(vertex_id_t v) override;
@@ -107,6 +81,8 @@ public:
     thread_local static int gced_edges;
     thread_local static int gc_merges;
     thread_local static int gc_to_single_block;
+
+    void rollback_vertex_insert(vertex_id_t v) override;
 protected:
     bool gc_block(vertex_id_t v);
     bool gc_skip_list(vertex_id_t v);
@@ -134,14 +110,7 @@ protected:
 
 private:
     TransactionManager& tm;
-    vector<void *> adjacency_index;
-    vector<mutex> vertex_mutices;
-    vector<atomic_flag> vertex_cas_locks;
-
-
-    atomic<uint> calls_to_add_edge { 0 };
-    atomic<uint> vertex_count { 0 };
-    atomic<uint> max_vertex { 0 };
+    VertexIndex adjacency_index;
 
     size_t block_size;
     const float bulk_load_fill_rate = 1.0;

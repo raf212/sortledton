@@ -13,36 +13,33 @@ SnapshotTransaction::SnapshotTransaction(version_t version, VersionedTopologyInt
 }
 
 bool SnapshotTransaction::execute() {
-  aquire_locks();
-
   try {
+    aquire_locks_and_insert_vertices();
+
     assert_preconditions();
     assert_std_preconditions();
     for (auto v: vertices_to_delete) {
-      if (vertex_does_not_exists_semantic_activated && !ds->has_vertex_version_p(v, version)) {
+      if (vertex_does_not_exists_semantic_activated && !ds->has_vertex_version(v, version)) {
         continue;
       }
       ds->delete_vertex_version(v, version);
     }
-    for (auto v : vertices_to_insert) {
-      if (vertex_does_not_exists_semantic_activated && ds->has_vertex_version_p(v, version)) {
-        continue;
-      }
-      ds->insert_vertex_version(v, version);
-    }
     for (auto e : edges_to_delete) {
-      if (edge_does_not_exists_semantic_activated && !ds->has_edge_version_p(e, version)) {
+      edge_t p_edge (ds->physical_id(e.src), ds->physical_id(e.dst));
+      if (edge_does_not_exists_semantic_activated && !ds->has_edge_version_p(p_edge, version)) {
         continue;
       }
-      ds->delete_edge_version(e, version);
+      ds->delete_edge_version(p_edge, version);
     }
     auto i = 0;
     for (auto e : edges_to_insert) {
+      edge_t p_edge (ds->physical_id(e.src), ds->physical_id(e.dst));
+
 //      try {
-      if (edge_does_not_exists_semantic_activated && ds->has_edge_version_p(e, version)) {
+      if (edge_does_not_exists_semantic_activated && ds->has_edge_version_p(p_edge, version)) {
         continue;
       }
-      ds->insert_edge_version(e, version);
+      ds->insert_edge_version(p_edge, version);
 //        i++;
 //        if (i % 1000 == 0) {
 //        cout << ".";
@@ -56,6 +53,8 @@ bool SnapshotTransaction::execute() {
     release_locks();
     return true;
   } catch (exception &e) {
+    cout << "rolling back" << endl;
+    rollback();
     release_locks();
     throw e;
   }
@@ -79,12 +78,25 @@ void SnapshotTransaction::assert_preconditions() {
   }
 }
 
-void SnapshotTransaction::aquire_locks() {
+void SnapshotTransaction::aquire_locks_and_insert_vertices() {
   sort(locks_to_aquire.begin(), locks_to_aquire.end());
   vertex_id_t last_lock = numeric_limits<vertex_id_t>::max();
   for (const auto &v : locks_to_aquire) {  // Relies on locks_to_aquire being a sorted data structure
-    if (v != last_lock) {
-      ds->aquire_vertex_lock(v);
+    if (v != last_lock) {  // Dedup locks
+      if (!ds->aquire_vertex_lock(v)) {
+        if (find(vertices_to_insert.begin(), vertices_to_insert.end(), v) != vertices_to_insert.end()) {
+          last_lock_aquired = v;
+          if(ds->insert_vertex_version(v, version)) {
+            rollbacks.push_back(RollbackAction::generate_rollback_insert_vertex(v));
+          } else if (!vertex_does_not_exists_semantic_activated ) {
+            throw VertexExistsException(v);
+          }
+        } else {
+          throw VertexDoesNotExistsException(v);
+        }
+      } else {
+        last_lock_aquired = v;
+      }
       last_lock = v;
     }
   }
@@ -93,9 +105,11 @@ void SnapshotTransaction::aquire_locks() {
 void SnapshotTransaction::release_locks() {
   vertex_id_t last_lock = numeric_limits<vertex_id_t>::max();
   for (auto &v : locks_to_aquire) {  // Relies on locks_to_aquire being a sorted data structure
-    if (v != last_lock) {
-      ds->release_vertex_lock(v);
-      last_lock = v;
+    if (v != last_lock && v <= last_lock_aquired) { // Dedup locks && do not release locks which have not been aquired.
+        ds->release_vertex_lock(v);
+        last_lock = v;
+    } else if (v > last_lock_aquired) {
+      cout << "did not release lock " << v << endl;
     }
   }
 }
@@ -105,28 +119,24 @@ size_t SnapshotTransaction::vertex_count() {
 }
 
 bool SnapshotTransaction::insert_vertex(vertex_id_t v) {
-  v = physical_id(v);
   locks_to_aquire.push_back(v);
   vertices_to_insert.push_back(v);
   return false;
 }
 
 bool SnapshotTransaction::delete_vertex(vertex_id_t v) {
-  v = physical_id(v);
   locks_to_aquire.push_back(v);
   vertices_to_delete.push_back(v);
   return false;
 }
 
 bool SnapshotTransaction::insert_edge(edge_t edge) {
-  edge = edge_t(physical_id(edge.src), physical_id(edge.dst));
   locks_to_aquire.push_back(edge.src);
   edges_to_insert.push_back(edge);
   return false;
 }
 
 bool SnapshotTransaction::delete_edge(edge_t edge) {
-  edge = edge_t(physical_id(edge.src), physical_id(edge.dst));
   locks_to_aquire.push_back(edge.src);
   edges_to_delete.push_back(edge);
   return false;
@@ -183,6 +193,7 @@ VersionedTopologyInterface *SnapshotTransaction::raw_ds() {
 }
 
 void SnapshotTransaction::clear() {
+  last_lock_aquired = 0;
   preconditions.clear();
   locks_to_aquire.clear();
   vertices_to_insert.clear();
@@ -231,25 +242,18 @@ void SnapshotTransaction::assert_std_preconditions() {
   // Vertices of each edge to insert need to exists.
   for (auto e : edges_to_insert) {
     // TODO is that to slow?
-    if (!ds->has_vertex_version_p(e.src, version) && find(vertices_to_insert.begin(), vertices_to_insert.end(), e.src) == vertices_to_insert.end()) {
+    if (!ds->has_vertex_version(e.src, version) && find(vertices_to_insert.begin(), vertices_to_insert.end(), e.src) == vertices_to_insert.end()) {
       throw VertexDoesNotExistsException(e.src);
     }
-    if (!ds->has_vertex_version_p(e.dst, version) && find(vertices_to_insert.begin(), vertices_to_insert.end(), e.src) == vertices_to_insert.end()) {
+    if (!ds->has_vertex_version(e.dst, version) && find(vertices_to_insert.begin(), vertices_to_insert.end(), e.src) == vertices_to_insert.end()) {
       throw VertexDoesNotExistsException(e.dst);
     }
   }
 
   if (!vertex_does_not_exists_semantic_activated) {
-    // New vertices cannot exist already
-    for (auto v : vertices_to_insert) {
-      if (ds->has_vertex_version_p(v, version)) {
-        throw VertexExistsException(v);
-      }
-    }
-
     // Vertices to delete have to exists
     for (auto v : vertices_to_delete) {
-      if (!ds->has_vertex_version_p(v, version)) {
+      if (!ds->has_vertex_version(v, version)) {
         throw VertexDoesNotExistsException(v);
       }
     }
@@ -258,15 +262,28 @@ void SnapshotTransaction::assert_std_preconditions() {
   if (!edge_does_not_exists_semantic_activated) {
     // New edges cannot exist already
     for (auto e : edges_to_insert) {
-      if (ds->has_edge_version_p(e, version)) {
+      if (ds->has_edge_version(e, version)) {
         throw EdgeExistsException(e);
       }
     }
 
     // Edges to delete have to exists
     for (auto e : edges_to_delete) {
-      if (!ds->has_edge_version_p(e, version)) {
+      if (!ds->has_edge_version(e, version)) {
         throw EdgeDoesNotExistsException(e);
+      }
+    }
+  }
+}
+
+void SnapshotTransaction::rollback() {
+  for (auto rb : rollbacks) {
+    switch (rb.type) {
+      case (RollbackAction::INSERT_VERTEX): {
+        ds->rollback_vertex_insert(rb.vertex);
+      }
+      default: {
+        throw NotImplemented();
       }
     }
   }

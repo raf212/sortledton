@@ -10,6 +10,7 @@
 #include <data_types.h>
 #include <atomic>
 #include <optional>
+#include <vector>
 
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_vector.h>
@@ -31,7 +32,7 @@ using namespace std;
 
 #define SKIP_LIST_LEVELS 6
 
-#define INITIAL_VECTOR_SIZE 1000000
+#define INITIAL_VECTOR_SIZE 524288
 
 /**
  * The types of adjacency sets used.
@@ -76,19 +77,27 @@ struct VertexVersionChainEntry;
 //    VertexEntry e;
 //};
 
-typedef tbb::concurrent_hash_map<logical_vertex_id_t, vertex_id_t> l_t_p_table;
+typedef tbb::concurrent_hash_map<vertex_id_t , vertex_id_t> l_t_p_table;
 
 class VertexIndex {
 public:
-    VertexIndex() =default;
+    VertexIndex();
     VertexIndex(const VertexIndex&) =delete;
     VertexIndex& operator=(const VertexIndex&) =delete;
 
-    vertex_id_t insert_vertex(logical_vertex_id_t id, version_t version);
-    void remove_vertex(logical_vertex_id_t id, version_t version);
+    optional<vertex_id_t> physical_id(vertex_id_t v);
+    vertex_id_t logical_id(vertex_id_t v);
 
-    optional<vertex_id_t> physical_id(logical_vertex_id_t v) const;
-    logical_vertex_id_t logical_id(vertex_id_t v) const;
+    bool has_vertex(vertex_id_t v);
+
+    bool insert_vertex(vertex_id_t id, version_t version);
+    bool remove_vertex(vertex_id_t id, version_t version);
+
+    void aquire_vertex_lock_p(vertex_id_t v);
+    void release_vertex_lock_p(vertex_id_t v);
+
+    bool aquire_vertex_lock(const vertex_id_t v);
+    void release_vertex_lock(const vertex_id_t v);
 
     void* const & operator[](size_t index) const;
     void*& operator[](size_t index);
@@ -96,26 +105,32 @@ public:
     size_t get_vertex_count(version_t version);
     size_t get_high_water_mark();
 
+    void reserve(size_t max_vertices);
+
+    void rollback_vertex_insert(vertex_id_t v);
+
 private:
     atomic_uint high_water_mark { 0u };  // The next physical vertex id, not yet in use.
     atomic_uint vertex_count { 0u };
 
     mutex growing_vector_mutex;
 
-    tbb::concurrent_vector<void*> index { INITIAL_VECTOR_SIZE};
+    vector<mutex> vertex_mutices;
 
-    l_t_p_table logical_to_physical;
-    tbb::concurrent_vector<logical_vertex_id_t> physical_to_logical { INITIAL_VECTOR_SIZE };
+    tbb::concurrent_vector<void*> index { INITIAL_VECTOR_SIZE, (void*) (0L | VERTEX_NOT_USED_MASK) };
 
-    tbb::concurrent_queue<vertex_id_t> free_list;
+    l_t_p_table logical_to_physical { INITIAL_VECTOR_SIZE };
+    tbb::concurrent_vector<vertex_id_t> physical_to_logical;  // Cannot use initializer (size, default value) here because it will create a vector of size 2
+
+    tbb::concurrent_queue<vertex_id_t> free_list {};
 
     template <typename T>
     void grow_vector_if_smaller(tbb::concurrent_vector<T>& v, size_t s) {
       if (v.capacity() <= s) {  // Only synchronize with other threads if potentially necessary
         {
-          lock_guard<mutex> l(growing_vector_mutex);
+          scoped_lock<mutex> l(growing_vector_mutex);
           if (v.capacity() <= s) {
-            v.grow_to_at_least(v.capacity() * 2);
+            v.grow_to_at_least(v.capacity() * 2, (T) (0L | VERTEX_NOT_USED_MASK));
           }
         }
       }

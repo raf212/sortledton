@@ -9,52 +9,59 @@
 #include "VertexIndex.h"
 #include <ToplogyInterface.h>
 
-logical_vertex_id_t VertexIndex::logical_id(vertex_id_t v) const {
+vertex_id_t VertexIndex::logical_id(vertex_id_t v) {
   assert(v < high_water_mark);
   return physical_to_logical[v];
 }
 
-optional<vertex_id_t> VertexIndex::physical_id(const logical_vertex_id_t v) const {
-  l_t_p_table::accessor a;
+optional<vertex_id_t> VertexIndex::physical_id(vertex_id_t v) {
+  l_t_p_table::const_accessor a;
   logical_to_physical.find(a, v);
   return a.empty() ? nullopt : make_optional(a->second);
 }
 
-void* const & VertexIndex::operator[](size_t v) const {
+void *const &VertexIndex::operator[](size_t v) const {
   return index[v];
 }
 
-void*& VertexIndex::operator[](size_t v) {
+void *&VertexIndex::operator[](size_t v) {
   return index[v];
 }
 
-vertex_id_t VertexIndex::insert_vertex(logical_vertex_id_t id, version_t version) {
+bool VertexIndex::insert_vertex(vertex_id_t id, version_t version) {
   vertex_id_t p_id;
-//  if (free_list.try_pop(p_id)) {
-    p_id = high_water_mark.fetch_add(1);
+  l_t_p_table::accessor w;
+  if (logical_to_physical.insert(w, id)) {
+    if (!free_list.try_pop(p_id)) {
+      p_id = high_water_mark.fetch_add(1);
 
-    grow_vector_if_smaller(index, p_id * 2 + 1);
-    grow_vector_if_smaller(physical_to_logical, p_id);
-//  }
+      grow_vector_if_smaller(index, p_id * 2 + 1);  // TODO Should I do this earlier and assynchronous
+      grow_vector_if_smaller(physical_to_logical, p_id);
+    }
 
-  // Update physical mapping, scoping to release accessor.
-  {
-    l_t_p_table::accessor w;
-    logical_to_physical.insert(w, id);
     w->second = p_id;
+    aquire_vertex_lock_p(p_id);
+    w.release();
+
+    // Update index
+    assert(index[p_id * 2] == (void*) (0l | VERTEX_NOT_USED_MASK));
+    index[p_id * 2] = nullptr;
+    index[p_id * 2 + 1] = 0;
+
+    // Update logical mapping
+    assert(physical_to_logical[p_id] == (0l | VERTEX_NOT_USED_MASK));
+    physical_to_logical[p_id] = id;
+
+    // Update vertex count
+    vertex_count.fetch_add(1);
+
+    return true;
+  } else {
+    p_id = w->second;
+    w.release();
+    aquire_vertex_lock_p(p_id);
+    return false;
   }
-
-  // Update index
-  index[p_id * 2] = nullptr;
-  index[p_id * 2 + 1] = 0;
-
-  // Update logical mapping
-  physical_to_logical[p_id] = id;
-
-  // Update vertex count
-  vertex_count.fetch_add(1);
-
-  return p_id;
 }
 
 size_t VertexIndex::get_high_water_mark() {
@@ -63,4 +70,64 @@ size_t VertexIndex::get_high_water_mark() {
 
 size_t VertexIndex::get_vertex_count(version_t version) {
   return vertex_count.load();
+}
+
+void VertexIndex::aquire_vertex_lock_p(vertex_id_t v) {
+  vertex_mutices[v].lock();
+}
+
+void VertexIndex::release_vertex_lock_p(vertex_id_t v) {
+  vertex_mutices[v].unlock();
+}
+
+bool VertexIndex::aquire_vertex_lock(const vertex_id_t v) {
+  l_t_p_table::const_accessor a;
+  if (logical_to_physical.find(a, v)) {
+    auto p_id = a->second;
+    a.release();
+    aquire_vertex_lock_p(p_id);
+    // TODO if I also allow vertex removal could this fail?
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void VertexIndex::reserve(size_t max_vertices) {
+  vector<mutex> m(max_vertices);
+  vertex_mutices.swap(m);
+}
+
+void VertexIndex::release_vertex_lock(vertex_id_t v) {
+  {
+    l_t_p_table::const_accessor a;
+    if (logical_to_physical.find(a, v)) {
+      release_vertex_lock_p(a->second);
+    } else {
+      throw VertexDoesNotExistsException(v);
+    }
+  }
+}
+
+void VertexIndex::rollback_vertex_insert(vertex_id_t v) {
+  l_t_p_table::accessor a;
+  if (!logical_to_physical.find(a, v)) {
+    auto p_id = a->second;
+    index[v * 2] = (void*) (0l | VERTEX_NOT_USED_MASK);
+    index[v * 2 + 1] = (void*)  (0l | VERTEX_NOT_USED_MASK);
+    physical_to_logical[p_id] = 0l | VERTEX_NOT_USED_MASK;
+    logical_to_physical.erase(a);
+    free_list.push(p_id);
+  } else {
+    throw VertexDoesNotExistsException(v);
+  }
+}
+
+bool VertexIndex::has_vertex(vertex_id_t v) {
+  l_t_p_table::const_accessor a;
+  return logical_to_physical.find(a, v);
+}
+
+VertexIndex::VertexIndex() {
+  physical_to_logical = tbb::concurrent_vector<vertex_id_t>(INITIAL_VECTOR_SIZE, 0l | VERTEX_NOT_USED_MASK);
 }

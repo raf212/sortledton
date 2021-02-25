@@ -13,6 +13,24 @@
 #include "IllegalOperation.h"
 #include "VertexExistsPrecondition.h"
 
+class RollbackAction {
+public:
+    enum ROLLBACK_ACTION {
+        INSERT_VERTEX
+    };
+
+    ROLLBACK_ACTION type;
+    vertex_id_t  vertex;
+    edge_t edge;  // Unused currently
+
+    static RollbackAction generate_rollback_insert_vertex(vertex_id_t v) {
+      return RollbackAction(INSERT_VERTEX, v, edge_t(0, 0));
+    }
+
+private:
+    RollbackAction(ROLLBACK_ACTION type, vertex_id_t v, edge_t e) : type(type), vertex(v), edge(e) {};
+};
+
 class SnapshotTransaction : public Transaction {
 public:
     SnapshotTransaction(version_t version, VersionedTopologyInterface* ds);
@@ -78,10 +96,17 @@ private:
     // TODO check how much performanc it cost to make this class thread safe by a mutex on each writing function.
     // if this is to expensive reintroduce a thread safe readonly transaction and note about thread safety in the documentation.
 
-    void aquire_locks();
+    void aquire_locks_and_insert_vertices();
     void release_locks();
+    void rollback();
     void assert_preconditions();
     void assert_std_preconditions();
+
+    /**
+     * Used for communication between aquire_ and release_locks. This is the last lock aquire_locks locked.
+     * release_lock will only call unlock for locks up till then.
+     */
+    vertex_id_t  last_lock_aquired = 0;
 
     bool vertex_does_not_exists_semantic_activated = false;
     bool edge_does_not_exists_semantic_activated = false;
@@ -93,6 +118,8 @@ private:
     vector<vertex_id_t> vertices_to_insert_if_not_exists {};
     vector<edge_t> edges_to_delete {};
     vector<edge_t> edges_to_insert {};
+
+    vector<RollbackAction> rollbacks {};
 };
 
 

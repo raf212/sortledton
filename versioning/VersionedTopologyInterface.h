@@ -26,7 +26,13 @@ public:
     virtual bool has_vertex_version(vertex_id_t v, version_t version);
     virtual bool has_vertex_version_p(vertex_id_t v, version_t version) = 0;
 
-    // TODO define fault model for already existing vertices and edges
+    /**
+     * Will also acquire the vertex lock for the vertex in question, indepdent on if it is added or not.
+     *
+     * @param v
+     * @param version
+     * @return true if the vertex has been inserted by this call, false otherwise
+     */
     virtual bool insert_vertex_version(vertex_id_t v, version_t version) = 0;
     virtual bool delete_vertex_version(vertex_id_t v, version_t version) = 0;
 
@@ -45,7 +51,12 @@ public:
     virtual bool insert_edge_version(edge_t edge, version_t version) = 0;
     virtual bool delete_edge_version(edge_t edge, version_t version) = 0;
 
-    virtual void aquire_vertex_lock(vertex_id_t vertex_lock) = 0;
+    /**
+     *
+     * @param vertex_lock
+     * @return true if the lock has been acquired, false if the logical vertex does not exists and no lock has been aquired.
+     */
+    virtual bool aquire_vertex_lock(vertex_id_t vertex_lock) = 0;
     virtual void aquire_vertex_lock_p(vertex_id_t vertex_lock) = 0;
     virtual void release_vertex_lock(vertex_id_t v) = 0;
     virtual void release_vertex_lock_p(vertex_id_t v) = 0;
@@ -56,6 +67,8 @@ public:
 
     virtual void gc_all() = 0;
     virtual void gc_vertex(vertex_id_t v) = 0;
+
+    virtual void rollback_vertex_insert(vertex_id_t v) = 0;
 };
 
 

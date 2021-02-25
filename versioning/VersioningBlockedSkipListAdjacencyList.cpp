@@ -20,7 +20,6 @@
 
 #define ASSERT_CONSISTENCY  1
 
-
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
@@ -47,29 +46,30 @@ thread_local int VersioningBlockedSkipListAdjacencyList::gc_merges = 0;
 thread_local int VersioningBlockedSkipListAdjacencyList::gc_to_single_block = 0;
 
 void VersioningBlockedSkipListAdjacencyList::bulkload(const SortedCSRDataSource &src) {
-  assert(adjacency_index.empty());  // Should only be called on an empty data structure
-
-  adjacency_index.reserve(src.vertex_count() * 2);
-  vector<mutex> m(src.vertex_count());
-  vertex_mutices.swap(m);
-  vector<atomic_flag> m1(src.vertex_count());
-  vertex_cas_locks.swap(m1);
-
-  for (int i = 0; i < src.vertex_count(); i++) {
-    const dst_t *start = src.adjacency_lists.data() + src.adjacency_index[i];
-    const dst_t *end = &src.adjacency_lists[0] + src.adjacency_index[i + 1];
-
-    void *head_block = write_to_blocks(start, end);
-
-#if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(i, FIRST_VERSION);
-#endif
-
-    adjacency_index.push_back(head_block);
-    adjacency_index.push_back((void *) (end - start));
-  }
-  vertex_count.store(src.vertex_count());
-  max_vertex.store(src.vertex_count());
+  throw NotImplemented();
+//  assert(adjacency_index.get_high_water_mark() == 0);  // Should only be called on an empty data structure
+//
+//  adjacency_index.reserve(src.vertex_count() * 2);
+//  vector<mutex> m(src.vertex_count());
+//  vertex_mutices.swap(m);
+//  vector<atomic_flag> m1(src.vertex_count());
+//  vertex_cas_locks.swap(m1);
+//
+//  for (int i = 0; i < src.vertex_count(); i++) {
+//    const dst_t *start = src.adjacency_lists.data() + src.adjacency_index[i];
+//    const dst_t *end = &src.adjacency_lists[0] + src.adjacency_index[i + 1];
+//
+//    void *head_block = write_to_blocks(start, end);
+//
+//#if defined(DEBUG) && ASSERT_CONSISTENCY
+//    assert_adjacency_list_consistency(i, FIRST_VERSION);
+//#endif
+//
+//    adjacency_index.push_back(head_block);
+//    adjacency_index.push_back((void *) (end - start));
+//  }
+//  vertex_count.store(src.vertex_count());
+//  max_vertex.store(src.vertex_count());
 }
 
 void *VersioningBlockedSkipListAdjacencyList::write_to_blocks(const dst_t *start, const dst_t *end) {
@@ -148,8 +148,6 @@ bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
   void *adjacency_list = raw_neighbourhood_version(edge.src, version);
   __builtin_prefetch((void *) ((uint64_t) adjacency_list & ~EDGE_SET_TYPE_MASK));
   __builtin_prefetch((void *) ((uint64_t) ((dst_t *) adjacency_list + 1) & ~SIZE_VERSION_MASK));
-
-  calls_to_add_edge.fetch_add(1); // TODO remove again
 
   // Insert to empty list
   if (unlikely(adjacency_list == nullptr)) {
@@ -499,7 +497,7 @@ VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(s
 
 size_t VersioningBlockedSkipListAdjacencyList::vertex_count_version(version_t version) {
   // TODO vertex versions not supported yet.
-  return max_vertex.load() + 1; // TODO correct once dynamic vertices have been implemented
+  return adjacency_index.get_high_water_mark(); // TODO correct once dynamic vertices have been implemented
 }
 
 void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_version(vertex_id_t src, version_t version) {
@@ -817,35 +815,12 @@ void VersioningBlockedSkipListAdjacencyList::report_storage_size() {
 //  cout << setw(30) << "Total: " << right << setw(20) << (edges + vertices) / 1000000 << endl;
 }
 
-void VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock_p(vertex_id_t vertex_lock) {
-//  auto old_value = (uint64_t) adjacency_index[vertex_lock * 2];
-
-//  while (true) {
-//    void* old_value = __atomic_load_n(&adjacency_index[vertex_lock * 2], __ATOMIC_ACQUIRE);
-//    if (!((uint64_t)old_value & LOCK_MASK)) {
-//      auto locked = (void*) ((uint64_t) old_value | LOCK_MASK);
-//      if (__atomic_compare_exchange_n(&adjacency_index[vertex_lock * 2], &old_value, locked, true, __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE)) {
-//        break;
-//      }
-//    }
-//  }
-
-//  while (!vertex_cas_locks[vertex_lock].test_and_set(std::memory_order_acquire))
-//    ;
-//  if(!vertex_mutices[vertex_lock].try_lock()) {
-//    cout << "lock contention" << endl;
-  vertex_mutices[vertex_lock].lock();
-//  }
-
+void VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock_p(vertex_id_t v) {
+  adjacency_index.aquire_vertex_lock_p(v);
 }
 
 void VersioningBlockedSkipListAdjacencyList::release_vertex_lock_p(vertex_id_t v) {
-//  vertex_cas_locks[v].clear(std::memory_order_acquire);
-//    __atomic_store()
-//    void* unlocked = (void*) ((uint64_t) adjacency_index[v * 2] & ~LOCK_MASK);
-//    __atomic_store(&(adjacency_index[v * 2]), &unlocked, __ATOMIC_RELEASE);
-//    adjacency_index[v * 2] = (void*) ((uint64_t) adjacency_index[v * 2] & ~LOCK_MASK);
-  vertex_mutices[v].unlock();
+  adjacency_index.release_vertex_lock_p(v);
 }
 
 SizeVersionChainEntry *
@@ -906,7 +881,7 @@ void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_size_entry(verte
 
 void VersioningBlockedSkipListAdjacencyList::gc_all() {
   // TODO needs max vertex not vertex count
-  auto vertices = vertex_count_version(FIRST_VERSION);
+  auto vertices = get_max_vertex();
   for (vertex_id_t v = 0; v < vertices; v++) {
     if (has_vertex_version_p(v, FIRST_VERSION)) {
       gc_vertex(v);
@@ -1243,36 +1218,12 @@ void VersioningBlockedSkipListAdjacencyList::free_adjacency_set(vertex_id_t v) {
 }
 
 void VersioningBlockedSkipListAdjacencyList::reserve_vertices(size_t max_vertices) {
-  assert(adjacency_index.empty());  // Should only be called on an empty data structure
-
-  void* e = (void*) ((uint64_t) nullptr | VERTEX_NOT_USED_MASK);
-  adjacency_index.resize(max_vertices * 2, e);
-  for (auto i = 0; i < adjacency_index.size(); i++) {
-    if (i % 2 == 1) {
-      adjacency_index[i] = (void*) ((uint64_t) 0);
-    }
-  }
-  vector<mutex> m(max_vertices);
-  vertex_mutices.swap(m);
-  vector<atomic_flag> m1(max_vertices);
-  vertex_cas_locks.swap(m1);
-
-  vertex_count.store(0);
-  max_vertex.store(0);
+  assert(adjacency_index.get_high_water_mark() == 0);  // Should only be called on an empty data structure
+  adjacency_index.reserve(max_vertices);
 }
 
 bool VersioningBlockedSkipListAdjacencyList::insert_vertex_version(vertex_id_t v, version_t version) {
-  if (has_vertex_version(v, version)) {
-    return false;
-  }
-  adjacency_index[v * 2] = nullptr;
-  adjacency_index[v * 2 + 1] = 0;
-  vertex_count.fetch_add(1);
-  for(auto atom_val=max_vertex.load();
-      atom_val < v &&
-      !max_vertex.compare_exchange_weak(atom_val, v);
-          );
-  return true;
+  return adjacency_index.insert_vertex(v, version);
 }
 
 bool VersioningBlockedSkipListAdjacencyList::has_vertex_version_p(vertex_id_t v, version_t version) {
@@ -1280,7 +1231,7 @@ bool VersioningBlockedSkipListAdjacencyList::has_vertex_version_p(vertex_id_t v,
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::get_max_vertex() {
-  return adjacency_index.size() / 2;
+  return adjacency_index.get_high_water_mark();
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::edge_count_version(version_t version) {
@@ -1293,18 +1244,26 @@ size_t VersioningBlockedSkipListAdjacencyList::edge_count_version(version_t vers
   return sum;
 }
 
-void VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock(vertex_id_t vertex_lock) {
-  aquire_vertex_lock_p(physical_id(vertex_lock));
+bool VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock(vertex_id_t v) {
+  adjacency_index.aquire_vertex_lock(v);
 }
 
 void VersioningBlockedSkipListAdjacencyList::release_vertex_lock(vertex_id_t v) {
-  release_vertex_lock_p(physical_id(v));
+  adjacency_index.release_vertex_lock(v);
 }
 
 vertex_id_t VersioningBlockedSkipListAdjacencyList::physical_id(vertex_id_t v) {
-  return v + 1;
+  return adjacency_index.physical_id(v).value();
 }
 
 vertex_id_t VersioningBlockedSkipListAdjacencyList::logical_id(vertex_id_t v) {
-  return v - 1;
+  return adjacency_index.logical_id(v);
+}
+
+void VersioningBlockedSkipListAdjacencyList::rollback_vertex_insert(vertex_id_t v) {
+  adjacency_index.rollback_vertex_insert(v);
+}
+
+bool VersioningBlockedSkipListAdjacencyList::has_vertex_version(vertex_id_t v, version_t version) {
+  adjacency_index.has_vertex(v);
 }

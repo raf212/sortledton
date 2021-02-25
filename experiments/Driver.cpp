@@ -72,6 +72,7 @@ void Driver::run() {
     cout << "Reading insert dataset " << config.insertions.path << endl;
     inserts = read_insert_dataset();
   }
+//  inserts.edges.resize(10000);
 
   EdgeList deletes;
   if (config.experiment_set.find(DELETE) != config.experiment_set.end()) {
