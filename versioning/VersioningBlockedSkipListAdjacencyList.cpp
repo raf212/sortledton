@@ -445,9 +445,9 @@ size_t VersioningBlockedSkipListAdjacencyList::neighbourhood_size_version_p(vert
   switch (get_set_type(src, version)) {
     case VSKIP_LIST: {
       if (!size_is_versioned(src)) {
-        return (uint64_t) adjacency_index[2 * src + 1];
+        return adjacency_index[src].size;
       } else {
-        auto chain = (SizeVersionChainEntry *) ((uint64_t) adjacency_index[2 * src + 1] & ~SIZE_VERSION_MASK);
+        auto chain = (SizeVersionChainEntry *) ((uint64_t) adjacency_index[src].size & ~SIZE_VERSION_MASK);
         return chain->traverse(version, 0)->current_size;
       }
       break;
@@ -455,10 +455,10 @@ size_t VersioningBlockedSkipListAdjacencyList::neighbourhood_size_version_p(vert
     case VSINGLE_BLOCK: {
       // If the size is not versioned, this means the correct size is stored in the index
       if (!size_is_versioned(src)) {
-        return (uint64_t) adjacency_index[2 * src + 1];
+        return adjacency_index[src].size;
       } else { // If the size is versioned the index stores the current count of destinations and versions in the block,
         // we need to iterate over the block to filter out versions.
-        auto size = (uint64_t) adjacency_index[2 * src + 1] & ~SIZE_VERSION_MASK;
+        auto size = adjacency_index[src].size & ~SIZE_VERSION_MASK;
         auto block = (dst_t *) raw_neighbourhood_version(src, version);
         auto end = block + size;
         auto count = 0;
@@ -532,8 +532,8 @@ void VersioningBlockedSkipListAdjacencyList::insert_empty(edge_t edge, version_t
   block[0] = make_versioned(edge.dst);
   block[1] = inline_version(false, false, version);
 
-  adjacency_index[2 * edge.src] = (void *) ((uint64_t) block | EDGE_SET_TYPE_MASK);
-  adjacency_index[2 * edge.src + 1] = (void *) ((uint64_t) 2 | SIZE_VERSION_MASK);
+  adjacency_index[edge.src].adjacency_set = ((uint64_t) block | EDGE_SET_TYPE_MASK);
+  adjacency_index[edge.src].size = 2ul | SIZE_VERSION_MASK;
 }
 
 version_t VersioningBlockedSkipListAdjacencyList::inline_version(bool deletion, bool more_versions, version_t version) {
@@ -551,7 +551,6 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
   gc_block(edge.src);
 #endif
 
-
   auto block = (dst_t *) raw_neighbourhood_version(edge.src, version);
   auto size = adjacency_index.get_block_size(edge.src);
   auto block_capacity = max(MIN_BLOCK_SIZE, round_up_power_of_two(size));
@@ -559,7 +558,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
   if (size < block_capacity - 1) {
     // If block is not too full; -1 for enough space to insert new edge and version, insert into block by shifting
     insert_by_shift(block, block + size, edge.dst, version);
-    adjacency_index[2 * edge.src + 1] = (void *) ((uint64_t) (size + 2) | SIZE_VERSION_MASK);
+    adjacency_index[edge.src].size = ((uint64_t) (size + 2) | SIZE_VERSION_MASK);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
     assert_block_consistency(block, block + size + 2, FIRST_VERSION);
 #endif
@@ -570,7 +569,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
       new_block->data = get_data_pointer(new_block);
       new_block->size = size;
 
-      adjacency_index[edge.src * 2 + 1] = (void *) ((uint64_t) construct_version_chain_from_block(edge.src, version) |
+      adjacency_index[edge.src].size = ((uint64_t) construct_version_chain_from_block(edge.src, version) |
                                                     SIZE_VERSION_MASK);
 
       memcpy((void *) get_data_pointer(new_block), (void *) block, size * sizeof(dst_t));
@@ -586,7 +585,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
         new_block->next_levels[l] = nullptr;
       }
 
-      adjacency_index[edge.src * 2] = new_block;
+      adjacency_index[edge.src].adjacency_set = (uint64_t) new_block;
 
       free(block);
 
@@ -604,8 +603,8 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
              sizeof(dst_t) * (size - pos_to_insert));
 
       free(block);
-      adjacency_index[edge.src * 2] = (void *) ((uint64_t) new_block | EDGE_SET_TYPE_MASK);
-      adjacency_index[2 * edge.src + 1] = (void *) ((uint64_t) (size + 2) | SIZE_VERSION_MASK);
+      adjacency_index[edge.src].adjacency_set = ((uint64_t) new_block | EDGE_SET_TYPE_MASK);
+      adjacency_index[edge.src].size = ((uint64_t) (size + 2) | SIZE_VERSION_MASK);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
       assert_block_consistency(new_block, new_block + size + 2, FIRST_VERSION);
 #endif
@@ -615,7 +614,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
 
 void VersioningBlockedSkipListAdjacencyList::update_adjacency_size(vertex_id_t v, bool deletion, version_t version) {
   // TODO needs unit testing.
-  auto s = (uint64_t) adjacency_index[2 * v + 1];
+  auto s = adjacency_index[v].size;
 
   auto update = 1;
   if (deletion) {
@@ -649,13 +648,13 @@ void VersioningBlockedSkipListAdjacencyList::update_adjacency_size(vertex_id_t v
       if (chain_end != chain) {
         chain_end->next = reuse;
       } else {
-        adjacency_index[2 * v + 1] = (void *) ((uint64_t) reuse | SIZE_VERSION_MASK);
+        adjacency_index[v].size = ((uint64_t) reuse | SIZE_VERSION_MASK);
       }
     }
   } else {
     auto chain = new SizeVersionChainEntry(version, s + update,
                                            new SizeVersionChainEntry(FIRST_VERSION, s, nullptr));
-    adjacency_index[2 * v + 1] = (void *) ((uint64_t) chain | SIZE_VERSION_MASK);
+    adjacency_index[v].size = ((uint64_t) chain | SIZE_VERSION_MASK);
   }
 }
 
@@ -912,7 +911,7 @@ void VersioningBlockedSkipListAdjacencyList::gc_vertex(vertex_id_t v) {
       free(to_free);
     }
     if (start->version == FIRST_VERSION) {
-      adjacency_index[v * 2 + 1] = (void*) ((uint64_t) start->current_size);
+      adjacency_index[v].size = start->current_size;
       free(start);
     }
   }
@@ -934,7 +933,7 @@ bool VersioningBlockedSkipListAdjacencyList::gc_block(vertex_id_t v) {
     if (version_remaining) {
       new_size |= SIZE_VERSION_MASK;
     }
-    adjacency_index[v * 2 + 1] = (void *) new_size;
+    adjacency_index[v].size = new_size;
   }
   return !version_remaining;
 }
@@ -1088,11 +1087,11 @@ void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id
     auto single_block = (dst_t *) malloc(round_up_power_of_two(size) * sizeof(dst_t));
     memcpy(single_block, get_data_pointer(skip_list_block), size * sizeof(dst_t));
     free(skip_list_block);
-    adjacency_index[v * 2] = (void *) ((uint64_t) single_block | EDGE_SET_TYPE_MASK);
+    adjacency_index[v].adjacency_set = ((uint64_t) single_block | EDGE_SET_TYPE_MASK);
     if (contains_versions) {
       size |= SIZE_VERSION_MASK;
     }
-    adjacency_index[v * 2 + 1] = (void *) size;
+    adjacency_index[v].size = size;
     gc_to_single_block += 1;
   }
 }
@@ -1201,15 +1200,15 @@ void VersioningBlockedSkipListAdjacencyList::free_adjacency_set(vertex_id_t v) {
         free(skip_list_header);
         skip_list_header = next;
       }
-      adjacency_index[v * 2] = nullptr;
-      adjacency_index[v * 2 + 1] = 0;
+      adjacency_index[v].adjacency_set = (uint64_t) nullptr;
+      adjacency_index[v].size = 0;
       break;
     }
     case VSINGLE_BLOCK: {
       auto block = (dst_t*) raw_neighbourhood_version(v, FIRST_VERSION);
       free(block);
-      adjacency_index[v * 2] = nullptr;
-      adjacency_index[v * 2 + 1] = 0;
+      adjacency_index[v].adjacency_set = (uint64_t) nullptr;
+      adjacency_index[v].size = 0;
       break;
     };
   }

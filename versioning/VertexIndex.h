@@ -79,6 +79,22 @@ struct VertexVersionChainEntry;
 //    VertexEntry e;
 //};
 
+struct VertexEntry {
+    uint64_t adjacency_set;
+    uint64_t size;
+    atomic_flag lock = ATOMIC_FLAG_INIT;
+
+    VertexEntry() {
+      adjacency_set = 0ul | VERTEX_NOT_USED_MASK;
+      size = 0ul | VERTEX_NOT_USED_MASK;
+    }
+
+    VertexEntry(const VertexEntry& other) {
+      adjacency_set = other.adjacency_set;
+      size = other.size;
+    }
+};
+
 typedef tbb::concurrent_hash_map<vertex_id_t, vertex_id_t> l_t_p_table;
 
 class VertexIndex {
@@ -107,9 +123,9 @@ public:
 
     void release_vertex_lock(const vertex_id_t v);
 
-    void *const &operator[](size_t index) const;
+    VertexEntry const &operator[](size_t index) const;
 
-    void *&operator[](size_t index);
+    VertexEntry &operator[](size_t index);
 
     size_t get_vertex_count(version_t version);
 
@@ -118,11 +134,11 @@ public:
     void rollback_vertex_insert(vertex_id_t v);
 
     inline void* raw_neighbourhood_version(vertex_id_t v, version_t version) {
-      return (void *) get_pointer((uint64_t) index[2 * v]);
+      return (void *) get_pointer(index[v].adjacency_set);
     };
 
     inline VAdjacencySetType get_adjacency_set_type(vertex_id_t v, version_t version) {
-      if ((uint64_t) index[v * 2] & EDGE_SET_TYPE_MASK) {
+      if (index[v].adjacency_set & EDGE_SET_TYPE_MASK) {
         return VSINGLE_BLOCK;
       } else {
         return VSKIP_LIST;
@@ -130,19 +146,19 @@ public:
     };
 
     inline bool size_is_versioned(vertex_id_t v) {
-      return (uint64_t) index[2 * v + 1] & SIZE_VERSION_MASK;
+      return index[v].size & SIZE_VERSION_MASK;
     };
 
     inline uint64_t get_block_size(vertex_id_t v) {
-      return get_pointer((uint64_t) index[v * 2 + 1]);
+      return get_pointer(index[v].size);
     };
 
     inline void* raw_neighbourhood_size_entry(vertex_id_t v) {
-      return index[v * 2 + 1];
+      return (void*) index[v].size;
     };
 
     bool has_vertex_version_p(vertex_id_t v, version_t version) {
-      return !((uint64_t) index[2 * v] & VERTEX_NOT_USED_MASK);
+      return !(index[v].adjacency_set & VERTEX_NOT_USED_MASK);
     };
 
 
@@ -154,7 +170,7 @@ private:
 
     tbb::concurrent_vector<mutex> vertex_mutices{INITIAL_VECTOR_SIZE};
 
-    tbb::concurrent_vector<void *> index{INITIAL_VECTOR_SIZE, (void *) (0L | VERTEX_NOT_USED_MASK)};
+    tbb::concurrent_vector<VertexEntry> index{INITIAL_VECTOR_SIZE, VertexEntry()};
 
     l_t_p_table logical_to_physical{INITIAL_VECTOR_SIZE};
     tbb::concurrent_vector<vertex_id_t> physical_to_logical;  // Cannot use initializer (size, default value) here because it will create a vector of size 2

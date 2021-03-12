@@ -20,11 +20,11 @@ optional<vertex_id_t> VertexIndex::physical_id(vertex_id_t v) {
   return a.empty() ? nullopt : make_optional(a->second);
 }
 
-void *const &VertexIndex::operator[](size_t v) const {
+VertexEntry const &VertexIndex::operator[](size_t v) const {
   return index[v];
 }
 
-void *&VertexIndex::operator[](size_t v) {
+VertexEntry &VertexIndex::operator[](size_t v) {
   return index[v];
 }
 
@@ -35,7 +35,7 @@ bool VertexIndex::insert_vertex(vertex_id_t id, version_t version) {
     if (!free_list.try_pop(p_id)) {
       p_id = high_water_mark.fetch_add(1);
 
-      grow_vector_if_smaller(index, p_id * 2 + 1, (void*) (0ul | VERTEX_NOT_USED_MASK));  // TODO Should I do this earlier and assynchronous
+      grow_vector_if_smaller(index, p_id, VertexEntry());  // TODO Should I do this earlier and assynchronous
       grow_vector_if_smaller(physical_to_logical, p_id, (0ul | VERTEX_NOT_USED_MASK));
       grow_vector_if_smaller(vertex_mutices, p_id);
     }
@@ -45,12 +45,12 @@ bool VertexIndex::insert_vertex(vertex_id_t id, version_t version) {
     w.release();
 
     // Update index
-    assert(index[p_id * 2] == (void*) (0l | VERTEX_NOT_USED_MASK));
-    index[p_id * 2] = nullptr;
-    index[p_id * 2 + 1] = 0;
+    assert(index[p_id].adjacency_set & VERTEX_NOT_USED_MASK);
+    index[p_id].adjacency_set = (uint64_t) nullptr ;
+    index[p_id].size = 0;
 
     // Update logical mapping
-    assert(physical_to_logical[p_id] == (0l | VERTEX_NOT_USED_MASK));
+    assert(physical_to_logical[p_id] & VERTEX_NOT_USED_MASK);
     physical_to_logical[p_id] = id;
 
     // Update vertex count
@@ -109,8 +109,8 @@ void VertexIndex::rollback_vertex_insert(vertex_id_t v) {
   l_t_p_table::accessor a;
   if (!logical_to_physical.find(a, v)) {
     auto p_id = a->second;
-    index[v * 2] = (void*) (0l | VERTEX_NOT_USED_MASK);
-    index[v * 2 + 1] = (void*)  (0l | VERTEX_NOT_USED_MASK);
+    index[v].adjacency_set = (0ul | VERTEX_NOT_USED_MASK);
+    index[v].size = (0ul | VERTEX_NOT_USED_MASK);
     physical_to_logical[p_id] = 0l | VERTEX_NOT_USED_MASK;
     logical_to_physical.erase(a);
     free_list.push(p_id);
