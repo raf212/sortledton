@@ -216,7 +216,6 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
 
   if (config.undirected && versioned_data_structure != nullptr) {
     auto temp = dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(versioned_data_structure);
-    temp->reserve_vertices(base.vertex_count() + 10);  // TODO remove
   } else {
     cout << "Loading base dataset." << endl;
     load_base_dataset(*data_structure, base);
@@ -855,15 +854,13 @@ unordered_set<dst_t> Driver::get_neighbours(TopologyInterface &ds, vertex_id_t v
 
 void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_count) {
   cout << "Validating insert experiment" << endl;
-  // TODO reactivate
   auto edge_count = ds.edge_count();
   auto expected_edge_count = el.edges.size() + base_edge_count;
   if (config.undirected) {
     // TODO support undirected mode in data structure?
-//    edge_count /= 2;
-//    expected_edge_count = el.edges.size();
-//     Undirectedness and base datasets are not really well supported. There could be an uneven number of edges even in an undirected graph.
-//    assert(edge_count == expected_edge_count || edge_count + 1 == expected_edge_count);
+    edge_count /= 2;
+    expected_edge_count = el.edges.size();  // The undirected mode does not load the edges from the base set
+    assert(edge_count == expected_edge_count);
   } else {
     assert(edge_count == expected_edge_count);
   }
@@ -1241,7 +1238,6 @@ Driver::run_gc_experiment(TransactionManager &tm, VersionedTopologyInterface &ds
 
 #ifdef DEBUG
   if (inserts_run) {
-    // TODO add function to return the thread ID.
     auto tx = tm.getSnapshotTransaction(&ds);
     check_insert(tx, inserts, 0);
     tm.transactionCompleted(tx);

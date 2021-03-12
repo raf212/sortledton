@@ -26,8 +26,6 @@ public:
     VersioningBlockedSkipListAdjacencyList(size_t block_size, TransactionManager& tm);
     ~VersioningBlockedSkipListAdjacencyList() override;
 
-    void reserve_vertices(size_t max_vertices);
-
     vertex_id_t physical_id(vertex_id_t v) override;
     vertex_id_t logical_id(vertex_id_t v) override;
 

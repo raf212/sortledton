@@ -94,11 +94,6 @@ bool VertexIndex::aquire_vertex_lock(const vertex_id_t v) {
   }
 }
 
-void VertexIndex::reserve(size_t max_vertices) {
-//  vector<mutex> m(max_vertices);
-//  vertex_mutices.swap(m);
-}
-
 void VertexIndex::release_vertex_lock(vertex_id_t v) {
   {
     l_t_p_table::const_accessor a;

@@ -114,8 +114,6 @@ public:
 
     size_t get_high_water_mark();
 
-    void reserve(size_t max_vertices);
-
     void rollback_vertex_insert(vertex_id_t v);
 
 private:

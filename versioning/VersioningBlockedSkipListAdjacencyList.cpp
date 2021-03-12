@@ -1219,11 +1219,6 @@ void VersioningBlockedSkipListAdjacencyList::free_adjacency_set(vertex_id_t v) {
 
 }
 
-void VersioningBlockedSkipListAdjacencyList::reserve_vertices(size_t max_vertices) {
-  assert(adjacency_index.get_high_water_mark() == 0);  // Should only be called on an empty data structure
-  adjacency_index.reserve(max_vertices);
-}
-
 bool VersioningBlockedSkipListAdjacencyList::insert_vertex_version(vertex_id_t v, version_t version) {
   return adjacency_index.insert_vertex(v, version);
 }
