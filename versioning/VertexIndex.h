@@ -19,6 +19,7 @@
 #include <mutex>
 
 #include "SizeVersionChainEntry.h"
+#include <utils/pointerTagging.h>
 
 using namespace std;
 
@@ -115,6 +116,35 @@ public:
     size_t get_high_water_mark();
 
     void rollback_vertex_insert(vertex_id_t v);
+
+    inline void* raw_neighbourhood_version(vertex_id_t v, version_t version) {
+      return (void *) get_pointer((uint64_t) index[2 * v]);
+    };
+
+    inline VAdjacencySetType get_adjacency_set_type(vertex_id_t v, version_t version) {
+      if ((uint64_t) index[v * 2] & EDGE_SET_TYPE_MASK) {
+        return VSINGLE_BLOCK;
+      } else {
+        return VSKIP_LIST;
+      }
+    };
+
+    inline bool size_is_versioned(vertex_id_t v) {
+      return (uint64_t) index[2 * v + 1] & SIZE_VERSION_MASK;
+    };
+
+    inline uint64_t get_block_size(vertex_id_t v) {
+      return get_pointer((uint64_t) index[v * 2 + 1]);
+    };
+
+    inline void* raw_neighbourhood_size_entry(vertex_id_t v) {
+      return index[v * 2 + 1];
+    };
+
+    bool has_vertex_version_p(vertex_id_t v, version_t version) {
+      return !((uint64_t) index[2 * v] & VERTEX_NOT_USED_MASK);
+    };
+
 
 private:
     atomic_uint high_water_mark{0u};  // The next physical vertex id, not yet in use.

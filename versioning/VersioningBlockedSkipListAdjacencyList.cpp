@@ -14,6 +14,7 @@
 #include "BlockedSkipListAdjacencyLists.h"
 #include "SizeVersionChainEntry.h"
 #include "VersionedEdgeIterator.h"
+#include <utils/pointerTagging.h>
 
 #define MIN_BLOCK_SIZE 2u
 #define COLLECT_VERSIONS_ON_INSERT 1
@@ -235,7 +236,7 @@ bool VersioningBlockedSkipListAdjacencyList::has_edge_version_p(edge_t edge, ver
     }
     case SINGLE_BLOCK: {
       auto start = (dst_t *) raw_neighbourhood_version(edge.src, version);
-      auto size = (uint64_t) adjacency_index[edge.src * 2 + 1] & ~SIZE_VERSION_MASK;
+      auto size = adjacency_index.get_block_size(edge.src);
       end = start + size;
       pos = find_upper_bound(start, end, edge.dst);
       break;
@@ -438,6 +439,8 @@ void VersioningBlockedSkipListAdjacencyList::intersect_neighbourhood_version_p(v
 
 }
 
+
+// TODO cleanup index usage
 size_t VersioningBlockedSkipListAdjacencyList::neighbourhood_size_version_p(vertex_id_t src, version_t version) {
   switch (get_set_type(src, version)) {
     case VSKIP_LIST: {
@@ -488,7 +491,7 @@ size_t VersioningBlockedSkipListAdjacencyList::neighbourhood_size_version_p(vert
 }
 
 bool VersioningBlockedSkipListAdjacencyList::size_is_versioned(vertex_id_t v) {
-  return (uint64_t) adjacency_index[2 * v + 1] & SIZE_VERSION_MASK;
+  return adjacency_index.size_is_versioned(v);
 }
 
 VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size,
@@ -500,13 +503,11 @@ VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(s
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::vertex_count_version(version_t version) {
-  // TODO vertex versions not supported yet.
   return adjacency_index.get_vertex_count(version);
 }
 
 void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_version(vertex_id_t src, version_t version) {
-  // TODO vertex versions not supported yet.
-  return (void *) ((uint64_t) adjacency_index[2 * src] & ~EDGE_SET_TYPE_MASK & ~LOCK_MASK & ~VERTEX_NOT_USED_MASK);
+  return adjacency_index.raw_neighbourhood_version(src, version);
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::memory_block_size() {
@@ -523,11 +524,7 @@ size_t VersioningBlockedSkipListAdjacencyList::skip_list_header_size() const {
 }
 
 VAdjacencySetType VersioningBlockedSkipListAdjacencyList::get_set_type(vertex_id_t v, version_t version) {
-  if ((uint64_t) adjacency_index[v * 2] & EDGE_SET_TYPE_MASK) {
-    return VSINGLE_BLOCK;
-  } else {
-    return VSKIP_LIST;
-  }
+  return adjacency_index.get_adjacency_set_type(v, version);  // TODO remove
 }
 
 void VersioningBlockedSkipListAdjacencyList::insert_empty(edge_t edge, version_t version) {
@@ -556,7 +553,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
 
 
   auto block = (dst_t *) raw_neighbourhood_version(edge.src, version);
-  auto size = (uint64_t) adjacency_index[edge.src * 2 + 1] & ~SIZE_VERSION_MASK;
+  auto size = adjacency_index.get_block_size(edge.src);
   auto block_capacity = max(MIN_BLOCK_SIZE, round_up_power_of_two(size));
 
   if (size < block_capacity - 1) {
@@ -855,7 +852,7 @@ VersioningBlockedSkipListAdjacencyList::gc_adjacency_size(SizeVersionChainEntry 
 SizeVersionChainEntry *
 VersioningBlockedSkipListAdjacencyList::construct_version_chain_from_block(vertex_id_t v, version_t version) {
   auto block = (dst_t *) raw_neighbourhood_version(v, version);
-  auto size = (uint64_t) adjacency_index[v * 2 + 1] & ~SIZE_VERSION_MASK;
+  auto size = adjacency_index.get_block_size(v);
   auto min_version = tm.getMinActiveVersion();
 
   vector<version_t> versions_to_construct;
@@ -880,7 +877,7 @@ VersioningBlockedSkipListAdjacencyList::construct_version_chain_from_block(verte
 }
 
 void *VersioningBlockedSkipListAdjacencyList::raw_neighbourhood_size_entry(vertex_id_t v) {
-  return adjacency_index[v * 2 + 1];
+  return adjacency_index.raw_neighbourhood_size_entry(v);
 }
 
 void VersioningBlockedSkipListAdjacencyList::gc_all() {
@@ -1224,7 +1221,7 @@ bool VersioningBlockedSkipListAdjacencyList::insert_vertex_version(vertex_id_t v
 }
 
 bool VersioningBlockedSkipListAdjacencyList::has_vertex_version_p(vertex_id_t v, version_t version) {
-  return !((uint64_t) adjacency_index[2 * v] & VERTEX_NOT_USED_MASK);
+  return adjacency_index.has_vertex_version_p(v, version);
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::get_max_vertex() {
