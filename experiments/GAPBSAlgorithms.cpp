@@ -74,7 +74,7 @@ namespace { // anonymous
            int64_t distance, SlidingQueue<int64_t> &queue) {
       int64_t scout_count = 0;
 
-#pragma omp parallel firstprivate(tx)
+#pragma omp parallel
       {
         QueueBuffer<int64_t> lqueue(queue);
 #pragma omp for reduction(+ : scout_count)

@@ -43,7 +43,7 @@ vertex_id_t BFSSourceSelector::find_source() {
 
   vertex_id_t max_vertex =0;
   size_t max_traversed = 0;
-  vector<uint> distances;
+  vector<pair<vertex_id_t, uint>> distances;
   for (vertex_id_t v = 0; v < ds.vertex_count(); v++) {
     distances = Algorithms::bfs(driver, ds, v);
     auto traversed_vertices = Algorithms::traversed_vertices(ds, distances);

@@ -5,7 +5,7 @@ list(APPEND CMAKE_MODULE_PATH "~/cmake_modules/FindTBB")
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-Wall -Wextra -Wno-unused-parameter)
+add_compile_options(-Wall -Wextra -Wno-unused-parameter -Winline -finline-functions)
 
 #set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -DBITS32)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -DBITS64)

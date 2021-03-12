@@ -59,7 +59,7 @@ private:
      * @param distances
      * @param version 0 for base version without inserts, 1 for version after all inserts, all others for that specific version.
      */
-    void check_bfs(vertex_id_t start_vertex, vector<uint>& distances, version_t version);
+    void check_bfs(vertex_id_t start_vertex, vector<pair<vertex_id_t, uint>>& distances, version_t version);
 
     void run_page_rank_experiment(TopologyInterface& ds, bool run_on_raw_neighbourhood);
 

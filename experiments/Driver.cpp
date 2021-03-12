@@ -367,7 +367,7 @@ Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood,
   cout << "Running BFS experiment ";
   cout.flush();
 
-  vector<uint> distances;
+  vector<pair<vertex_id_t, uint>> distances;
 
   vector<size_t> run_times;
   for (uint rep = 0; rep < config.repetitions; rep++) {
@@ -731,8 +731,11 @@ EdgeIterator &Driver::getSingleEdgeIter(TopologyInterface &ds) {
   }
 }
 
-void Driver::check_bfs(vertex_id_t start_vertex, vector<uint> &distances, version_t version) {
+void Driver::check_bfs(vertex_id_t start_vertex, vector<pair<vertex_id_t, uint>> &distances, version_t version) {
   string inserts = "base";
+
+  // Sort by the logical vertex
+  sort(distances.begin(), distances.end());  // Sorts lexicographical which is the same than on the first element if the first element is distinct.
 
   if (version == FIRST_VERSION) {
     inserts = "base";
@@ -756,7 +759,7 @@ void Driver::check_bfs(vertex_id_t start_vertex, vector<uint> &distances, versio
     f.write((char *) &size, sizeof(size));
 
     for (auto d : distances) {
-      f.write((char *) &d, sizeof(d));
+      f.write((char *) &d.second, sizeof(d.second));
     }
     f.close();
   } else {
@@ -770,13 +773,15 @@ void Driver::check_bfs(vertex_id_t start_vertex, vector<uint> &distances, versio
 
     uint e;
     uint i = 0;
+    uint errors = 0;
     for (auto d : distances) {
       if (i < size) {
         f.read((char *) &e, sizeof(e));
-        if (d != e) {
-          cout << "i " << i << " d " << d << " e " << e << endl;
+        if (d.second != e && errors < 100) {
+          errors += 1;
+          cout << "i " << i << " d " << d.second << " e " << e << "logical vertex " << d.first <<  endl;
         }
-        assert(d == e);
+        assert(d.second == e);
       }
         i += 1;
     }
@@ -920,7 +925,7 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_
   BFSSourceSelector ss(*this, config.base, ds);
   vertex_id_t start_vertex = ss.get_source();
 
-  vector<uint> distances;
+  vector<pair<vertex_id_t, uint>> distances;
   if (typeid(ds) == typeid(SnapshotTransaction)) {
     distances = Algorithms::bfs(*this, ds, start_vertex, true, false, false);
   } else {

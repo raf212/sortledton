@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <queue>
+#include <omp.h>
 
 #include <HashSetSimulatorAdjacencyList.h>
 #include <MallocAdjacencyLists.h>
@@ -86,8 +87,14 @@ vector<uint> Algorithms::bfs_single_edge_interface(Driver &driver, TopologyInter
 }
 
 
-uint Algorithms::traversed_vertices(TopologyInterface &ds, vector<uint> &distances) {
-  return ds.vertex_count() - count(distances.begin(), distances.end(), numeric_limits<uint>::max());
+uint Algorithms::traversed_vertices(TopologyInterface &ds, vector<pair<vertex_id_t, uint>> &distances) {
+  auto count = 0;
+  for (auto d : distances) {
+    if (d.second != numeric_limits<uint>::max()) {
+      count++;
+    }
+  }
+  return count;
 }
 
 vector<uint>
@@ -337,11 +344,12 @@ Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_
   return distances;
 }
 
-vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool raw_neighbourhood,
+vector<pair<vertex_id_t, uint>> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool raw_neighbourhood,
                              bool aquire_locks, bool gapbs) {
+  auto start = chrono::steady_clock::now();
   start_vertex = ds.physical_id(start_vertex);  // Logical to physical translation
   vector<uint> physical_result;
-  vector<uint> logical_result;
+  vector<pair<vertex_id_t, uint>> logical_result;
   if (gapbs) {
     physical_result = GAPBSAlgorithms::bfs(ds, start_vertex, raw_neighbourhood);
   } else if (raw_neighbourhood) {
@@ -360,20 +368,29 @@ vector<uint> Algorithms::bfs(Driver &driver, TopologyInterface &ds, vertex_id_t 
     physical_result = bfs_batched_interface(driver, ds, start_vertex);
   }
 
+  auto end = chrono::steady_clock::now();
+  size_t milliseconds = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+
+  cout << "BFS took: " << milliseconds << " milliseconds" << endl;
+
   // Translation to logical
-  // TODO parallelize
   // TODO rephrase once we have vertex iterators.
-  logical_result.resize(4846609, numeric_limits<uint>::max());
+  start = chrono::steady_clock::now();
+  logical_result.resize(ds.max_physical_vertex());
   auto V = ds.max_physical_vertex();
+#pragma omp parallel for
   for (uint v = 0; v <  V; v++) {
     if (ds.has_vertex_p(v)) {
-      if (logical_result.size() < ds.logical_id(v)) {
-        cerr << "Warning returned logical id outside of range" << ds.logical_id(v) << endl;
-      } else {
-        logical_result[ds.logical_id(v)] = physical_result[v];
-      }
+        logical_result[v] = make_pair(ds.logical_id(v), physical_result[v]);
+    } else {
+      logical_result[v] = make_pair(v, numeric_limits<uint>::max());
     }
   }
+  end = chrono::steady_clock::now();
+  milliseconds = chrono::duration_cast<chrono::milliseconds>(end - start).count();
+
+  cout << "Translating took: " << milliseconds << " milliseconds" << endl;
+
   return logical_result;
 }
 
