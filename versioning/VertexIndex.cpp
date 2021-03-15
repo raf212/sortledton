@@ -73,6 +73,7 @@ size_t VertexIndex::get_vertex_count(version_t version) {
 }
 
 void VertexIndex::aquire_vertex_lock_p(vertex_id_t v) {
+  // TODO with the c++20 flag implementation we could do this: https://rigtorp.se/spinlock/
   while(index[v].lock.test_and_set((std::memory_order_acquire))) { ; }
 }
 
