@@ -37,7 +37,6 @@ bool VertexIndex::insert_vertex(vertex_id_t id, version_t version) {
 
       grow_vector_if_smaller(index, p_id, VertexEntry());  // TODO Should I do this earlier and assynchronous
       grow_vector_if_smaller(physical_to_logical, p_id, (0ul | VERTEX_NOT_USED_MASK));
-      grow_vector_if_smaller(vertex_mutices, p_id);
     }
 
     w->second = p_id;
@@ -74,11 +73,11 @@ size_t VertexIndex::get_vertex_count(version_t version) {
 }
 
 void VertexIndex::aquire_vertex_lock_p(vertex_id_t v) {
-  vertex_mutices[v].lock();
+  while(index[v].lock.test_and_set((std::memory_order_acquire))) { ; }
 }
 
 void VertexIndex::release_vertex_lock_p(vertex_id_t v) {
-  vertex_mutices[v].unlock();
+  index[v].lock.clear(std::memory_order_release);
 }
 
 bool VertexIndex::aquire_vertex_lock(const vertex_id_t v) {

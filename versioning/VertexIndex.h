@@ -168,8 +168,6 @@ private:
 
     mutex growing_vector_mutex;
 
-    tbb::concurrent_vector<mutex> vertex_mutices{INITIAL_VECTOR_SIZE};
-
     tbb::concurrent_vector<VertexEntry> index{INITIAL_VECTOR_SIZE, VertexEntry()};
 
     l_t_p_table logical_to_physical{INITIAL_VECTOR_SIZE};
@@ -184,17 +182,6 @@ private:
         scoped_lock<mutex> l(growing_vector_mutex);
         if (v.capacity() <= s) {
           v.grow_to_at_least(v.capacity() * 2, init_value);
-        }
-
-      }
-    }
-
-    template<typename T>
-    void grow_vector_if_smaller(tbb::concurrent_vector<T> &v, size_t s) {
-      if (v.capacity() <= s) {  // Only synchronize with other threads if potentially necessary
-        scoped_lock<mutex> l(growing_vector_mutex);
-        if (v.capacity() <= s) {
-          v.grow_to_at_least(v.capacity() * 2);
         }
 
       }
