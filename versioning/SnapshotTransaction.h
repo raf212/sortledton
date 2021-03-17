@@ -55,6 +55,7 @@ public:
 
     size_t edge_count() override;
     bool insert_edge(edge_t edge) override;
+    bool insert_edge(edge_t edge, char* properties, size_t property_size) override;
     bool delete_edge(edge_t edge) override;
 
     size_t neighbourhood_size_p(vertex_id_t src) override;

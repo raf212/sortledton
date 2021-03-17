@@ -4,6 +4,7 @@
 #include <data-src/DataSource.h>
 #include <data-src/SortedCSRDataSource.h>
 #include <data_types.h>
+#include <utils/NotImplemented.h>
 #include "adjacency-lists/BatchedEdgeIterator.h"
 #include "adjacency-lists/EdgeIterator.h"
 
@@ -49,6 +50,7 @@ public:
     virtual bool delete_vertex(vertex_id_t v) = 0;
 
     virtual bool insert_edge(edge_t edge) = 0;
+    virtual bool insert_edge(edge_t edge, char* properties, size_t property_size) { throw NotImplemented(); };
     virtual bool insert_safe(edge_t edge) = 0;
     virtual bool delete_edge(edge_t edge) = 0;
 

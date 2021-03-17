@@ -133,6 +133,8 @@ public:
 
     uint omp_threads = 0;
 
+    bool weighted = false;
+
     void initialize(int argc, char **argv);
 
 private:

@@ -33,22 +33,22 @@ private:
     Config config;
     Reporter reporter;
     SortedCSRDataSource read_base_dataset();
-    EdgeList read_insert_dataset();
-    EdgeList read_delete_dataset();
+    EdgeList<edge_t> read_insert_dataset();
+    EdgeList<edge_t> read_delete_dataset();
 
-    void run_data_structure(SortedCSRDataSource& base, EdgeList& inserts, EdgeList& deletes,
+    void run_data_structure(SortedCSRDataSource& base, EdgeList<weighted_edge_t>& inserts, EdgeList<edge_t>& deletes,
                             DataStructures ds,
                             const vector<string>& ds_parameters,
                             vector<vector<vertex_id_t>>& neighbour_2_sources);
 
     void load_base_dataset(TopologyInterface& ds, SortedCSRDataSource& base);
 
-    void run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList &el, size_t base_edge_count);
-    void run_insert_experiment_one_by_one(TransactionManager &tm, VersionedTopologyInterface *ds, EdgeList &el,
+    void run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList<weighted_edge_t> &el, size_t base_edge_count);
+    void run_insert_experiment_one_by_one(TransactionManager &tm, VersionedTopologyInterface *ds, EdgeList<weighted_edge_t> &el,
                                           size_t base_edge_count);
-    void check_insert(TopologyInterface& ds, EdgeList& el, size_t base_edge_count);
+    void check_insert(TopologyInterface& ds, EdgeList<weighted_edge_t>& el, size_t base_edge_count);
 
-    void run_delete_experiment(TopologyInterface& ds, EdgeList& el);
+    void run_delete_experiment(TopologyInterface& ds, EdgeList<edge_t>& el);
 
     void run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool aquire_locks, bool after_inserts,
                             bool gabbs);
@@ -75,7 +75,7 @@ private:
     void run_community_detection(TopologyInterface& ds);
     void check_community_detection(vector<vertex_id_t> labels);
 
-    void validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes);
+    void validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts, EdgeList<edge_t> &deletes);
 
     void print_graph(TopologyInterface& ds);
 
@@ -88,7 +88,7 @@ private:
 
     void show_storage_sizes(string ds_name, TopologyInterface& ds);
 
-    void run_gc_experiment(TransactionManager& tm, VersionedTopologyInterface& ds, bool inserts_run, EdgeList &inserts);
+    void run_gc_experiment(TransactionManager& tm, VersionedTopologyInterface& ds, bool inserts_run, EdgeList<weighted_edge_t> &inserts);
     void check_gc_experiment(VersionedTopologyInterface& ds);
 
 };

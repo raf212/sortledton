@@ -15,7 +15,7 @@
 // Used vertex identifier and destination data structure for all data structrues.
   typedef uint64_t vertex_id_t;
   typedef vertex_id_t dst_t;
-
+  typedef double weight_t;
 
   // Version used to indicate that this is the first version of any version chain. This does not need to be
   // the original first version from system start but could be a later version after GC.
@@ -77,6 +77,21 @@ struct edge_t {
       return src == other.src && dst == other.dst;
     }
 };
+
+struct weighted_edge_t {
+    vertex_id_t src;
+    dst_t dst;
+    weight_t weight;
+
+    weighted_edge_t() : src(0), dst(0), weight(0.0) {};
+    weighted_edge_t(vertex_id_t src, dst_t dst, weight_t weight) : src(src), dst(dst), weight(weight) {};
+    weighted_edge_t(edge_t e) : weighted_edge_t(e.src, e.dst, 0.0) {};
+
+    bool operator==(const edge_t other) const {
+      return src == other.src && dst == other.dst;
+    }
+};
+
 
 struct temporal_edge_t {
     vertex_id_t src;

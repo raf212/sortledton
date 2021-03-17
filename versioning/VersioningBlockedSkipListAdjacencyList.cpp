@@ -145,7 +145,10 @@ dst_t *VersioningBlockedSkipListAdjacencyList::get_data_pointer(VSkipListHeader 
   return (dst_t *) ((char *) header + skip_list_header_size());
 }
 
-bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version) {
+bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version, char* properties, size_t properties_size) {
+  assert((properties != nullptr && properties_size != 0) || (properties == nullptr && properties_size == 0));
+  assert(properties_size == property_size && "We allow only properties of the same size for all edges.");
+
   void *adjacency_list = raw_neighbourhood_version(edge.src, version);
   __builtin_prefetch((void *) ((uint64_t) adjacency_list & ~EDGE_SET_TYPE_MASK));
   __builtin_prefetch((void *) ((uint64_t) ((dst_t *) adjacency_list + 1) & ~SIZE_VERSION_MASK));
@@ -169,6 +172,10 @@ bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
       }
     }
   }
+}
+
+bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version) {
+  insert_edge_version(edge, version, nullptr, 0);
 }
 
 /**
@@ -494,9 +501,9 @@ bool VersioningBlockedSkipListAdjacencyList::size_is_versioned(vertex_id_t v) {
   return adjacency_index.size_is_versioned(v);
 }
 
-VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size,
+VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size, size_t property_size,
                                                                                TransactionManager &tm)
-        : tm(tm), block_size(block_size) {
+        : tm(tm), block_size(block_size), property_size(property_size) {
   if (round_up_power_of_two(block_size) != block_size) {
     throw ConfigurationError("Block size needs to be a power of two.");
   }

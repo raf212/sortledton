@@ -292,3 +292,7 @@ void SnapshotTransaction::rollback() {
 size_t SnapshotTransaction::max_physical_vertex() {
   return ds->max_physical_vertex();
 }
+
+bool SnapshotTransaction::insert_edge(edge_t edge, char *properties, size_t property_size) {
+  ds->insert_edge_version(edge, version, properties, property_size);
+}

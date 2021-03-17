@@ -23,7 +23,7 @@ class MultipleVersionException : exception {
 class VersioningBlockedSkipListAdjacencyList : public VersionedTopologyInterface {
 
 public:
-    VersioningBlockedSkipListAdjacencyList(size_t block_size, TransactionManager& tm);
+    VersioningBlockedSkipListAdjacencyList(size_t block_size, size_t property_size, TransactionManager& tm);
     ~VersioningBlockedSkipListAdjacencyList() override;
 
     vertex_id_t physical_id(vertex_id_t v) override;
@@ -55,6 +55,7 @@ public:
     bool has_edge_version_p(edge_t edge, version_t version) override;
 
     bool insert_edge_version(edge_t edge, version_t version) override;
+    bool insert_edge_version(edge_t edge, version_t version, char* properties, size_t properties_size) override;
     bool delete_edge_version(edge_t edge, version_t version) override { throw NotImplemented(); };
 
     bool aquire_vertex_lock(vertex_id_t v) override;
@@ -111,6 +112,7 @@ private:
     TransactionManager& tm;
     VertexIndex adjacency_index;
 
+    size_t property_size;
     size_t block_size;
     const float bulk_load_fill_rate = 1.0;
 

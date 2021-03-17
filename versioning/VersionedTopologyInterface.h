@@ -23,9 +23,6 @@ public:
     virtual size_t max_physical_vertex() = 0;
     virtual size_t edge_count_version(version_t version) = 0;
 
-
-
-
     virtual bool has_vertex_version(vertex_id_t v, version_t version);
     virtual bool has_vertex_version_p(vertex_id_t v, version_t version) = 0;
 
@@ -52,6 +49,7 @@ public:
     virtual void intersect_neighbourhood_version_p(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) = 0;
 
     virtual bool insert_edge_version(edge_t edge, version_t version) = 0;
+    virtual bool insert_edge_version(edge_t edge, version_t version, char* properties, size_t properties_size) = 0;
     virtual bool delete_edge_version(edge_t edge, version_t version) = 0;
 
     /**

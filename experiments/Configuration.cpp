@@ -25,8 +25,8 @@ void Config::initialize(int argc, char **argv) {
             {"prefetch_blocks", required_argument, 0, 'p'},
             {"undirected", no_argument, 0, 'u'},
             {"insert_threads", required_argument, 0, 't'},
-            {"omp_threads", required_argument, 0, 'o'}
-
+            {"omp_threads", required_argument, 0, 'o'},
+            {"weighted", no_argument, 0, 'w'}
     };
 
     c = getopt_long(argc, argv, "",
@@ -61,6 +61,9 @@ void Config::initialize(int argc, char **argv) {
         break;
       case 'b':
         base = Dataset(optarg, CSR_SRC);
+        break;
+      case 'w':
+        weighted = true;
         break;
       case 'i':
         insertions = Dataset(optarg, EDGE_LIST);

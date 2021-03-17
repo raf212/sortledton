@@ -66,18 +66,19 @@ void Driver::run() {
   SortedCSRDataSource base = read_base_dataset();
   cout << "Vertices" << base.vertex_count() << endl;
 
-  EdgeList inserts;
+  EdgeList<edge_t> inserts_no_weights;
   if (config.experiment_set.find(INSERT) != config.experiment_set.end() ||
       config.experiment_set.find(INSERT_TRANSACTIONS) != config.experiment_set.end()) {
     cout << "Reading insert dataset " << config.insertions.path << endl;
-    inserts = read_insert_dataset();
+    inserts_no_weights = read_insert_dataset();
   }
-//  inserts.edges.resize(10000);
 
-  EdgeList deletes;
+  EdgeList<weighted_edge_t> inserts = inserts_no_weights.add_weights(config.weighted);
+
+  EdgeList<edge_t> deletes;
   if (config.experiment_set.find(DELETE) != config.experiment_set.end()) {
     cout << "Reading delete dataset " << config.deletions.path << endl;
-    inserts = read_delete_dataset();
+    deletes = read_delete_dataset();
   }
 
   vector<vector<vertex_id_t>> neighbour_2_sources;
@@ -93,7 +94,7 @@ void Driver::run() {
   }
 }
 
-void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, EdgeList &deletes,
+void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts, EdgeList<edge_t> &deletes,
                                 DataStructures ds, const vector<string> &ds_parameters,
                                 vector<vector<vertex_id_t>> &neighbourhood_2_sources) {
   reporter.set_data_structure(ds, ds_parameters);
@@ -186,7 +187,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList &inserts, Ed
       if (!ds_parameters.empty()) {  // TODO better parameter sanitization
         block_size = stoi(ds_parameters[0]);
       }
-      versioned_data_structure = new VersioningBlockedSkipListAdjacencyList(block_size, tm);
+      versioned_data_structure = new VersioningBlockedSkipListAdjacencyList(block_size, config.weighted ? sizeof(weight_t) : 0, tm);
       ds_name = "versioned";
       break;
     }
@@ -404,7 +405,7 @@ void Driver::load_base_dataset(TopologyInterface &ds, SortedCSRDataSource &base)
   ds.bulkload(base);
 }
 
-void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &ds, bool undirected) {
+void run_inserts(EdgeList<weighted_edge_t> &el, atomic_uint &insert_position, TopologyInterface &ds, bool undirected) {
   // Effects the batch size on performance have never been tested. I tested it only for the versioned data structure.
   // But it is likely that it applies for this case as well, in particular, since jobs here are smaller/take less time.
   const uint batch_size = 3000;
@@ -420,14 +421,14 @@ void run_inserts(EdgeList &el, atomic_uint &insert_position, TopologyInterface &
         edge_t opposite = {e.dst, e.src};
         ds.insert_safe(opposite);
       }
-      ds.insert_safe(e);
+      ds.insert_safe({e.src, e.dst});
       work++;
     }
   }
 }
 
 void
-run_inserts_in_transactions(size_t thread_id, TransactionManager &tm, EdgeList &el, atomic_uint &insert_position,
+run_inserts_in_transactions(bool weighted, size_t thread_id, TransactionManager &tm, EdgeList<weighted_edge_t> &el, atomic_uint &insert_position,
                                  VersionedTopologyInterface *ds, uint total_partitions, uint partition,
                                  bool undirected) {
   tm.register_thread(thread_id);
@@ -444,11 +445,23 @@ run_inserts_in_transactions(size_t thread_id, TransactionManager &tm, EdgeList &
       tx.use_vertex_does_not_exists_semantics();
       tx.insert_vertex(e.src);
       tx.insert_vertex(e.dst);
+      char weight[sizeof(e.weight)];
+      memcpy((void*) &weight, (void*) &e.weight, sizeof(e.weight));
       if (undirected) {
         auto opposite = edge_t{e.dst, e.src};
-        tx.insert_edge(opposite);
+        if (weighted) {
+          tx.insert_edge(opposite, weight, sizeof(e.weight));
+        } else {
+          tx.insert_edge(opposite);
+        }
+
       }
-      tx.insert_edge(e);
+      if (weighted) {
+        tx.insert_edge({e.src, e.dst}, weight, sizeof(e.weight));
+      } else {
+        tx.insert_edge({e.src, e.dst});
+      }
+
       tx.execute();
       tm.transactionCompleted(tx);
       tm.getSnapshotTransaction(ds, tx);
@@ -472,7 +485,7 @@ run_inserts_in_transactions(size_t thread_id, TransactionManager &tm, EdgeList &
 }
 
 void
-Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList &el, size_t base_edge_count) {
+Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList<weighted_edge_t> &el, size_t base_edge_count) {
   cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
   uint threads = config.insert_threads;
 
@@ -483,7 +496,7 @@ Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, Edg
         edge_t opposite = {e.dst, e.src};
         ds.insert_edge(opposite);
       }
-      ds.insert_edge(e);
+      ds.insert_edge({e.src, e.dst});
     }
   } else {
     atomic<uint> insert_index(0);
@@ -517,7 +530,7 @@ Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, Edg
 #endif
 }
 
-void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedTopologyInterface *ds, EdgeList &el,
+void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedTopologyInterface *ds, EdgeList<weighted_edge_t> &el,
                                               size_t base_edge_count) {
   cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
   uint threads = config.insert_threads;
@@ -530,11 +543,23 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
       tx.use_vertex_does_not_exists_semantics();
       tx.insert_vertex(e.src);
       tx.insert_vertex(e.dst);
+
+      char weight[sizeof(e.weight)];
+      memcpy((void*) &weight, (void*) &e.weight, sizeof(e.weight));
       if (config.undirected) {
         auto opposite = edge_t{e.dst, e.src};
-        tx.insert_edge(opposite);
+        if (config.weighted) {
+          tx.insert_edge(opposite, weight, sizeof(e.weight));
+        } else {
+          tx.insert_edge(opposite);
+        }
       }
-      tx.insert_edge(e);
+
+      if (config.weighted) {
+        tx.insert_edge({e.src, e.dst}, weight, sizeof(e.weight));
+      } else {
+        tx.insert_edge({e.src, e.dst});
+      }
       tx.execute();
       tm.transactionCompleted(tx);
       tm.getSnapshotTransaction(ds, tx);
@@ -545,7 +570,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
     vector<thread> ts;
     uint partition = 0;
     for (uint i = 1; i < threads + 1; i++) {
-      ts.emplace_back(run_inserts_in_transactions, i, ref(tm), ref(el), ref(insert_index), ds, config.insert_threads,
+      ts.emplace_back(run_inserts_in_transactions, config.weighted, i, ref(tm), ref(el), ref(insert_index), ds, config.insert_threads,
                       partition, config.undirected);
       partition++;
     }
@@ -570,7 +595,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
 }
 
 
-void Driver::run_delete_experiment(TopologyInterface &ds, EdgeList &el) {
+void Driver::run_delete_experiment(TopologyInterface &ds, EdgeList<edge_t> &el) {
   throw NotImplemented();
 }
 
@@ -688,13 +713,13 @@ void Driver::run_neighbourhood_2_experiment(TopologyInterface &ds,
   cout << endl << "2 neighbourhood counting run in average in " << average << " milliseconds " << endl;
 }
 
-EdgeList Driver::read_insert_dataset() {
-  EdgeList edge_list;
+EdgeList<edge_t> Driver::read_insert_dataset() {
+  EdgeList<edge_t> edge_list;
   edge_list.read_from_binary_file(config.insertions.path);
   return edge_list;
 }
 
-EdgeList Driver::read_delete_dataset() {
+EdgeList<edge_t> Driver::read_delete_dataset() {
   throw NotImplemented();
 }
 
@@ -789,8 +814,8 @@ void Driver::check_bfs(vertex_id_t start_vertex, vector<pair<vertex_id_t, uint>>
   }
 }
 
-void Driver::validate_graph_structure(TopologyInterface &ds, SortedCSRDataSource &base, EdgeList &inserts,
-                                      EdgeList &deletes) {
+void Driver::validate_graph_structure(TopologyInterface &ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts,
+                                      EdgeList<edge_t> &deletes) {
   cout << "Validating data structure." << endl;
   auto vertices = base.vertex_count();
 
@@ -852,7 +877,7 @@ unordered_set<dst_t> Driver::get_neighbours(TopologyInterface &ds, vertex_id_t v
   return neighbours;
 }
 
-void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_count) {
+void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, size_t base_edge_count) {
   cout << "Validating insert experiment" << endl;
   auto edge_count = ds.edge_count();
   auto expected_edge_count = el.edges.size() + base_edge_count;
@@ -872,7 +897,7 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList &el, size_t base_edge_
 //    if (i % 1000 == 0) {
 //      cout << ".";
 //    }
-    assert(ds.has_edge(e));
+    assert(ds.has_edge({e.src, e.dst}));
     if (config.undirected) {
       edge_t opposite = {e.dst, e.src};
       assert(ds.has_edge(opposite));
@@ -1222,7 +1247,7 @@ void Driver::show_storage_sizes(string ds_name, TopologyInterface &ds) {
 }
 
 void
-Driver::run_gc_experiment(TransactionManager &tm, VersionedTopologyInterface &ds, bool inserts_run, EdgeList &inserts) {
+Driver::run_gc_experiment(TransactionManager &tm, VersionedTopologyInterface &ds, bool inserts_run, EdgeList<weighted_edge_t> &inserts) {
   cout << "Running GC experiment " << endl;
 
   tm.update_min_version();
