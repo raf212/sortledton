@@ -32,14 +32,14 @@ bool SnapshotTransaction::execute() {
       ds->delete_edge_version(p_edge, version);
     }
 //    auto i = 0;
-    for (auto e : edges_to_insert) {
+    for (auto [e, properties, properties_size] : edges_to_insert) {
       edge_t p_edge (ds->physical_id(e.src), ds->physical_id(e.dst));
 
 //      try {
       if (edge_does_not_exists_semantic_activated && ds->has_edge_version_p(p_edge, version)) {
         continue;
       }
-      ds->insert_edge_version(p_edge, version);
+      ds->insert_edge_version(p_edge, version, properties, properties_size);
 //        i++;
 //        if (i % 1000 == 0) {
 //        cout << ".";
@@ -95,7 +95,7 @@ void SnapshotTransaction::aquire_locks_and_insert_vertices() {
           throw VertexDoesNotExistsException(v);
         }
       } else {
-        last_lock_aquired = v;
+        last_lock_aquired = v;  // TODO needs to be initilized to another value than 0
       }
       last_lock = v;
     }
@@ -131,9 +131,7 @@ bool SnapshotTransaction::delete_vertex(vertex_id_t v) {
 }
 
 bool SnapshotTransaction::insert_edge(edge_t edge) {
-  locks_to_aquire.push_back(edge.src);
-  edges_to_insert.push_back(edge);
-  return false;
+  return insert_edge(edge, nullptr, 0);
 }
 
 bool SnapshotTransaction::delete_edge(edge_t edge) {
@@ -240,7 +238,7 @@ vertex_id_t SnapshotTransaction::logical_id(vertex_id_t v) {
 void SnapshotTransaction::assert_std_preconditions() {
 
   // Vertices of each edge to insert need to exists.
-  for (auto e : edges_to_insert) {
+  for (auto [e, _, _1] : edges_to_insert) {
     // TODO is that to slow?
     if (!ds->has_vertex_version(e.src, version) && find(vertices_to_insert.begin(), vertices_to_insert.end(), e.src) == vertices_to_insert.end()) {
       throw VertexDoesNotExistsException(e.src);
@@ -261,7 +259,7 @@ void SnapshotTransaction::assert_std_preconditions() {
 
   if (!edge_does_not_exists_semantic_activated) {
     // New edges cannot exist already
-    for (auto e : edges_to_insert) {
+    for (auto [e, _, _1] : edges_to_insert) {
       if (ds->has_edge_version(e, version)) {
         throw EdgeExistsException(e);
       }
@@ -294,5 +292,7 @@ size_t SnapshotTransaction::max_physical_vertex() {
 }
 
 bool SnapshotTransaction::insert_edge(edge_t edge, char *properties, size_t property_size) {
-  ds->insert_edge_version(edge, version, properties, property_size);
+  locks_to_aquire.push_back(edge.src);
+  edges_to_insert.emplace_back(edge, properties, property_size);
+  return false;
 }

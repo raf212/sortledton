@@ -54,6 +54,7 @@ public:
 #pragma omp parallel for
       for (auto i = 0u; i < edges.size(); i++) {
         auto e = edges[i];
+        // TODO needs better weight support before running SSSP
         with_weights.edges[i] = weighted_edge_t(e.src, e.dst, e.dst);
       }
       return with_weights;

@@ -119,7 +119,7 @@ private:
     vector<vertex_id_t> vertices_to_insert {};
     vector<vertex_id_t> vertices_to_insert_if_not_exists {};
     vector<edge_t> edges_to_delete {};
-    vector<edge_t> edges_to_insert {};
+    vector<tuple<edge_t, char*, size_t>> edges_to_insert {};
 
     vector<RollbackAction> rollbacks {};
 };

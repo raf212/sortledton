@@ -112,8 +112,8 @@ private:
     TransactionManager& tm;
     VertexIndex adjacency_index;
 
-    size_t property_size;
     size_t block_size;
+    size_t property_size;
     const float bulk_load_fill_rate = 1.0;
 
     // Skiplist constant, likelyhood for being x level high is p^x. 0.25 is a typical value from prior work.
@@ -134,13 +134,12 @@ private:
 
     dst_t* find_upper_bound(dst_t* start, dst_t* end, dst_t value);
 
-    void insert_empty(edge_t edge, version_t version);
-    void insert_single_block(edge_t edge, version_t version);
-    void insert_skip_list(edge_t edge, version_t version);
+    void insert_empty(edge_t edge, version_t version, char* properties);
+    void insert_single_block(edge_t edge, version_t version, char* properties);
+    void insert_skip_list(edge_t edge, version_t version, char* properties);
     void insert_by_shift(dst_t* start, dst_t* end, dst_t dst, version_t version);
 
     bool size_is_versioned(vertex_id_t v);
-    version_t inline_version(bool deletion, bool more_versions, version_t version);
 
     void update_adjacency_size(vertex_id_t v, bool deletion, version_t version);
     SizeVersionChainEntry* construct_version_chain_from_block(vertex_id_t v, version_t version);

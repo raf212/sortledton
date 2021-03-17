@@ -445,6 +445,7 @@ run_inserts_in_transactions(bool weighted, size_t thread_id, TransactionManager 
       tx.use_vertex_does_not_exists_semantics();
       tx.insert_vertex(e.src);
       tx.insert_vertex(e.dst);
+
       char weight[sizeof(e.weight)];
       memcpy((void*) &weight, (void*) &e.weight, sizeof(e.weight));
       if (undirected) {
