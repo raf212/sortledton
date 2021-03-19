@@ -87,7 +87,7 @@ dst_t VersionedEdgeIterator::next() {
 }
 
 void
-VersionedEdgeIterator::initialize(vertex_id_t src, VAdjacencySetType type, void *adjacency_set, uint64_t set_size, version_t version, bool is_versioned) {
+VersionedEdgeIterator::initialize(vertex_id_t src, VAdjacencySetType type, void *adjacency_set, uint64_t block_size, version_t version, bool is_versioned) {
   if (opened) {
     close();
   }
@@ -106,7 +106,7 @@ VersionedEdgeIterator::initialize(vertex_id_t src, VAdjacencySetType type, void 
       case VSINGLE_BLOCK: {
         next_skip_list_block = nullptr;
         data = (dst_t*) adjacency_set;
-        current_block_end = data + set_size;
+        current_block_end = data + block_size;
         break;
       }
       case VSKIP_LIST: {

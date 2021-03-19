@@ -5,7 +5,7 @@
 #ifndef LIVE_GRAPH_TWO_VERTEXINDEX_H
 #define LIVE_GRAPH_TWO_VERTEXINDEX_H
 
-
+#include <cassert>
 #include <cstdint>
 #include <data_types.h>
 #include <atomic>
@@ -24,7 +24,8 @@
 using namespace std;
 
 // The mask indicating if a size entry in the index is versioned.
-#define SIZE_VERSION_MASK (1L << 63)
+#define SIZE_VERSION_OFFSET 63
+#define SIZE_VERSION_MASK (1L << SIZE_VERSION_OFFSET)
 // The 2nd bit of the adjacency set pointer in the index is used to indicate the VAdjacencySetType.
 // Set means the edge set is of type VSINGLE_BLOCK, unset means it is of type VSKIP_LIST
 #define EDGE_SET_TYPE_MASK (1L << 62)
@@ -133,6 +134,7 @@ public:
 
     void rollback_vertex_insert(vertex_id_t v);
 
+    // TODO rename this should be get neighbourhood pointer. it is not raw. It does not include the set type
     inline void* raw_neighbourhood_version(vertex_id_t v, version_t version) {
       return (void *) get_pointer(index[v].adjacency_set);
     };
@@ -149,9 +151,18 @@ public:
       return index[v].size & SIZE_VERSION_MASK;
     };
 
-    inline uint64_t get_block_size(vertex_id_t v) {
-      return get_pointer(index[v].size);
+    inline tuple<uint64_t, uint64_t, bool> get_block_size(vertex_id_t v) {
+      assert(get_adjacency_set_type(v, FIRST_VERSION) == VSINGLE_BLOCK);
+      return {index[v].size & 0x00000000FFFFFFFF, (index[v].size & 0x00FFFFFF00000000) >> 32 , index[v].size & SIZE_VERSION_MASK};
     };
+
+    inline void set_block_size(vertex_id_t v, uint64_t size, uint64_t property_count, bool versioned) {
+      assert(get_adjacency_set_type(v, FIRST_VERSION) == VSINGLE_BLOCK);
+//      TODO needs to update property count
+      index[v].size = ((((uint64_t) versioned) << SIZE_VERSION_OFFSET) | (property_count << 32) | size);
+      assert(get<0>(get_block_size(v)) == size);
+//      index[v].size = ((uint64_t) versioned << SIZE_VERSION_OFFSET) | size;
+    }
 
     inline void* raw_neighbourhood_size_entry(vertex_id_t v) {
       return (void*) index[v].size;
