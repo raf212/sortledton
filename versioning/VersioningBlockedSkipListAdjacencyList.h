@@ -192,7 +192,15 @@ private:
     void skip_list_to_single_block(vertex_id_t v, bool contains_versions);
 
     void assert_adjacency_list_consistency(vertex_id_t v, version_t min_version);
-    void assert_block_consistency(dst_t* start, dst_t* end, version_t min_version);
+
+    /**
+     *
+     * @param start
+     * @param end
+     * @param min_version
+     * @return The number of versions in the block.
+     */
+    size_t assert_block_consistency(dst_t* start, dst_t* end, version_t min_version);
 
     dst_t get_min_from_skip_list_header(VSkipListHeader* header);
 

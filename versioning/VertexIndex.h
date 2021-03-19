@@ -49,6 +49,7 @@ struct VSkipListHeader {
     VSkipListHeader *before;  // TODO remove
     dst_t *data;
     uint16_t size;  // Number of destinations stored in this block.
+    uint16_t properties;
     dst_t max;
     VSkipListHeader *next_levels[SKIP_LIST_LEVELS];  // a fixed number of pointers for all levels.
 };
@@ -158,10 +159,7 @@ public:
 
     inline void set_block_size(vertex_id_t v, uint64_t size, uint64_t property_count, bool versioned) {
       assert(get_adjacency_set_type(v, FIRST_VERSION) == VSINGLE_BLOCK);
-//      TODO needs to update property count
       index[v].size = ((((uint64_t) versioned) << SIZE_VERSION_OFFSET) | (property_count << 32) | size);
-      assert(get<0>(get_block_size(v)) == size);
-//      index[v].size = ((uint64_t) versioned << SIZE_VERSION_OFFSET) | size;
     }
 
     inline void* raw_neighbourhood_size_entry(vertex_id_t v) {
