@@ -87,7 +87,7 @@ set(SRC
         versioning/VersionedEdgeIterator.cpp versioning/VersionedEdgeIterator.h experiments/GAPBSAlgorithms.cpp experiments/GAPBSAlgorithms.h
         third-party/gapbs.h
         versioning/VertexIndex.cpp
-        versioning/VertexIndex.h utils/pointerTagging.h)
+        versioning/VertexIndex.h utils/pointerTagging.h versioning/EdgeBlock.cpp versioning/EdgeBlock.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp

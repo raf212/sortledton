@@ -148,6 +148,11 @@ public:
       }
     };
 
+    inline void store_single_block(vertex_id_t v, dst_t* block, uint64_t size, uint64_t property_count, bool versioned) {
+      index[v].adjacency_set = (uint64_t) block | EDGE_SET_TYPE_MASK;
+      set_block_size(v, size, property_count, versioned);
+    }
+
     inline bool size_is_versioned(vertex_id_t v) {
       return index[v].size & SIZE_VERSION_MASK;
     };

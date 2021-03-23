@@ -15,6 +15,7 @@
 #include "VersionedTopologyInterface.h"
 
 #include "VertexIndex.h"
+#include "EdgeBlock.h"
 
 class MultipleVersionException : exception {
 
@@ -133,6 +134,11 @@ private:
     dst_t* get_data_pointer(VSkipListHeader* header) const;
 
     dst_t* find_upper_bound(dst_t* start, dst_t* end, dst_t value);
+
+    size_t get_edge_block_capacity(size_t contained_edges);
+    size_t get_edge_block_size_in_bytes(size_t capcitiy_in_edges);
+    EdgeBlock new_single_edge_block(size_t min_capicity_in_edges);
+    VSkipListHeader* new_skip_list_block();
 
     void insert_empty(edge_t edge, version_t version, char* properties);
     void insert_single_block(edge_t edge, version_t version, char* properties);
