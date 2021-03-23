@@ -135,15 +135,12 @@ private:
 
     dst_t* find_upper_bound(dst_t* start, dst_t* end, dst_t value);
 
-    size_t get_edge_block_capacity(size_t contained_edges);
-    size_t get_edge_block_size_in_bytes(size_t capcitiy_in_edges);
     EdgeBlock new_single_edge_block(size_t min_capicity_in_edges);
     VSkipListHeader* new_skip_list_block();
 
     void insert_empty(edge_t edge, version_t version, char* properties);
     void insert_single_block(edge_t edge, version_t version, char* properties);
     void insert_skip_list(edge_t edge, version_t version, char* properties);
-    void insert_by_shift(dst_t* start, dst_t* end, dst_t dst, version_t version);
 
     bool size_is_versioned(vertex_id_t v);
 
@@ -159,17 +156,6 @@ private:
      * @return nullptr or ptr to a garbage collected version which has not been freed.
      */
     SizeVersionChainEntry* gc_adjacency_size(SizeVersionChainEntry* start, version_t collect_after);
-
-    /**
-     * Removes all version below min_version from this block.
-     *
-     * @param start pointer to the start of the block
-     * @param end  pointer past the end of the block
-     * @param min_version minimal version to keep
-     * @param out_size the size of the block after this function
-     * @return if any versioned edge remain in the block after this function.
-     */
-    bool gc_by_shift(dst_t* start, const dst_t* end, version_t min_version, uint64_t& out_size);
 
     /**
      * Merges to skip list blocks into one. Frees the other.
@@ -198,15 +184,6 @@ private:
     void skip_list_to_single_block(vertex_id_t v, bool contains_versions);
 
     void assert_adjacency_list_consistency(vertex_id_t v, version_t min_version);
-
-    /**
-     *
-     * @param start
-     * @param end
-     * @param min_version
-     * @return The number of versions in the block.
-     */
-    size_t assert_block_consistency(dst_t* start, dst_t* end, version_t min_version);
 
     dst_t get_min_from_skip_list_header(VSkipListHeader* header);
 
