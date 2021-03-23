@@ -561,7 +561,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
     adjacency_index.set_block_size(edge.src, eb.get_edges_and_versions(), eb.get_property_count(), true);
 
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    eb.assert_block_consistency(FIRST_VERSION);
+    assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
 #endif
   } else {  // else resize block or add skip list
     if (block_capacity == block_size) {
@@ -589,7 +589,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
       free(eb.get_single_block_pointer());
       adjacency_index.store_single_block(edge.src, new_eb.get_single_block_pointer(), new_eb.get_edges_and_versions(), new_eb.get_property_count(), true);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-      new_eb.assert_block_consistency(FIRST_VERSION);
+      assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
 #endif
     }
   }
