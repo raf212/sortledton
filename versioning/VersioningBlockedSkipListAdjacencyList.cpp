@@ -906,18 +906,9 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list_block(VSkipListHeader 
                                                                 VSkipListHeader *after, version_t min_version,
                                                                 VSkipListHeader *blocks[SKIP_LIST_LEVELS],
                                                                 int leave_space) {
-  dst_t *data = get_data_pointer(*to_clean);
-  uint64_t new_size = (*to_clean)->size;
-  auto end = data + new_size;
-  bool version_remaining = gc_by_shift(data, end, min_version, new_size);
-
-  if (is_versioned(data[new_size - 2])) {
-    (*to_clean)->max = make_unversioned(data[new_size - 2]);
-  } else {
-    (*to_clean)->max = data[new_size - 1];
-  }
-  (*to_clean)->size = (uint16_t) new_size;
-  // TODO deletion needs to update the property size here.
+  auto eb = EdgeBlock::from_vskip_list_header(*to_clean, block_size, property_size);
+  bool versions_remaining = eb.gc(min_version);
+  eb.update_skip_list_header(*to_clean);
 
   // TODO reimplement list merging
 
@@ -962,37 +953,7 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list_block(VSkipListHeader 
 //#endif
 //    }
 //  }
-  return version_remaining;
-}
-
-bool VersioningBlockedSkipListAdjacencyList::gc_by_shift(dst_t *start, const dst_t *end, version_t min_version,
-                                                         uint64_t &new_size) {
-  // Removes unncessary versions and shifts remaining destinations and versions forward.
-  auto shift = 0; // The forward shift to use, increases when versions are removed.
-  bool version_remaining = false;
-  new_size = end - start;
-  for (auto i = start; i < end; i++) {
-    auto e = *i;
-    if (is_versioned(e) && timestamp(*(i + 1) < min_version)) {
-      if (is_deletion(*(i + 1))) {
-        new_size -= 2;
-        shift += 2;
-        i += 2;
-      } else {
-        *(i - shift) = make_unversioned(e);
-        new_size -= 1;
-        shift += 1;
-        i += 1;
-      }
-      gced_edges += 1;
-    } else {
-      if (is_versioned(e)) {
-        version_remaining = true;
-      }
-      *(i - shift) = e;
-    }
-  }
-  return version_remaining;
+  return versions_remaining;
 }
 
 void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHeader *from, VSkipListHeader *to,
@@ -1065,17 +1026,10 @@ void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(v
 //          assert( block_size / 2 - 3 <= i->size);  // TODO there's a bug such that some blocks are slightly smaller than block_size / 2
         }
 
-        auto data = get_data_pointer(i);
-        auto end = data + i->size;
+        auto eb = EdgeBlock::from_vskip_list_header(i, block_size, property_size);
+        auto versions = eb.assert_block_consistency(version);
 
-        auto versions = assert_block_consistency(data, end, version);
-
-        if (is_versioned(*(end - 2))) {
-          assert(i->max == make_unversioned(*(end - 2)));
-        } else {
-          assert(i->max == make_unversioned(*(end - 1)));
-        }
-
+        assert(i->max == eb.get_max_edge());
         assert(i->properties == i->size - versions);
 
         for (auto l = 0; l < SKIP_LIST_LEVELS; l++) {
@@ -1095,37 +1049,16 @@ void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(v
       break;
     }
     case VSINGLE_BLOCK: {
-      auto start = (dst_t *) raw_neighbourhood_version(v, version);
-      auto [size, property_count, is_versioned] = adjacency_index.get_block_size(v);
-      auto end = start + size;
-      auto versions = assert_block_consistency(start, end, version);
+      auto [size, pc, is_versioned] = adjacency_index.get_block_size(v);
+      auto eb = EdgeBlock::from_single_block((dst_t *) raw_neighbourhood_version(v, version), size, pc, property_size);
+      auto versions = eb.assert_block_consistency(version);
 
       assert((is_versioned && 0 < versions) || (!is_versioned && versions == 0));
-      assert(property_count == size - versions);
+      assert(pc == size - versions);
       break;
     }
   }
 
-}
-
-size_t VersioningBlockedSkipListAdjacencyList::assert_block_consistency(dst_t *start, dst_t *end, version_t min_version) {
-  dst_t before = 0;
-  auto versions = 0;
-  for (auto i = start; i < end; i++) {
-    auto e = *i;
-    if (is_versioned(e)) {
-      versions++;
-      assert(before <= make_unversioned(e));
-      before = make_unversioned(e);
-      assert(i + 1 < end);
-      assert(min_version <= timestamp(*(i + 1)));
-      i += 1; // Jump over version
-    } else {
-      assert(before <= e);
-      before = e;
-    }
-  }
-  return versions;
 }
 
 dst_t VersioningBlockedSkipListAdjacencyList::get_min_from_skip_list_header(VSkipListHeader *header) {
