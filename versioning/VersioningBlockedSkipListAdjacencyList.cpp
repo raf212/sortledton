@@ -653,7 +653,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
 #if COLLECT_VERSIONS_ON_INSERT
   eb.gc(tm.getMinActiveVersion());
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-  assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+  eb.assert_block_consistency(FIRST_VERSION);
 #endif
 #endif
 
