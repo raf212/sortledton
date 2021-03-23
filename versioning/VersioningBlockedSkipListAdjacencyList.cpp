@@ -16,6 +16,7 @@
 #include "EdgeBlock.h"
 
 #define CACHELINE_SIZE 64
+#define PAGE_SIZE 4096
 
 #define COLLECT_VERSIONS_ON_INSERT 1
 
@@ -565,24 +566,14 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
   } else {  // else resize block or add skip list
     if (block_capacity == block_size) {
       // Block should be split into 2 skip list blocks, we do this in two steps, convert to SkipListHeader and then by recursion split into two.
-      VSkipListHeader *new_block = (VSkipListHeader *) malloc(memory_block_size());
-      new_block->data = get_data_pointer(new_block);
-      new_block->size = eb.get_edges_and_versions();
-      new_block->properties = eb.get_property_count();
+      VSkipListHeader *new_block = new_skip_list_block();
+      auto new_eb = EdgeBlock::from_vskip_list_header(new_block, block_size, property_size);
+      eb.copy_into(new_eb);
+      new_eb.update_skip_list_header(new_block);
 
       adjacency_index.set_block_size(edge.src, eb.get_edges_and_versions(), eb.get_property_count(), versions_remaining);
-
       adjacency_index[edge.src].size = ((uint64_t) construct_version_chain_from_block(edge.src, version) |
                                         SIZE_VERSION_MASK);
-      EdgeBlock new_edgeblock(new_block->data, block_capacity, 0, 0, property_size);
-      eb.copy_into(new_edgeblock);
-
-      new_block->max = eb.get_max_edge();
-
-      new_block->before = nullptr;
-      for (int l = 0; l < SKIP_LIST_LEVELS; l++) {
-        new_block->next_levels[l] = nullptr;
-      }
 
       adjacency_index[edge.src].adjacency_set = (uint64_t) new_block;
 
@@ -596,7 +587,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
       new_eb.insert_edge(edge.dst, version, properties);
 
       free(eb.get_single_block_pointer());
-      adjacency_index.store_single_block(edge.src, new_eb.get_block_capacity(), new_eb.get_edges_and_versions(), new_eb.get_property_count(), true);
+      adjacency_index.store_single_block(edge.src, new_eb.get_single_block_pointer(), new_eb.get_edges_and_versions(), new_eb.get_property_count(), true);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
       new_eb.assert_block_consistency(FIRST_VERSION);
 #endif
@@ -655,60 +646,44 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
   VSkipListHeader *adjacency_list = (VSkipListHeader *) raw_neighbourhood_version(edge.src, version);
 
   VSkipListHeader *blocks_per_level[SKIP_LIST_LEVELS];
-  auto i = find_block(adjacency_list, edge.dst, blocks_per_level);
+  auto block = find_block(adjacency_list, edge.dst, blocks_per_level);
 
-  version_t min_version = tm.getMinActiveVersion();
-  auto before = i->before;
+  auto eb = EdgeBlock::from_vskip_list_header(block, block_size, property_size);
+
 #if COLLECT_VERSIONS_ON_INSERT
-  gc_skip_list_block(&i, before, nullptr, min_version, blocks_per_level, 2);
-  if (i == nullptr) {
-    i = find_block(adjacency_list, edge.dst, blocks_per_level);
-  }
-#endif
+  eb.gc(tm.getMinActiveVersion());
 #if defined(DEBUG) && ASSERT_CONSISTENCY
   assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
 #endif
-
-  auto data = get_data_pointer(i);
-  EdgeBlock edge_block(data, block_size, i->size, i->properties, property_size);
+#endif
 
   // Handle a full block
-  if (block_size <= (uint) (i->size + 1)) {
-    auto *new_block = (VSkipListHeader *) malloc(memory_block_size());
-    new_block->data = get_data_pointer(new_block);
-    EdgeBlock new_edge_block(new_block->data, block_size, 0, 0, property_size);
+  if (!eb.has_space_to_insert_edge()) {
+    auto *new_block = new_skip_list_block();
+    auto new_edge_block = EdgeBlock::from_vskip_list_header(new_block, block_size, property_size);
 
-    auto [split, property_split] = edge_block.split_into(new_edge_block);
+    eb.split_into(new_edge_block);
+    eb.update_skip_list_header(block);
+    new_edge_block.update_skip_list_header(new_block);
 
-    new_block->size = i->size - split;
-    i->size = split;
-    new_block->properties = i->properties - property_split;
-    i->properties = property_split;
-
-
-    new_block->next_levels[0] = i->next_levels[0];
-    new_block->before = i;
+    // Insert new block into the skip list at level 0.
+    new_block->next_levels[0] = block->next_levels[0];
+    new_block->before = block;
     if (new_block->next_levels[0] != nullptr) {
       new_block->next_levels[0]->before = new_block;
     }
-    i->next_levels[0] = new_block;
+    block->next_levels[0] = new_block;
 
-    new_block->max = i->max;
-    if (is_versioned(data[split - 2])) {
-      i->max = make_unversioned(data[split - 2]);
-    } else {
-      i->max = data[split - 1];
-    }
-
+    // Update skip list on all levels but 0
     auto height = get_height();
     for (uint l = 1; l < SKIP_LIST_LEVELS; l++) {
       if (l < height) {
-        if (blocks_per_level[l]->next_levels[l] != i) {
+        if (blocks_per_level[l]->next_levels[l] != block) {
           new_block->next_levels[l] = blocks_per_level[l]->next_levels[l];
           blocks_per_level[l]->next_levels[l] = new_block;
         } else {
-          new_block->next_levels[l] = i->next_levels[l];
-          i->next_levels[l] = new_block;
+          new_block->next_levels[l] = block->next_levels[l];
+          block->next_levels[l] = new_block;
         }
         blocks_per_level[l] = new_block;
       } else {
@@ -722,12 +697,8 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     // Recursive call of max depth 1.
     insert_skip_list(edge, version, properties);
   } else {
-    edge_block.insert_edge(edge.dst, version, properties);
-
-    i->size += 2;
-    i->properties += 1;
-    i->max = std::max(edge.dst, i->max);
-
+    eb.insert_edge(edge.dst, version, properties);
+    eb.update_skip_list_header(block);
     update_adjacency_size(edge.src, false, version);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
     assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
@@ -947,6 +918,8 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list_block(VSkipListHeader 
   }
   (*to_clean)->size = (uint16_t) new_size;
   // TODO deletion needs to update the property size here.
+
+  // TODO reimplement list merging
 
 //  if (before != nullptr && new_size + leave_space < block_size / 2) {
 //    if (new_size + before->size + leave_space <= block_size) {
@@ -1274,10 +1247,25 @@ size_t VersioningBlockedSkipListAdjacencyList::max_physical_vertex() {
 }
 
 EdgeBlock VersioningBlockedSkipListAdjacencyList::new_single_edge_block(size_t capacity) {
-  assert(capacity < block_size);
+  assert(capacity <= block_size);
   assert(MIN_BLOCK_SIZE <= capacity);
 
   auto block = (dst_t*) aligned_alloc(CACHELINE_SIZE, capacity * sizeof(dst_t));
 
   return EdgeBlock(block, capacity, 0, 0, property_size);
+}
+
+VSkipListHeader *VersioningBlockedSkipListAdjacencyList::new_skip_list_block() {
+  auto h = (VSkipListHeader*) aligned_alloc(PAGE_SIZE, memory_block_size());
+  h->data = get_data_pointer(h);
+  h->before = nullptr;
+
+  for (auto i = 0u; i < SKIP_LIST_LEVELS; i++) {
+    h->next_levels[i] = nullptr;
+  }
+
+  h->size = 0;
+  h->properties = 0;
+  h->max = 0;
+  return h;
 }

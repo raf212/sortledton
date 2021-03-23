@@ -40,7 +40,9 @@ public:
               property_size(property_size) {};
 
 
-    static EdgeBlock from_vskip_list_header(VSkipListHeader* header);
+    static EdgeBlock from_vskip_list_header(VSkipListHeader* header, size_t block_size, size_t property_size) {
+      return EdgeBlock(header->data, block_size, header->size, header->properties, property_size);
+    };
     static EdgeBlock from_single_block(dst_t* start, size_t edges_and_versions, size_t properties, size_t property_size) {
       return EdgeBlock(start, max(MIN_BLOCK_SIZE, round_up_power_of_two(edges_and_versions)), edges_and_versions, properties, property_size);
     }
@@ -131,6 +133,11 @@ public:
       // Move properties in existing block
       memmove((char*) end - (properties - property_split) * property_size, (char*) properties_start(), (properties - property_split) * properties);
 
+      other.edges_and_versions = edges_and_versions - split;
+      other.properties = properties - property_split;
+      edges_and_versions = split;
+      properties = property_split;
+
       return {split, property_split};
     }
 
@@ -178,6 +185,12 @@ public:
       } else {
         return start[edges_and_versions - 1];
       }
+    }
+
+    void update_skip_list_header(VSkipListHeader *h) {
+      h->size = edges_and_versions;
+      h->properties = properties;
+      h->max = get_max_edge();
     }
 
 private:
