@@ -20,6 +20,7 @@
 #include <mutex>
 
 #include "SizeVersionChainEntry.h"
+#include "AdjacencySetTypes.h"
 #include <utils/pointerTagging.h>
 
 using namespace std;
@@ -34,26 +35,7 @@ using namespace std;
 // This mask is set on vertex index entries for unused vertices.
 #define VERTEX_NOT_USED_MASK (1L << 60)
 
-#define SKIP_LIST_LEVELS 6
-
 #define INITIAL_VECTOR_SIZE 131072
-
-/**
- * The types of adjacency sets used.
- */
-enum VAdjacencySetType {
-    VSKIP_LIST,    // A blocked skip list defined in VSkipListHeader
-    VSINGLE_BLOCK  // An array of edges prepended by the number of edges and versions in their.
-};
-
-struct VSkipListHeader {
-    VSkipListHeader *before;  // TODO remove
-    dst_t *data;
-    uint16_t size;  // Number of destinations stored in this block.
-    uint16_t properties;
-    dst_t max;
-    VSkipListHeader *next_levels[SKIP_LIST_LEVELS];  // a fixed number of pointers for all levels.
-};
 
 struct VertexVersionChainEntry;
 

@@ -45,7 +45,9 @@ public:
     size_t neighbourhood_size_version_p(vertex_id_t src, version_t version) override;
 
     void neighbourhood_version(vertex_id_t src, EdgeIterator& iter, version_t version) override { throw NotImplemented(); };
+    void neighbourhood_version_with_properties(vertex_id_t src, VersionedPropertyEdgeIterator& iter, version_t version) override { throw NotImplemented(); };
     void neighbourhood_version_p(vertex_id_t src, EdgeIterator& iter, version_t version) override;
+    void neighbourhood_version_with_properties_p(vertex_id_t src, VersionedPropertyEdgeIterator& iter, version_t version) override;
     void* raw_neighbourhood_version(vertex_id_t src, version_t version) override;
     VAdjacencySetType get_set_type(vertex_id_t v, version_t version);
     void* raw_neighbourhood_size_entry(vertex_id_t v);

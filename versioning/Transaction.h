@@ -10,6 +10,8 @@
 #include <data-structures/ToplogyInterface.h>
 #include "Precondition.h"
 
+class VersionedPropertyEdgeIterator;
+
 class Transaction : public TopologyInterface {
 public :
     virtual void use_does_not_exists_semantics();
@@ -17,6 +19,9 @@ public :
     virtual void use_edge_does_not_exists_semantics() = 0;
 
     bool insert_safe(edge_t e) override { throw NotImplemented(); }
+
+    virtual void neighbourhood_with_properties(vertex_id_t src, VersionedPropertyEdgeIterator& iter) = 0;
+    virtual void neighbourhood_with_properties_p(vertex_id_t src, VersionedPropertyEdgeIterator& iter) = 0;
 
     virtual version_t get_version() const = 0;
 };

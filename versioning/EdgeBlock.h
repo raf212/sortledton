@@ -5,7 +5,10 @@
 #ifndef LIVE_GRAPH_TWO_EDGEBLOCK_H
 #define LIVE_GRAPH_TWO_EDGEBLOCK_H
 
+#include <cassert>
+#include <cstring>
 #include <utils/utils.h>
+#include "AdjacencySetTypes.h"
 
 inline version_t inline_version(bool deletion, bool more_versions, version_t version) {
   if (more_versions) {

@@ -296,3 +296,11 @@ bool SnapshotTransaction::insert_edge(edge_t edge, char *properties, size_t prop
   edges_to_insert.emplace_back(edge, properties, property_size);
   return false;
 }
+
+void SnapshotTransaction::neighbourhood_with_properties(vertex_id_t src, VersionedPropertyEdgeIterator &iter) {
+  ds->neighbourhood_version_with_properties(src, iter, version);
+}
+
+void SnapshotTransaction::neighbourhood_with_properties_p(vertex_id_t src, VersionedPropertyEdgeIterator &iter) {
+  ds->neighbourhood_version_with_properties_p(src, iter, version);
+}

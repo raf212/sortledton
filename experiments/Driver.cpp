@@ -27,6 +27,7 @@
 #include <versioning/SnapshotTransaction.h>
 #include <versioning/TransactionManager.h>
 #include <versioning/VersioningBlockedSkipListAdjacencyList.h>
+#include <versioning/VersionedPropertyEdgeIterator.h>
 #include "Driver.h"
 
 #include "BFSSourceSelector.h"
@@ -904,6 +905,26 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
       assert(ds.has_edge(opposite));
     }
   }
+
+  // Check properties
+  if (config.weighted && typeid(ds) == typeid(SnapshotTransaction&)) {
+    auto tx = dynamic_cast<SnapshotTransaction&>(ds);
+    VersionedPropertyEdgeIterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList*>(tx.raw_ds()), sizeof(weight_t));
+    for (vertex_id_t v = 0; v < ds.max_physical_vertex(); v++) {
+      auto l_v = ds.logical_id(v);
+      tx.neighbourhood_with_properties_p(v, iter);
+      while (iter.has_next()) {
+        auto [d, pp] = iter.next_with_properties();
+        auto p = *((dst_t*) pp);
+        if (p != l_v) {
+          auto l_d = ds.logical_id(d);
+          assert(l_d == p);
+        }
+      }
+    }
+
+  }
+
 
 
   const string gold_standard_file_sizes =

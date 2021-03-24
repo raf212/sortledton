@@ -61,8 +61,10 @@ public:
     size_t neighbourhood_size_p(vertex_id_t src) override;
 
     void neighbourhood_p(vertex_id_t src, BatchedEdgeIterator& iter) override { throw NotImplemented(); };
-
     void neighbourhood_p(vertex_id_t src, EdgeIterator& iter) override;
+
+    void neighbourhood_with_properties(vertex_id_t src, VersionedPropertyEdgeIterator& iter) override;
+    void neighbourhood_with_properties_p(vertex_id_t src, VersionedPropertyEdgeIterator& iter) override;
 
     /**
      * Cannot be used. Use raw_ds instead.
