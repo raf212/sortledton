@@ -1017,15 +1017,18 @@ void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::assert_edge_block_consistency(EdgeBlock eb, vertex_id_t src, version_t version) {
+#if defined(DEBUG) && ASSERT_WEIGHTS
   auto l_v = logical_id(src);
   auto property_start = eb.properties_start();
+  auto property_offset = 0;
+#endif
+
   auto start = eb.start;
   auto size = eb.get_edges_and_versions();
 
-
   dst_t before = 0;
   auto versions = 0;
-  auto property_offset = 0;
+
   for (auto i = start; i < start + size; i++) {
     auto e = *i;
     if (is_versioned(e)) {

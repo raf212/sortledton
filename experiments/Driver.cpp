@@ -216,9 +216,7 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edg
     data_structure = &transaction;
   }
 
-  if (config.undirected && versioned_data_structure != nullptr) {
-    auto temp = dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(versioned_data_structure);
-  } else {
+  if (!config.undirected && versioned_data_structure == nullptr) {
     cout << "Loading base dataset." << endl;
     load_base_dataset(*data_structure, base);
     if (config.undirected) {

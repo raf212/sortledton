@@ -39,7 +39,7 @@ tuple<dst_t, char *> VersionedPropertyEdgeIterator::next_with_properties() {
     current_skip_list_header = current_skip_list_header->next_levels[0];
     current_property = 0;
     property_column = current_skip_list_header->property_start(block_size, property_size);
-    next_with_properties();
+    return next_with_properties();
   }
 }
 
