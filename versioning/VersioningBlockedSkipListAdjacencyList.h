@@ -184,6 +184,7 @@ private:
     void skip_list_to_single_block(vertex_id_t v, bool contains_versions);
 
     void assert_adjacency_list_consistency(vertex_id_t v, version_t min_version);
+    size_t assert_edge_block_consistency(EdgeBlock eb, vertex_id_t src, version_t version);
 
     dst_t get_min_from_skip_list_header(VSkipListHeader* header);
 

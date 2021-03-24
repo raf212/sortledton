@@ -7,9 +7,6 @@
 
 #include <utils/utils.h>
 
-#define MIN_BLOCK_SIZE 2u
-
-
 inline version_t inline_version(bool deletion, bool more_versions, version_t version) {
   if (more_versions) {
     version |= MORE_VERSION_MASK;
@@ -36,26 +33,22 @@ inline version_t inline_version(bool deletion, bool more_versions, version_t ver
 class EdgeBlock {
 public:
     EdgeBlock(dst_t *start, size_t capacity, size_t edges_and_versions, size_t properties, size_t property_size)
-            : start(start), capacity(capacity), end(start + capacity * sizeof(dst_t)), edges_and_versions(edges_and_versions), properties(properties),
+            : start(start), capacity(capacity), end(((char*) start) + capacity * sizeof(dst_t) + capacity * property_size), edges_and_versions(edges_and_versions), properties(properties),
               property_size(property_size) {};
 
 
     static EdgeBlock from_vskip_list_header(VSkipListHeader* header, size_t block_size, size_t property_size) {
       return EdgeBlock(header->data, block_size, header->size, header->properties, property_size);
     };
-    static EdgeBlock from_single_block(dst_t* start, size_t edges_and_versions, size_t properties, size_t property_size) {
-      return EdgeBlock(start, max(MIN_BLOCK_SIZE, round_up_power_of_two(edges_and_versions)), edges_and_versions, properties, property_size);
+
+    static EdgeBlock from_single_block(dst_t* start, size_t capacity, size_t edges_and_versions, size_t properties, size_t property_size) {
+      return EdgeBlock(start, capacity, edges_and_versions, properties, property_size);
     }
 
     // TODO move methods definitions to cpp file
 
     bool has_space_to_insert_edge() {
       return edges_and_versions + 2 <= get_block_capacity();
-      // TODO needs to take properties into account
-//      int remaining_space = size() - edges_and_versions * sizeof(dst_t) - properties * property_size;
-      // One edge, one version record and the size of the properties.
-//      int required_space =  2 * sizeof(dst_t) - property_size;
-//      return 0 <= remaining_space - required_space;
     };
 
     /**
@@ -67,7 +60,9 @@ public:
      */
     void insert_edge(dst_t e, version_t version, char *properties) {
       assert(has_space_to_insert_edge());
-      size_t offset = insert_edge_and_version_by_shift(e, version);
+      int offset = insert_edge_and_version_by_shift(e, version);
+      offset -= count_versions_before(offset);
+
       insert_properties_by_shift(properties, offset);
       edges_and_versions += 2;
       this->properties += 1;
@@ -127,11 +122,12 @@ public:
       memcpy(other.start, start + split, (edges_and_versions - split) * sizeof(dst_t));
 
       auto property_split = split - count_versions_before(split);
+      auto properties_to_move = properties - property_split;
 
       // Copy properties into new block.
-      memcpy((char*) other.end - property_split * property_size, (char*) end - property_split * property_size, property_split * property_size);
+      memcpy((char*) other.end - properties_to_move * property_size, (char*) end - properties_to_move * property_size, properties_to_move * property_size);
       // Move properties in existing block
-      memmove((char*) end - (properties - property_split) * property_size, (char*) properties_start(), (properties - property_split) * properties);
+      memmove(end - property_split * property_size, properties_start(), property_split * property_size);
 
       other.edges_and_versions = edges_and_versions - split;
       other.properties = properties - property_split;
@@ -157,28 +153,6 @@ public:
       return capacity;
     }
 
-    size_t assert_block_consistency(version_t min_version) {
-      dst_t before = 0;
-      auto versions = 0;
-      for (auto i = start; i < start + edges_and_versions; i++) {
-        auto e = *i;
-        if (is_versioned(e)) {
-          versions++;
-          assert(before <= make_unversioned(e));
-          before = make_unversioned(e);
-          assert(i + 1 < end);
-          assert(min_version <= timestamp(*(i + 1)));
-          i += 1; // Jump over version
-        } else {
-          assert(before <= e);
-          before = e;
-        }
-      }
-      return versions;
-      // TODO needs to assert properties
-    };
-
-
     dst_t get_max_edge() {
       if (1 < edges_and_versions && is_versioned(start[edges_and_versions - 2])) {
         return make_unversioned(start[edges_and_versions - 2]);
@@ -193,19 +167,22 @@ public:
       h->max = get_max_edge();
     }
 
-private:
+    char *properties_start() {
+      return end - properties * property_size;
+    }
 
     /**
-     * Start of the memory region
-     */
+   * Start of the memory region
+   */
     dst_t *start;
 
+private:
     size_t capacity;
 
     /**
      * End of the memory region.
      */
-    dst_t *end;
+    char* end;
 
     /**
      * The number of version records and edges.
@@ -224,12 +201,10 @@ private:
     size_t property_size;
 
     size_t size() {
-      return (end - start) * sizeof(dst_t);
+      return (end - (char*) start);
     };
 
-    char *properties_start() {
-      return (char *) end - properties * property_size;
-    }
+
 
     size_t insert_edge_and_version_by_shift(dst_t e, version_t version) {
       auto i = start + edges_and_versions - 1;
@@ -253,11 +228,16 @@ private:
 
       *i = make_versioned(e);
       *(i + 1) = inline_version(false, false, version);
-      return i - start;  // TODO offset computation incorrect, does not take versions into account
+      return i - start;
     }
 
     void insert_properties_by_shift(char *properties, size_t offset) {
-      // TODO implement
+      if (offset == 0) {
+        memcpy(properties_start() - property_size, properties, property_size);
+      } else {
+        memmove(properties_start() - property_size, properties_start(), offset * property_size);
+        memcpy(properties_start() + (offset - 1) * property_size, properties, property_size);
+      }
     }
 
     size_t count_versions_before(size_t offset) {

@@ -12,6 +12,7 @@
 #include <optional>
 #include <vector>
 #include <iostream>
+#include <math.h>
 
 #include <tbb/concurrent_hash_map.h>
 #include <tbb/concurrent_vector.h>
@@ -148,23 +149,26 @@ public:
       }
     };
 
-    inline void store_single_block(vertex_id_t v, dst_t* block, uint64_t size, uint64_t property_count, bool versioned) {
+    inline void store_single_block(vertex_id_t v, dst_t* block, uint64_t capacity, uint64_t size, uint64_t property_count, bool versioned) {
       index[v].adjacency_set = (uint64_t) block | EDGE_SET_TYPE_MASK;
-      set_block_size(v, size, property_count, versioned);
+      set_block_size(v, capacity, size, property_count, versioned);
     }
 
     inline bool size_is_versioned(vertex_id_t v) {
       return index[v].size & SIZE_VERSION_MASK;
     };
 
-    inline tuple<uint64_t, uint64_t, bool> get_block_size(vertex_id_t v) {
+    inline tuple<uint64_t, uint64_t, uint64_t, bool> get_block_size(vertex_id_t v) {
       assert(get_adjacency_set_type(v, FIRST_VERSION) == VSINGLE_BLOCK);
-      return {index[v].size & 0x00000000FFFFFFFF, (index[v].size & 0x00FFFFFF00000000) >> 32 , index[v].size & SIZE_VERSION_MASK};
+      return {index[v].size & 0x000000000000FFFF, (index[v].size & 0x00000000FFFF0000) >> 16, (index[v].size & 0x0000FFFF00000000) >> 32 , index[v].size & SIZE_VERSION_MASK};
     };
 
-    inline void set_block_size(vertex_id_t v, uint64_t size, uint64_t property_count, bool versioned) {
+    inline void set_block_size(vertex_id_t v, uint64_t capacity, uint64_t size, uint64_t property_count, bool versioned) {
+      assert(capacity < pow(2, 16));
+      assert(size < pow(2, 16));
+      assert(property_count < pow(2, 16));
       assert(get_adjacency_set_type(v, FIRST_VERSION) == VSINGLE_BLOCK);
-      index[v].size = ((((uint64_t) versioned) << SIZE_VERSION_OFFSET) | (property_count << 32) | size);
+      index[v].size = ((((uint64_t) versioned) << SIZE_VERSION_OFFSET) | (property_count << 32) | size << 16 | capacity);
     }
 
     inline void* raw_neighbourhood_size_entry(vertex_id_t v) {

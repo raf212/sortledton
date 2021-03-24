@@ -545,19 +545,19 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
       tx.insert_vertex(e.src);
       tx.insert_vertex(e.dst);
 
-      char weight[sizeof(e.weight)];
-      memcpy((void*) &weight, (void*) &e.weight, sizeof(e.weight));
+//      char weight[sizeof(e.weight)];
+//      memcpy((void*) &weight, (void*) &e.weight, sizeof(e.weight));
       if (config.undirected) {
         auto opposite = edge_t{e.dst, e.src};
         if (config.weighted) {
-          tx.insert_edge(opposite, weight, sizeof(e.weight));
+          tx.insert_edge(opposite, (char*) &e.weight, sizeof(e.weight));
         } else {
           tx.insert_edge(opposite);
         }
       }
 
       if (config.weighted) {
-        tx.insert_edge({e.src, e.dst}, weight, sizeof(e.weight));
+        tx.insert_edge({e.src, e.dst}, (char*) &e.weight, sizeof(e.weight));
       } else {
         tx.insert_edge({e.src, e.dst});
       }

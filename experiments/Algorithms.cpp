@@ -230,7 +230,7 @@ Algorithms::bfs_raw_neighbourhood(Driver &driver, TopologyInterface &ds, vertex_
       raw_ds->aquire_vertex_lock_p(v);
       if (raw_ds->get_set_type(v, trans_timestamp)) {
         dst_t *ns = (dst_t *) raw_ds->raw_neighbourhood_version(v, trans_timestamp);
-        uint64_t size = 0x00000000FFFFFFFF & (uint64_t) raw_ds->raw_neighbourhood_size_entry(v); // TODO create function which exposes the tuple interface to the outside
+        uint64_t size = (0x00000000FFFF0000 & (uint64_t) raw_ds->raw_neighbourhood_size_entry(v)) >> 16; // TODO create function which exposes the tuple interface to the outside
         dst_t *end = ns + size;
 
         while (ns < end) {
