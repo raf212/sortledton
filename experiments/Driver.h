@@ -61,9 +61,9 @@ private:
      */
     void check_bfs(vertex_id_t start_vertex, vector<pair<vertex_id_t, uint>>& distances, version_t version);
 
-    void run_page_rank_experiment(TopologyInterface& ds, bool run_on_raw_neighbourhood);
+    void run_page_rank_experiment(TopologyInterface& ds, bool run_on_raw_neighbourhood, bool gapbs);
 
-    void check_page_rank(vector<float>& scores);
+    void check_page_rank(vector<pair<vertex_id_t, double>>& scores);
 
     void run_triangle_counting_experiment(TopologyInterface& ds);
     void check_triangle_counting(size_t count);

@@ -373,6 +373,7 @@ vector<pair<vertex_id_t, uint>> Algorithms::bfs(Driver &driver, TopologyInterfac
 
   cout << "BFS took: " << milliseconds << " milliseconds" << endl;
 
+  // TODO use algorithm::translate here
   // Translation to logical
   // TODO rephrase once we have vertex iterators.
   start = chrono::steady_clock::now();
@@ -407,15 +408,6 @@ unordered_map<vertex_id_t, size_t> Algorithms::neighbourhood_2(Driver &driver,
   }
 }
 
-vector<float> Algorithms::page_rank(Driver &driver, TopologyInterface &ds, bool run_on_raw_neighbourhood) {
-  const int max_iters = 5;
-  const float epsilon = 1e-4;
-
-  if (run_on_raw_neighbourhood) {
-    return PageRank::page_rank_raw_neighbourhood(driver, ds, max_iters, epsilon);
-  } else if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
-    throw NotImplemented();
-  } else {
-    return PageRank::page_rank_batched_interface(driver, ds, max_iters, epsilon);
-  }
+vector<pair<vertex_id_t, double>> Algorithms::page_rank(Driver &driver, TopologyInterface &ds, bool run_on_raw_neighbourhood, bool use_gapbs) {
+  return PageRank::page_rank(driver, ds, Config::PAGE_RANK_ITERATIONS, run_on_raw_neighbourhood, use_gapbs);
 }

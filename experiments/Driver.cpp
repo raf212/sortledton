@@ -36,6 +36,8 @@
 #include "TwoNeighbour.h"
 
 
+#define CHECKINSERT 0
+
 vector<vector<vertex_id_t>> Driver::select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
   vector<vector<vertex_id_t>> out;
 
@@ -284,8 +286,10 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edg
         }
         break;
       }
+      case GAPBS_PR:
+        gapbs = true; // Fallthrough
       case (PR): {
-        run_page_rank_experiment(*data_structure, run_on_raw_neighbourhood);
+        run_page_rank_experiment(*data_structure, run_on_raw_neighbourhood, gapbs);
         if (versioned_data_structure != nullptr) {
           tm.transactionCompleted(transaction);
         }
@@ -525,7 +529,7 @@ Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, Edg
 
   cout << "Inserting took: " << microseconds / 1000 << " milliseconds " << endl;
   cout << "This is " << ((float) el.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
-#ifdef DEBUG
+#if defined(DEBUG) && CHECKINSERT
   check_insert(ds, el, base_edge_count);
 #endif
 }
@@ -586,7 +590,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
 
   cout << "Inserting took: " << microseconds / 1000 << " milliseconds " << endl;
   cout << "This is " << ((float) el.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
-#ifdef DEBUG
+#if defined(DEBUG) && CHECKINSERT
   auto tx = tm.getSnapshotTransaction(ds);
   check_insert(tx, el, base_edge_count);
   tm.transactionCompleted(tx);
@@ -1198,17 +1202,16 @@ void Driver::print_graph(TopologyInterface &ds) {
   }
 }
 
-void Driver::run_page_rank_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood) {
+void Driver::run_page_rank_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool gapbs) {
   cout << "Running PR experiment ";
   cout.flush();
 
-  vector<float> scores;
+  vector<pair<vertex_id_t, double>> scores;
 
   vector<size_t> run_times;
   for (uint rep = 0; rep < config.repetitions; rep++) {
-    // BFS
     auto start = chrono::steady_clock::now();
-    scores = Algorithms::page_rank(*this, ds, run_on_raw_neighbourhood);
+    scores = Algorithms::page_rank(*this, ds, run_on_raw_neighbourhood, gapbs);
     auto end = chrono::steady_clock::now();
 
     size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
@@ -1229,8 +1232,11 @@ void Driver::run_page_rank_experiment(TopologyInterface &ds, bool run_on_raw_nei
   cout << endl << "PR run in average in " << average << " milliseconds " << endl;
 }
 
-void Driver::check_page_rank(vector<float> &scores) {
+void Driver::check_page_rank(vector<pair<vertex_id_t, double>> &scores) {
   cout << "Validating Page Rank experiment" << endl;
+
+  sort(scores.begin(), scores.end());
+
   string inserts = "base";
 
   const string gold_standard_file =
@@ -1246,8 +1252,9 @@ void Driver::check_page_rank(vector<float> &scores) {
     size_t size = scores.size();
     f.write((char *) &size, sizeof(size));
 
-    for (float s : scores) {
-      f.write((char *) &s, sizeof(s));
+    for (auto s : scores) {
+      f.write((char *) &s.first, sizeof(s.first));
+      f.write((char *) &s.second, sizeof(s.second));
     }
     f.close();
   } else {
@@ -1256,11 +1263,22 @@ void Driver::check_page_rank(vector<float> &scores) {
     size_t size;
     f.read((char *) &size, sizeof(size));
     assert(size == scores.size());
+    vertex_id_t v = 0;
+    double e = 0.0;
+    auto errors = 0;
+    for (auto i = 0u; i < scores.size(); i++) {
+      auto d = scores[i];
+      f.read((char*) &v, sizeof(v));
+      f.read((char *) &e, sizeof(double));
+      auto correct = fabs(d.second - e) < Config::PAGE_RANK_ERROR;  // TODO move precision to configuration+
 
-    float e;
-    for (float d : scores) {
-      f.read((char *) &e, sizeof(d));
-      assert(fabs(d - e) < 1e-4);  // TODO move PR precission to Configuration
+      assert(v == d.first);\
+      if (!correct && errors < 100) {
+
+        errors += 1;
+        cout << i << "Actual: " << d.second << "Expected: " << e << "Difference: " << fabs(d.second - e) << endl;
+      }
+//      assert(correct);
     }
 
     f.close();
@@ -1287,7 +1305,7 @@ Driver::run_gc_experiment(TransactionManager &tm, VersionedTopologyInterface &ds
   cout << ".";
   cout.flush();
 
-#ifdef DEBUG
+#if defined(DEBUG) && CHECKINSERT
   if (inserts_run) {
     auto tx = tm.getSnapshotTransaction(&ds);
     check_insert(tx, inserts, 0);

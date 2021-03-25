@@ -183,7 +183,8 @@ const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING{
         {COMMUNITY_DETECTION, "community"},
         {STORAGE, "storage"},
         {GC, "gc"},
-        {GAPBS_BFS, "bsbfs"}
+        {GAPBS_BFS, "bsbfs"},
+        {GAPBS_PR, "bspr"}
 };
 
 const string Config::gold_standard_directory = "/space/fuchs/shared/graph_two_gold_standards";

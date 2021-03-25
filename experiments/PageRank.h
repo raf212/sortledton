@@ -13,12 +13,13 @@
 
 
 class PageRank {
-    static constexpr float damping_factor = 0.85;
-
 public:
-    static vector<float> page_rank_batched_interface(Driver& driver, TopologyInterface& ds, int max_iters, double epsilon = 0);
-    static vector<float> page_rank_raw_neighbourhood(Driver& driver, TopologyInterface& ds, int max_iters, double epsilon = 0);
+    static vector<pair<vertex_id_t, double>> page_rank(Driver& driver, TopologyInterface& ds, int iterations, bool use_raw_neighbourhood, bool use_gapbs);
 
+private:
+    static vector<double> page_rank_batched_interface(Driver& driver, TopologyInterface& ds, int iterations);
+    static vector<double> page_rank_raw_neighbourhood(Driver& driver, TopologyInterface& ds, int iterations);
+    static vector<double> page_rank_bs(Driver& driver, TopologyInterface& ds, int iterations);
 };
 
 

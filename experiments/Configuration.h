@@ -54,7 +54,8 @@ enum Experiments {
     COMMUNITY_DETECTION,
     STORAGE,
     GC,
-    GAPBS_BFS
+    GAPBS_BFS,
+    GAPBS_PR
 };
 
 class Dataset {
@@ -108,6 +109,10 @@ public:
     Dataset deletions;
 
     uint repetitions;
+
+    constexpr static double PAGE_RANK_ERROR = 1e-4;
+    constexpr static int PAGE_RANK_ITERATIONS = 5;
+    constexpr static double PAGE_RANK_DAMPING_FACTOR = 0.85;
 
 
     // TODO remove it turned out to be not beneficial and is not used
