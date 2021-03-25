@@ -890,10 +890,10 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
     assert(edge_count == expected_edge_count);
   }
 
-
-  auto i = 0;
-  for (auto e : el.edges) {
-    i++;
+  cout << "Checking if all edges exist." << endl;
+#pragma omp parallel for
+  for (auto i = 0u; i < el.edges.size(); i++) {
+    auto e = el.edges[i];
 //    if (i % 1000 == 0) {
 //      cout << ".";
 //    }
@@ -905,18 +905,24 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
   }
 
   // Check properties
+  cout << "Checking properties" << endl;
   if (config.weighted && typeid(ds) == typeid(SnapshotTransaction&)) {
     auto tx = dynamic_cast<SnapshotTransaction&>(ds);
-    VersionedPropertyEdgeIterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList*>(tx.raw_ds()), sizeof(weight_t));
-    for (vertex_id_t v = 0; v < ds.max_physical_vertex(); v++) {
-      auto l_v = ds.logical_id(v);
-      tx.neighbourhood_with_properties_p(v, iter);
-      while (iter.has_next()) {
-        auto [d, pp] = iter.next_with_properties();
-        auto p = *((dst_t*) pp);
-        if (p != l_v) {
-          auto l_d = ds.logical_id(d);
-          assert(l_d == p);
+#pragma omp parallel
+    {
+      VersionedPropertyEdgeIterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(tx.raw_ds()),
+                                         sizeof(weight_t));
+#pragma omp for
+      for (vertex_id_t v = 0; v < ds.max_physical_vertex(); v++) {
+        auto l_v = ds.logical_id(v);
+        tx.neighbourhood_with_properties_p(v, iter);
+        while (iter.has_next()) {
+          auto[d, pp] = iter.next_with_properties();
+          auto p = *((dst_t *) pp);
+          if (p != l_v) {
+            auto l_d = ds.logical_id(d);
+            assert(l_d == p);
+          }
         }
       }
     }
