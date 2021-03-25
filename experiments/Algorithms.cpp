@@ -373,26 +373,7 @@ vector<pair<vertex_id_t, uint>> Algorithms::bfs(Driver &driver, TopologyInterfac
 
   cout << "BFS took: " << milliseconds << " milliseconds" << endl;
 
-  // TODO use algorithm::translate here
-  // Translation to logical
-  // TODO rephrase once we have vertex iterators.
-  start = chrono::steady_clock::now();
-  logical_result.resize(ds.max_physical_vertex());
-  auto V = ds.max_physical_vertex();
-#pragma omp parallel for
-  for (uint v = 0; v <  V; v++) {
-    if (ds.has_vertex_p(v)) {
-        logical_result[v] = make_pair(ds.logical_id(v), physical_result[v]);
-    } else {
-      logical_result[v] = make_pair(v, numeric_limits<uint>::max());
-    }
-  }
-  end = chrono::steady_clock::now();
-  milliseconds = chrono::duration_cast<chrono::milliseconds>(end - start).count();
-
-  cout << "Translating took: " << milliseconds << " milliseconds" << endl;
-
-  return logical_result;
+  return Algorithms::translate(ds, physical_result);
 }
 
 unordered_map<vertex_id_t, size_t> Algorithms::neighbourhood_2(Driver &driver,
