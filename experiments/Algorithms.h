@@ -7,10 +7,12 @@
 
 #include <memory>
 #include <vector>
+#include <chrono>
+#include <iostream>
 
 #include "data-structures/ToplogyInterface.h"
-#include "Driver.h"
 
+class Driver;
 
 using namespace std;
 class Algorithms {
@@ -24,6 +26,11 @@ public:
                                                                                                           start_vertex,
                                                                                                           false, false,
                                                                                                           false); };
+
+    static vector<pair<vertex_id_t , weight_t>> sssp(Driver& driver, TopologyInterface& ds, bool use_raw_neighbourhood);
+    static vector<pair<vertex_id_t , vertex_id_t>> wcc(Driver& driver, TopologyInterface& ds, bool use_raw_neighbourhood);
+    static vector<pair<vertex_id_t , double>> lcc(Driver& driver, TopologyInterface& ds, bool use_raw_neighbourhood);
+    static vector<pair<vertex_id_t , vertex_id_t>> cdlp(Driver& driver, TopologyInterface& ds, bool use_raw_neighbourhood);
 
     static vector<pair<vertex_id_t, double>> page_rank(Driver& driver, TopologyInterface& ds, bool use_raw_neighbourhood, bool use_gapbs);
 

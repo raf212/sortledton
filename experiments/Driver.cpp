@@ -97,9 +97,10 @@ void Driver::run() {
   }
 }
 
-void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts, EdgeList<edge_t> &deletes,
-                                DataStructures ds, const vector<string> &ds_parameters,
-                                vector<vector<vertex_id_t>> &neighbourhood_2_sources) {
+void
+Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts, EdgeList<edge_t> &deletes,
+                           DataStructures ds, const vector<string> &ds_parameters,
+                           vector<vector<vertex_id_t>> &neighbourhood_2_sources) {
   reporter.set_data_structure(ds, ds_parameters);
 
   TopologyInterface *data_structure;
@@ -190,7 +191,8 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edg
       if (!ds_parameters.empty()) {  // TODO better parameter sanitization
         block_size = stoi(ds_parameters[0]);
       }
-      versioned_data_structure = new VersioningBlockedSkipListAdjacencyList(block_size, config.weighted ? sizeof(weight_t) : 0, tm);
+      versioned_data_structure = new VersioningBlockedSkipListAdjacencyList(block_size,
+                                                                            config.weighted ? sizeof(weight_t) : 0, tm);
       ds_name = "versioned";
       break;
     }
@@ -275,21 +277,39 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edg
         }
         break;
       }
-      case (COMMUNITY_DETECTION): {
-        throw NotImplemented("Current implementation is incorrect");
-        if (run_on_raw_neighbourhood) {
-          throw NotImplemented();
-        }
-        run_community_detection(*data_structure);
+      case GAPBS_PR:
+        gapbs = true; // Fallthrough
+      case (PR): {
+        run_page_rank_experiment(*data_structure, run_on_raw_neighbourhood, gapbs);
         if (versioned_data_structure != nullptr) {
           tm.transactionCompleted(transaction);
         }
         break;
       }
-      case GAPBS_PR:
-        gapbs = true; // Fallthrough
-      case (PR): {
-        run_page_rank_experiment(*data_structure, run_on_raw_neighbourhood, gapbs);
+      case (SSSP): {
+        run_analytics(e.first, *data_structure, run_on_raw_neighbourhood);
+        if (versioned_data_structure != nullptr) {
+          tm.transactionCompleted(transaction);
+        }
+        break;
+      }
+      case (WCC): {
+        run_analytics(e.first, *data_structure, run_on_raw_neighbourhood);
+        if (versioned_data_structure != nullptr) {
+          tm.transactionCompleted(transaction);
+        }
+
+        break;
+      }
+      case (LCC): {
+        run_analytics(e.first, *data_structure, run_on_raw_neighbourhood);
+        if (versioned_data_structure != nullptr) {
+          tm.transactionCompleted(transaction);
+        }
+        break;
+      }
+      case (CDLP): {
+        run_analytics(e.first, *data_structure, run_on_raw_neighbourhood);
         if (versioned_data_structure != nullptr) {
           tm.transactionCompleted(transaction);
         }
@@ -359,6 +379,77 @@ void Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edg
     delete versioned_data_structure;
     versioned_data_structure = nullptr;
   }
+}
+
+
+void Driver::run_analytics(Experiments ex, TopologyInterface &ds, bool run_on_raw_neighbourhood) {
+  string experiment_name = Config::EXPERIMENT_MAPPING.find(ex)->second;
+  cout << "Running " << experiment_name << " experiment ";
+  cout.flush();
+
+  vector<pair<vertex_id_t, uint64_t>> integral_values;
+  vector<pair<vertex_id_t, double>> double_values;
+  vector<pair<vertex_id_t, weight_t>> weight_values;
+
+  vector<size_t> run_times;
+  for (uint rep = 0; rep < config.repetitions; rep++) {
+    auto start = chrono::steady_clock::now();
+    switch (ex) {
+      case (WCC): {
+        integral_values = Algorithms::wcc(*this, ds, run_on_raw_neighbourhood);
+        break;
+      }
+      case (SSSP): {
+        weight_values = Algorithms::sssp(*this, ds, run_on_raw_neighbourhood);
+        break;
+      }
+      case (LCC): {
+        double_values = Algorithms::lcc(*this, ds, run_on_raw_neighbourhood);
+        break;
+      }
+      case (CDLP): {
+        integral_values = Algorithms::cdlp(*this, ds, run_on_raw_neighbourhood);
+        break;
+      }
+      default:
+        throw NotImplemented();
+    }
+    auto end = chrono::steady_clock::now();
+
+    size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
+
+    run_times.push_back(microseconds);
+    reporter.add_repetition(ex, rep, microseconds);
+
+
+    cout << ".";
+    cout.flush();
+
+#ifdef DEBUG
+    switch (ex) {
+      case (WCC): // Fallthrough
+      case (CDLP): {
+        check_analytics<uint64_t>(ex, integral_values);
+        break;
+
+      }
+      case (SSSP): {
+        check_analytics<weight_t>(ex, weight_values);
+        break;
+      }
+      case (LCC): {
+        check_analytics<double>(ex, double_values);
+        break;
+      }
+      default:
+        throw NotImplemented();
+    }
+#endif
+  }
+
+  double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
+  cout << endl << experiment_name << " run in average in " << average << " milliseconds " <<
+       endl;
 }
 
 void
@@ -431,9 +522,10 @@ void run_inserts(EdgeList<weighted_edge_t> &el, atomic_uint &insert_position, To
 }
 
 void
-run_inserts_in_transactions(bool weighted, size_t thread_id, TransactionManager &tm, EdgeList<weighted_edge_t> &el, atomic_uint &insert_position,
-                                 VersionedTopologyInterface *ds, uint total_partitions, uint partition,
-                                 bool undirected) {
+run_inserts_in_transactions(bool weighted, size_t thread_id, TransactionManager &tm, EdgeList<weighted_edge_t> &el,
+                            atomic_uint &insert_position,
+                            VersionedTopologyInterface *ds, uint total_partitions, uint partition,
+                            bool undirected) {
   tm.register_thread(thread_id);
   const uint batch_size = 3000;
 
@@ -450,7 +542,7 @@ run_inserts_in_transactions(bool weighted, size_t thread_id, TransactionManager 
       tx.insert_vertex(e.dst);
 
       char weight[sizeof(e.weight)];
-      memcpy((void*) &weight, (void*) &e.weight, sizeof(e.weight));
+      memcpy((void *) &weight, (void *) &e.weight, sizeof(e.weight));
       if (undirected) {
         auto opposite = edge_t{e.dst, e.src};
         if (weighted) {
@@ -489,7 +581,8 @@ run_inserts_in_transactions(bool weighted, size_t thread_id, TransactionManager 
 }
 
 void
-Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList<weighted_edge_t> &el, size_t base_edge_count) {
+Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList<weighted_edge_t> &el,
+                              size_t base_edge_count) {
   cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
   uint threads = config.insert_threads;
 
@@ -534,7 +627,8 @@ Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, Edg
 #endif
 }
 
-void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedTopologyInterface *ds, EdgeList<weighted_edge_t> &el,
+void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedTopologyInterface *ds,
+                                              EdgeList<weighted_edge_t> &el,
                                               size_t base_edge_count) {
   cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
   uint threads = config.insert_threads;
@@ -553,14 +647,14 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
       if (config.undirected) {
         auto opposite = edge_t{e.dst, e.src};
         if (config.weighted) {
-          tx.insert_edge(opposite, (char*) &e.weight, sizeof(e.weight));
+          tx.insert_edge(opposite, (char *) &e.weight, sizeof(e.weight));
         } else {
           tx.insert_edge(opposite);
         }
       }
 
       if (config.weighted) {
-        tx.insert_edge({e.src, e.dst}, (char*) &e.weight, sizeof(e.weight));
+        tx.insert_edge({e.src, e.dst}, (char *) &e.weight, sizeof(e.weight));
       } else {
         tx.insert_edge({e.src, e.dst});
       }
@@ -574,7 +668,8 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
     vector<thread> ts;
     uint partition = 0;
     for (uint i = 1; i < threads + 1; i++) {
-      ts.emplace_back(run_inserts_in_transactions, config.weighted, i, ref(tm), ref(el), ref(insert_index), ds, config.insert_threads,
+      ts.emplace_back(run_inserts_in_transactions, config.weighted, i, ref(tm), ref(el), ref(insert_index), ds,
+                      config.insert_threads,
                       partition, config.undirected);
       partition++;
     }
@@ -763,7 +858,8 @@ void Driver::check_bfs(vertex_id_t start_vertex, vector<pair<vertex_id_t, uint>>
   string inserts = "base";
 
   // Sort by the logical vertex
-  sort(distances.begin(), distances.end());  // Sorts lexicographical which is the same than on the first element if the first element is distinct.
+  sort(distances.begin(),
+       distances.end());  // Sorts lexicographical which is the same than on the first element if the first element is distinct.
 
   if (version == FIRST_VERSION) {
     inserts = "base";
@@ -807,19 +903,20 @@ void Driver::check_bfs(vertex_id_t start_vertex, vector<pair<vertex_id_t, uint>>
         f.read((char *) &e, sizeof(e));
         if (d.second != e && errors < 100) {
           errors += 1;
-          cout << "i " << i << " d " << d.second << " e " << e << "logical vertex " << d.first <<  endl;
+          cout << "i " << i << " d " << d.second << " e " << e << "logical vertex " << d.first << endl;
         }
         assert(d.second == e);
       }
-        i += 1;
+      i += 1;
     }
 
     f.close();
   }
 }
 
-void Driver::validate_graph_structure(TopologyInterface &ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts,
-                                      EdgeList<edge_t> &deletes) {
+void
+Driver::validate_graph_structure(TopologyInterface &ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts,
+                                 EdgeList<edge_t> &deletes) {
   cout << "Validating data structure." << endl;
   auto vertices = base.vertex_count();
 
@@ -910,8 +1007,8 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
 
   // Check properties
   cout << "Checking properties" << endl;
-  if (config.weighted && typeid(ds) == typeid(SnapshotTransaction&)) {
-    auto tx = dynamic_cast<SnapshotTransaction&>(ds);
+  if (config.weighted && typeid(ds) == typeid(SnapshotTransaction &)) {
+    auto tx = dynamic_cast<SnapshotTransaction &>(ds);
 #pragma omp parallel
     {
       VersionedPropertyEdgeIterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(tx.raw_ds()),
@@ -932,7 +1029,6 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
     }
 
   }
-
 
 
   const string gold_standard_file_sizes =
@@ -1055,139 +1151,6 @@ void Driver::check_triangle_counting(size_t count) {
   }
 }
 
-void Driver::run_community_detection(TopologyInterface &ds) {
-  cout << "Running community detection experiment ";
-  cout.flush();
-
-  const uint max_iterations = 5;
-
-  vector<size_t> run_times;
-
-  size_t vertex_count = ds.max_physical_vertex();
-
-  for (uint rep = 0; rep < config.repetitions; rep++) {
-    auto start = chrono::steady_clock::now();
-
-    vector<bool> active1(vertex_count, true);
-    vector<bool> active2(vertex_count, false);
-
-    vector<vertex_id_t> labels1(vertex_count);
-    vector<vertex_id_t> labels2(vertex_count);
-
-    auto &l_old = labels1;
-    auto &l_new = labels2;
-
-    ContigiousBlockIterator &neighbours = getIter(ds);
-
-    for (vertex_id_t v = 0; v < ds.max_physical_vertex(); v++) {
-      l_old[v] = v;
-    }
-
-    // Needs to be ordered for correctness; to find the minimum label.
-    map<vertex_id_t, size_t> label_counts;
-    bool done = false;
-
-    uint iterations = 0;
-    while (!done && iterations <= max_iterations) {
-      size_t vertices_changed = 0;
-      done = true;
-
-      for (vertex_id_t v = 0; v < vertex_count; v++) {
-        label_counts.clear();
-
-        ds.neighbourhood(v, neighbours);
-        while (neighbours.has_next()) {
-          auto &block = neighbours.next();
-
-          for (auto n : block) {
-            auto l = l_old[n];
-            auto lc = label_counts.find(l);
-            if (lc == label_counts.end()) {
-              label_counts.insert({l, 1});
-            } else {
-              lc->second++;
-            }
-          }
-        }
-
-        vertex_id_t new_label;
-        auto max_count = 0u;
-        for (auto lc : label_counts) {
-          if (max_count < lc.second) {
-            max_count = lc.second;
-            new_label = lc.first;
-          }
-        }
-        l_new[v] = new_label;
-        if (l_old[v] != l_new[v]) {
-          done = false;
-          vertices_changed++;
-        }
-      }
-
-      swap(l_old, l_new);
-      iterations++;
-    }
-
-    auto end = chrono::steady_clock::now();
-
-    size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
-    run_times.push_back(microseconds);
-    reporter.add_repetition(COMMUNITY_DETECTION, rep, microseconds);
-
-    cout << ".";
-    cout.flush();
-
-#ifdef DEBUG
-    check_community_detection(l_new);
-#endif
-  }
-
-  double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
-  cout << endl << "community detection run in average in " << average << " milliseconds " << endl;
-
-}
-
-
-// TODO shouldn't community detection converge?
-void Driver::check_community_detection(vector<vertex_id_t> labels) {
-  cout << "Validating community experiment" << endl;
-  const string gold_standard_file =
-          config.gold_standard_directory + "/community_" + config.base.get_name() + ".goldStandard";
-  if (!file_exists(gold_standard_file)) {
-    cout << "Writing new gold standard for: " << gold_standard_file << endl;
-    ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
-
-    if (!f.good()) {
-      assert(false);
-    }
-
-    size_t vertex_count = labels.size();
-    f.write((char *) &vertex_count, sizeof(vertex_count));
-
-    for (vertex_id_t v = 0; v < vertex_count; v++) {
-      f.write((char *) &labels[v], sizeof(vertex_id_t));
-    }
-    f.close();
-  } else {
-    ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
-
-    size_t vertex_count;
-    f.read((char *) &vertex_count, sizeof(vertex_count));
-
-    assert(vertex_count == labels.size());
-
-    vertex_id_t l;
-    for (vertex_id_t v = 0; v < vertex_count; v++) {
-      f.read((char *) &l, sizeof(l));
-      assert(labels[v] == l);
-    }
-
-    f.close();
-  }
-
-}
-
 void Driver::print_graph(TopologyInterface &ds) {
   ContigiousBlockIterator &ns = getIter(ds);
   for (vertex_id_t v = 0; v < ds.max_physical_vertex(); v++) {
@@ -1268,7 +1231,7 @@ void Driver::check_page_rank(vector<pair<vertex_id_t, double>> &scores) {
     auto errors = 0;
     for (auto i = 0u; i < scores.size(); i++) {
       auto d = scores[i];
-      f.read((char*) &v, sizeof(v));
+      f.read((char *) &v, sizeof(v));
       f.read((char *) &e, sizeof(double));
       auto correct = fabs(d.second - e) < Config::PAGE_RANK_ERROR;  // TODO move precision to configuration+
 
@@ -1291,7 +1254,8 @@ void Driver::show_storage_sizes(string ds_name, TopologyInterface &ds) {
 }
 
 void
-Driver::run_gc_experiment(TransactionManager &tm, VersionedTopologyInterface &ds, bool inserts_run, EdgeList<weighted_edge_t> &inserts) {
+Driver::run_gc_experiment(TransactionManager &tm, VersionedTopologyInterface &ds, bool inserts_run,
+                          EdgeList<weighted_edge_t> &inserts) {
   cout << "Running GC experiment " << endl;
 
   tm.update_min_version();

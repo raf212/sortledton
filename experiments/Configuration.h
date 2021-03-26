@@ -51,11 +51,14 @@ enum Experiments {
     BFS,
     PR,
     NEIGHBOUR_2,
-    COMMUNITY_DETECTION,
     STORAGE,
     GC,
     GAPBS_BFS,
-    GAPBS_PR
+    GAPBS_PR,
+    SSSP,
+    WCC,
+    LCC,
+    CDLP
 };
 
 class Dataset {

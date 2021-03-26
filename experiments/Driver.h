@@ -19,6 +19,19 @@
 
 #include "data-structures/adjacency-lists/FilteredVectorIterator.h"
 
+namespace specialize {
+    template <typename T>
+    inline bool check_equal(T a, T b, double tolerance) {
+      return a == b;
+    }
+
+    template<>
+    inline bool check_equal(double a, double b, double tolerance) {
+      return fabs(a - b) < tolerance;
+    }
+}
+
+
 class Driver {
 public:
     Driver(Config config) : config(config), reporter(config) { };
@@ -72,9 +85,6 @@ private:
     void run_neighbourhood_2_experiment(TopologyInterface& ds, const vector<vector<vertex_id_t>>& sources, bool run_on_raw_neighbourhood);
     void check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts);
 
-    void run_community_detection(TopologyInterface& ds);
-    void check_community_detection(vector<vertex_id_t> labels);
-
     void validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts, EdgeList<edge_t> &deletes);
 
     void print_graph(TopologyInterface& ds);
@@ -91,7 +101,70 @@ private:
     void run_gc_experiment(TransactionManager& tm, VersionedTopologyInterface& ds, bool inserts_run, EdgeList<weighted_edge_t> &inserts);
     void check_gc_experiment(VersionedTopologyInterface& ds);
 
-};
+private:
+    void run_analytics(Experiments e, TopologyInterface& ds, bool run_on_raw_neighbourhoud);
 
+    template <typename T>
+    void check_analytics(Experiments ex, vector<pair<vertex_id_t, T>> values) {
+      string experiment_name = Config::EXPERIMENT_MAPPING.find(ex)->second;
+
+      cout << "Validating " << experiment_name << " experiment" << endl;
+
+      sort(values.begin(), values.end());
+
+      string inserts = "base";
+
+      const string gold_standard_file =
+              config.gold_standard_directory + "/" + experiment_name + "_" + config.base.get_name() + ".goldStandard";
+      if (!file_exists(gold_standard_file)) {
+        cout << "Writing new gold standard for: " << gold_standard_file << endl;
+        ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
+
+        if (!f.good()) {
+          assert(false);
+        }
+
+        size_t size = values.size();
+        f.write((char *) &size, sizeof(size));
+
+        for (auto s : values) {
+          f.write((char *) &s.first, sizeof(s.first));
+          f.write((char *) &s.second, sizeof(s.second));
+        }
+        f.close();
+      } else {
+        ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
+
+        size_t size;
+        f.read((char *) &size, sizeof(size));
+        assert(size == values.size());
+
+        vertex_id_t v = 0;
+        T e = 0.0;
+        auto errors = 0;
+        for (auto i = 0u; i < values.size(); i++) {
+          auto d = values[i];
+          f.read((char*) &v, sizeof(v));
+          f.read((char *) &e, sizeof(T));
+
+          auto correct = check_equal(d.second, e, Config::PAGE_RANK_ERROR);
+
+          assert(v == d.first);
+          if (!correct && errors < 100) {
+            errors += 1;
+            cout << i << "Actual: " << d.second << "Expected: " << e << "Difference: " << fabs(d.second - e) << endl;
+          }
+          assert(correct);
+        }
+        f.close();
+      }
+    };
+
+    template <typename T>
+    inline bool check_equal(T a, T b, double tolerance) {
+      return specialize::check_equal(a, b, tolerance);
+    }
+
+};
 
 #endif //LIVE_GRAPH_TWO_DRIVER_H

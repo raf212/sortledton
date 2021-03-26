@@ -10,6 +10,7 @@
 #include "third-party/gapbs.h"
 #include "GAPBSAlgorithms.h"
 #include "Algorithms.h"
+#include <versioning/VersionedEdgeIterator.h>
 
 using namespace gapbs;
 

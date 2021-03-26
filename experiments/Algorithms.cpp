@@ -19,6 +19,7 @@
 #include <versioning/VersioningBlockedSkipListAdjacencyList.h>
 #include <data_types.h>
 #include "GAPBSAlgorithms.h"
+#include "Driver.h"
 
 
 vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
@@ -391,4 +392,23 @@ unordered_map<vertex_id_t, size_t> Algorithms::neighbourhood_2(Driver &driver,
 
 vector<pair<vertex_id_t, double>> Algorithms::page_rank(Driver &driver, TopologyInterface &ds, bool run_on_raw_neighbourhood, bool use_gapbs) {
   return PageRank::page_rank(driver, ds, Config::PAGE_RANK_ITERATIONS, run_on_raw_neighbourhood, use_gapbs);
+}
+
+vector<pair<vertex_id_t, weight_t>>
+Algorithms::sssp(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhood) {
+  throw NotImplemented();
+}
+
+vector<pair<vertex_id_t, vertex_id_t>>
+Algorithms::wcc(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhood) {
+  throw NotImplemented();
+}
+
+vector<pair<vertex_id_t, double>> Algorithms::lcc(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhood) {
+  throw NotImplemented();
+}
+
+vector<pair<vertex_id_t, vertex_id_t>>
+Algorithms::cdlp(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhood) {
+  throw NotImplemented();
 }

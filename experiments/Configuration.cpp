@@ -180,11 +180,14 @@ const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING{
         {PR, "pr"},
         {TRIANGLE_COUNTING, "triangle"},
         {NEIGHBOUR_2, "2-neighbour"},
-        {COMMUNITY_DETECTION, "community"},
         {STORAGE, "storage"},
         {GC, "gc"},
         {GAPBS_BFS, "bsbfs"},
-        {GAPBS_PR, "bspr"}
+        {GAPBS_PR, "bspr"},
+        {SSSP, "sssp"},
+        {WCC, "wcc"},
+        {LCC, "lcc"},
+        {CDLP, "cdlp"},
 };
 
 const string Config::gold_standard_directory = "/space/fuchs/shared/graph_two_gold_standards";
