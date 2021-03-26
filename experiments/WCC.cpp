@@ -46,7 +46,6 @@ vector<vertex_id_t> WCC::gapbs_wcc(Driver &driver, TopologyInterface &ds) {
 
   bool change = true;
   while (change) {
-    cout << "Iteration" << endl;
     change = false;
 
 #pragma omp parallel
@@ -111,7 +110,4 @@ vector<pair<vertex_id_t, vertex_id_t>> WCC::wcc(Driver &driver, TopologyInterfac
 
   cout << "Translating took: " << milliseconds << " milliseconds" << endl;
   return logical_result;
-
-
-  return Algorithms::translate<vertex_id_t>(ds, physical_results);
 }
