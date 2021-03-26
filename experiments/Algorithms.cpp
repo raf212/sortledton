@@ -20,6 +20,7 @@
 #include <data_types.h>
 #include "GAPBSAlgorithms.h"
 #include "Driver.h"
+#include "WCC.h"
 
 
 vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
@@ -401,7 +402,7 @@ Algorithms::sssp(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourho
 
 vector<pair<vertex_id_t, vertex_id_t>>
 Algorithms::wcc(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhood) {
-  throw NotImplemented();
+  return WCC::wcc(driver, ds, use_raw_neighbourhood);
 }
 
 vector<pair<vertex_id_t, double>> Algorithms::lcc(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhood) {
