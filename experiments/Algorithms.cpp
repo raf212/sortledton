@@ -21,6 +21,7 @@
 #include "GAPBSAlgorithms.h"
 #include "Driver.h"
 #include "WCC.h"
+#include "CDLP.h"
 
 
 vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
@@ -411,5 +412,5 @@ vector<pair<vertex_id_t, double>> Algorithms::lcc(Driver &driver, TopologyInterf
 
 vector<pair<vertex_id_t, vertex_id_t>>
 Algorithms::cdlp(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhood) {
-  throw NotImplemented();
+  return CDLP::cdlp(driver, ds, Config::CDLP_MAX_ITERATIONS, use_raw_neighbourhood);
 }

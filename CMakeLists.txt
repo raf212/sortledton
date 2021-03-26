@@ -91,7 +91,8 @@ set(SRC
         versioning/EdgeBlock.cpp versioning/EdgeBlock.h versioning/VersionedPropertyEdgeIterator.cpp
         versioning/VersionedPropertyEdgeIterator.cpp versioning/VersionedPropertyEdgeIterator.h
         versioning/AdjacencySetTypes.h
-        experiments/WCC.cpp experiments/WCC.h)
+        experiments/WCC.cpp experiments/WCC.h
+        experiments/CDLP.cpp experiments/CDLP.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp
