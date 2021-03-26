@@ -33,6 +33,8 @@ more consistent performance for undirected graphs.
 // direction, so we use a min-max swap such that lower component IDs propagate
 // independent of the edge's direction.
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "EndlessLoop"
 vector<vertex_id_t> WCC::gapbs_wcc(Driver &driver, TopologyInterface &ds) {
   const uint64_t V = ds.max_physical_vertex();
   vector<vertex_id_t> components(V);
@@ -84,6 +86,7 @@ vector<vertex_id_t> WCC::gapbs_wcc(Driver &driver, TopologyInterface &ds) {
   }
   return components;
 }
+#pragma clang diagnostic pop
 
 vector<pair<vertex_id_t, vertex_id_t>> WCC::wcc(Driver &driver, TopologyInterface &ds, bool run_on_raw_neighbourhoud) {
   if (run_on_raw_neighbourhoud) {
