@@ -22,7 +22,8 @@
 #include "Driver.h"
 #include "WCC.h"
 #include "CDLP.h"
-
+#include "BFSSourceSelector.h"
+#include "SSSP.h"
 
 vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
   size_t vertices_traversed = 0;
@@ -398,7 +399,9 @@ vector<pair<vertex_id_t, double>> Algorithms::page_rank(Driver &driver, Topology
 
 vector<pair<vertex_id_t, weight_t>>
 Algorithms::sssp(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhood) {
-  throw NotImplemented();
+  BFSSourceSelector ss(driver, driver.config.base, ds);
+  vertex_id_t start_vertex = ss.get_source();
+  return SSSP::sssp(driver, ds, use_raw_neighbourhood, start_vertex);
 }
 
 vector<pair<vertex_id_t, vertex_id_t>>

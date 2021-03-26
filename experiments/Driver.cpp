@@ -287,6 +287,12 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
         break;
       }
       case (SSSP): {
+        if (typeid(weight_t) != typeid(double)) {
+          throw ConfigurationError("Cannot run SSSP with weight type other than double.");
+        }
+        if (!config.weighted) {
+          throw ConfigurationError("SSSP can only be run on weighted graphs.");
+        }
         run_analytics(e.first, *data_structure, run_on_raw_neighbourhood);
         if (versioned_data_structure != nullptr) {
           tm.transactionCompleted(transaction);
@@ -1011,8 +1017,7 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
     auto tx = dynamic_cast<SnapshotTransaction &>(ds);
 #pragma omp parallel
     {
-      VersionedPropertyEdgeIterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(tx.raw_ds()),
-                                         sizeof(weight_t));
+      sortledton_property_iterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(tx.raw_ds()));
 #pragma omp for
       for (vertex_id_t v = 0; v < ds.max_physical_vertex(); v++) {
         auto l_v = ds.logical_id(v);

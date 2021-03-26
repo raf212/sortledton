@@ -1044,10 +1044,18 @@ size_t VersioningBlockedSkipListAdjacencyList::assert_edge_block_consistency(Edg
 
     }
 #if defined(DEBUG) && ASSERT_WEIGHTS
-    auto p = ((dst_t *) property_start)[property_offset];
-    if (p != l_v) {
-      auto uv = adjacency_index.logical_id(make_unversioned(e));
-      assert(p == uv);
+    if (typeid(weight_t) == typeid(dst_t)) {
+      auto p = ((dst_t *) property_start)[property_offset];
+      if (p != l_v) {
+        auto uv = adjacency_index.logical_id(make_unversioned(e));
+        assert(p == uv);
+      }
+    } else if (typeid(weight_t) == typeid(double)) {
+      auto p = ((double *) property_start)[property_offset];
+      assert(p < 1.1);
+      assert(0.01 <= p);
+    } else {
+      throw ConfigurationError("Cannot check weight conistency for types other than dst_t or double");
     }
     property_offset += 1;
 #endif
@@ -1261,6 +1269,7 @@ VSkipListHeader *VersioningBlockedSkipListAdjacencyList::new_skip_list_block() {
 void VersioningBlockedSkipListAdjacencyList::neighbourhood_version_with_properties_p(vertex_id_t src,
                                                                                      VersionedPropertyEdgeIterator &iter,
                                                                                      version_t version) {
+  assert(property_size != 0 && "Cannot get neighbourhood with properties from a adjacency set with no properties.");
   bool is_versioned = size_is_versioned(src);
   auto set_type = get_set_type(src, version);
   void* set = raw_neighbourhood_version(src, version);
@@ -1275,4 +1284,8 @@ void VersioningBlockedSkipListAdjacencyList::neighbourhood_version_with_properti
   }
 
   iter.initialize(src, set_type, set, properties, block_size, size, version, is_versioned);
+}
+
+size_t VersioningBlockedSkipListAdjacencyList::get_property_size() {
+  return property_size;
 }

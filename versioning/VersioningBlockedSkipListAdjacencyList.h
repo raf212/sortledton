@@ -61,6 +61,8 @@ public:
     bool insert_edge_version(edge_t edge, version_t version, char* properties, size_t properties_size) override;
     bool delete_edge_version(edge_t edge, version_t version) override { throw NotImplemented(); };
 
+    size_t get_property_size() override;
+
     bool aquire_vertex_lock(vertex_id_t v) override;
     void release_vertex_lock(vertex_id_t v) override;
     void aquire_vertex_lock_p(vertex_id_t vertex_lock) override;

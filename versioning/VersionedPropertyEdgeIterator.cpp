@@ -4,8 +4,12 @@
 
 #include "VersionedPropertyEdgeIterator.h"
 
-VersionedPropertyEdgeIterator::VersionedPropertyEdgeIterator(VersioningBlockedSkipListAdjacencyList &ds, size_t property_size) :
-                                                             VersionedEdgeIterator(ds), property_size(property_size) {}
+VersionedPropertyEdgeIterator::VersionedPropertyEdgeIterator(VersioningBlockedSkipListAdjacencyList &ds) :
+                                                             VersionedEdgeIterator(ds), property_size(ds.get_property_size()) {
+  if (property_size == 0) {
+    throw NoProperties();
+  }
+}
 
 void VersionedPropertyEdgeIterator::initialize(vertex_id_t src, VAdjacencySetType type, void *adjacency_set,
                                                char *property_column, size_t block_size, uint64_t set_size, version_t version,

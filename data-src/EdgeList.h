@@ -10,6 +10,8 @@
 #include <string>
 #include <fstream>
 #include <omp.h>
+#include <random>
+#include <utils/NotImplemented.h>
 #include "../data_types.h"
 #include "DataSource.h"
 
@@ -17,6 +19,8 @@ using namespace std;
 
 template <typename et>
 class EdgeList : DataSource {
+    static mt19937 weight_generator;
+
 public:
     typename vector<et>::iterator begin() { return edges.begin(); };
     typename vector<et>::iterator end() { return edges.end(); };
@@ -48,20 +52,32 @@ public:
     };
 
     EdgeList<weighted_edge_t> add_weights(bool generate_weights) {
-      EdgeList<weighted_edge_t> with_weights;
-      with_weights.edges.resize(edges.size());
+      // TODO could be optimized for the unweighted case.
+      // TODO we could parallelize weight gneration for the dst_t case.
+        EdgeList<weighted_edge_t> with_weights;
+        with_weights.edges.resize(edges.size());
 
-#pragma omp parallel for
-      for (auto i = 0u; i < edges.size(); i++) {
-        auto e = edges[i];
-        // TODO needs better weight support before running SSSP
-        with_weights.edges[i] = weighted_edge_t(e.src, e.dst, e.dst);
+        for (auto i = 0u; i < edges.size(); i++) {
+          auto e = edges[i];
+          weight_t w = generate_weight(e);
+          with_weights.edges[i] = weighted_edge_t(e.src, e.dst, w);
+        }
+        return with_weights;
+    }
+
+    weight_t generate_weight(edge_t e) {
+      if (typeid(weight_t) == typeid(double)) {
+        return uniform_real_distribution<double>(0.01, 1.0)(weight_generator);
+      } else if (typeid(weight_t) == typeid(dst_t)) {
+        return e.dst;
+      } else {
+        throw NotImplemented();
       }
-      return with_weights;
+
     }
 };
 
-#include "DataSource.h"
-
+template <typename T>
+mt19937 EdgeList<T>::weight_generator = mt19937(42);
 
 #endif //LIVE_GRAPH_TWO_EDGELIST_H

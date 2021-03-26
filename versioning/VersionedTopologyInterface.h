@@ -10,6 +10,12 @@
 #include <data-src/SortedCSRDataSource.h>
 #include <adjacency-lists/EdgeIterator.h>
 
+// TODO move to Topology interface.
+// TODO move property interface to the topology interface
+class NoProperties : exception {
+
+};
+
 class VersionedPropertyEdgeIterator;
 
 using namespace std;
@@ -55,6 +61,8 @@ public:
     virtual bool insert_edge_version(edge_t edge, version_t version) = 0;
     virtual bool insert_edge_version(edge_t edge, version_t version, char* properties, size_t properties_size) = 0;
     virtual bool delete_edge_version(edge_t edge, version_t version) = 0;
+
+    virtual size_t get_property_size() = 0;
 
     /**
      *

@@ -27,6 +27,9 @@ namespace specialize {
 
     template<>
     inline bool check_equal(double a, double b, double tolerance) {
+      if (isinf(a) && isinf(b)) {
+        return true;
+      }
       return fabs(a - b) < tolerance;
     }
 }
@@ -42,8 +45,8 @@ public:
     EdgeIterator& getSingleEdgeIter(TopologyInterface& ds);
     unordered_set<dst_t> get_neighbours(TopologyInterface& ds, vertex_id_t v);
 
-private:
     Config config;
+private:
     Reporter reporter;
     SortedCSRDataSource read_base_dataset();
     EdgeList<edge_t> read_insert_dataset();
@@ -150,6 +153,9 @@ private:
           auto correct = check_equal(d.second, e, Config::PAGE_RANK_ERROR);
 
           assert(v == d.first);
+          if (i < 100) {
+            cout << d.second << endl;
+          }
           if (!correct && errors < 100) {
             errors += 1;
             cout << i << "Actual: " << d.second << "Expected: " << e << "Difference: " << fabs(d.second - e) << endl;

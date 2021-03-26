@@ -117,6 +117,7 @@ public:
     constexpr static int PAGE_RANK_ITERATIONS = 5;
     constexpr static double PAGE_RANK_DAMPING_FACTOR = 0.85;
     constexpr static int CDLP_MAX_ITERATIONS = 30;
+    constexpr static double SSSP_DELTA= 2.0;
 
 
     // TODO remove it turned out to be not beneficial and is not used

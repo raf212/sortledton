@@ -13,7 +13,7 @@ class VersioningBlockedSkipListAdjacencyList;
 
 class VersionedPropertyEdgeIterator : public VersionedEdgeIterator {
 public:
-    VersionedPropertyEdgeIterator(VersioningBlockedSkipListAdjacencyList& ds, size_t property_size);
+    VersionedPropertyEdgeIterator(VersioningBlockedSkipListAdjacencyList& ds);
     ~VersionedPropertyEdgeIterator() = default;
 
     // TODO make protected
@@ -46,7 +46,7 @@ private:
 
 };
 
-typedef VersionedEdgeIterator sortledton_property_iterator;
+typedef VersionedPropertyEdgeIterator sortledton_property_iterator;
 
 
 #endif //LIVE_GRAPH_TWO_VERSIONEDPROPERTYEDGEITERATOR_H
