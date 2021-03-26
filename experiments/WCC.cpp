@@ -48,7 +48,7 @@ vector<vertex_id_t> WCC::gapbs_wcc(Driver &driver, TopologyInterface &ds) {
   while (change) {
     change = false;
 
-#pragma omp parallel
+#pragma omp parallel shared(change)
     {
       sortledton_iterator iter(
               *dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(dynamic_cast<SnapshotTransaction &>(ds).raw_ds()));
