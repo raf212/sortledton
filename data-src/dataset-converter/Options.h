@@ -30,7 +30,6 @@ public:
     size_t temporal_value_position = numeric_limits<size_t>::max();
 
     bool make_undirected = false;
-    bool make_directed = false;
 
     float insert_percentage = 0.0;
     float deletion_percentage = 0.0;

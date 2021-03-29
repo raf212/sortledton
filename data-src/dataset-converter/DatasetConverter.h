@@ -50,18 +50,13 @@ private:
 
     template<typename E>
     void templated_run() {
-      if (o.make_undirected) {
-        cout << "Support for make_undirected has been removed." << endl;
-        throw exception();
-      }
-
       cout << "Parsing text file. Densify: " << o.densify << "Edge type " << typeid(E).name() << " Temporal value: "
            << o.temporal_value_position << endl;
       size_t vertex_count;
 
       vector<E> edge_list = parse_text_file<E>(o, vertex_count);
 
-      edge_list = clean_data<E>(edge_list, o.make_directed);
+      edge_list = clean_data<E>(edge_list, o.make_undirected);
 
       size_t deletion_set_size = o.deletion_percentage * edge_list.size();
       size_t insertion_set_size = o.insert_percentage * edge_list.size();
@@ -81,7 +76,7 @@ private:
       write_deletion_set<E>(edge_list.begin(), edge_list.begin() + deletion_set_size);
 
       SortedCSRDataSource csr = convert_to_sorted_csr<E>(edge_list.begin(), edge_list.end() - insertion_set_size,
-                                                      vertex_count);
+                                                      vertex_count, o.make_undirected);
       write_base_dataset(csr);
 
       write_degree_information(csr);
@@ -166,7 +161,15 @@ private:
     template<typename E>
     SortedCSRDataSource convert_to_sorted_csr(typename vector<E>::iterator begin,
                                               typename vector<E>::iterator end,
-                                              size_t vertex_count) {
+                                              size_t vertex_count,
+                                              bool make_undirected_base) {
+
+      vector<E> undirected;
+      if (make_undirected_base) {
+        undirected = make_undirected<E>(begin, end);
+        begin = undirected.begin();
+        end = undirected.end();
+      }
 
       // TODO support for weigths missing
       cout << "Creating CSR." << endl;
@@ -215,12 +218,14 @@ private:
      * @return
      */
     template<typename E>
-    vector<E> make_undirected(vector<E> &edges) {
+    vector<E> make_undirected(typename vector<E>::iterator begin,
+                              typename vector<E>::iterator end) {
       cout << "Creating undirected dataset" << endl;
       vector<E> undirected;
-      undirected.reserve(edges.size() * 2);
+      undirected.reserve((end - begin) * 2);
 
-      for (auto e : edges) {
+      for (; begin < end; begin++) {
+        auto e = *begin;
         undirected.push_back(e);
         undirected.push_back(e.opposite());
       }

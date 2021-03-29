@@ -40,7 +40,13 @@ void show_max_degree(const vector<temporal_edge_t>& edge_list, size_t vertex_cou
 }
 
 void DatasetConverter::run() {
-  templated_run<temporal_edge_t>();
+  if (o.input_format == WEIGHTED_EDGELIST_TEXT) {
+    return templated_run<weighted_edge_t>();
+  } else if (o.input_format == TEMPORAL_EDGELIST_TEXT) {
+    return templated_run<temporal_edge_t>();
+  } else {
+    return templated_run<edge_t>();
+  }
 }
 
 bool DatasetConverter::is_comment(const string &line) {

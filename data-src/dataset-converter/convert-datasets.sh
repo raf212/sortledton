@@ -35,10 +35,10 @@ mkdir -p $TARGET_PATH/dimacs-us-u
 #./dataset_converter ${NO_INSERT_DELETE} --make_undirected --densify ${SRC_PATH}example-undirected.e ${TARGET_PATH}/example-u/
 
 ./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}out.higgs-twitter-social ${TARGET_PATH}higgs/
-./dataset_converter ${ALL_INSERT} --make_directed --densify ${SRC_PATH}out.higgs-twitter-social ${TARGET_PATH}higgs-full-insert/
+./dataset_converter ${ALL_INSERT} --make_undirected --densify ${SRC_PATH}out.higgs-twitter-social ${TARGET_PATH}higgs-full-insert/
 #./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}out.soc-LiveJournal1 ${TARGET_PATH}live-journal/
 ./dataset_converter ${NO_INSERT_DELETE} --densify ${SRC_PATH}out.soc-LiveJournal1 ${TARGET_PATH}live-journal-full/
-./dataset_converter ${ALL_INSERT} --make_directed --densify ${SRC_PATH}out.soc-LiveJournal1 ${TARGET_PATH}live-journal-full-insert/
+./dataset_converter ${ALL_INSERT} --make_undirected --densify ${SRC_PATH}out.soc-LiveJournal1 ${TARGET_PATH}live-journal-full-insert/
 #./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}soc-bitcoin.edges ${TARGET_PATH}soc-bitcoin/
 #./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}graph500-22.e ${TARGET_PATH}/graph500-22/
 #./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}graph500-23.e ${TARGET_PATH}/graph500-23/
@@ -53,7 +53,7 @@ mkdir -p $TARGET_PATH/dimacs-us-u
 #
 #
 ./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}/out.twitter_mpi ${TARGET_PATH}/twitter/
-./dataset_converter ${ALL_INSERT} --make_directed --densify ${SRC_PATH}out.twitter_mpi ${TARGET_PATH}twitter-full-insert/
+./dataset_converter ${ALL_INSERT} --make_undirected --densify ${SRC_PATH}out.twitter_mpi ${TARGET_PATH}twitter-full-insert/
 
 #./dataset_converter ${DEFAULT_ARGS} --densify ${SRC_PATH}graph500-26.e ${TARGET_PATH}/graph500-26/
 

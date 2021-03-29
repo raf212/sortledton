@@ -22,8 +22,7 @@ Options parseOptions(int argc, char **argv) {
             {"densify", no_argument, 0, 'e'},        // If the dataset has no dense id or none-numeric ids and needs to be translated into dense numeric ids.
             {"insert_percentage", required_argument, 0, 'i'}, // The percentage of edges to be choosen for insertion.
             {"delete_percentage", required_argument, 0, 'd'}, // The percentage of edges to be choosen for deletion.
-            {"make_undirected", no_argument, 0, 'u'}, // If set makes a directed graph undirected.
-            {"make_directed", no_argument, 0, 'k'}, // If set keeps only edges with src < dst
+            {"make_undirected", no_argument, 0, 'u'}, // Creates edge list which include only edge with src < dst and base dataset which have edges in both directions
     };
 
     c = getopt_long(argc, argv,"",
@@ -48,9 +47,6 @@ Options parseOptions(int argc, char **argv) {
       case 'u':
         o.make_undirected = true;
         o.base_file_name = "undirected_" + o.base_file_name;
-        break;
-      case 'k':
-        o.make_directed = true;
         break;
       case '?':
         printf("No help provided read src.\n");

@@ -138,8 +138,8 @@ struct edge_t {
       f.write((char*) &dst, sizeof(dst));
     }
 
-    edge_t opposite(edge_t e) {
-      return {e.dst, e.src};
+    edge_t opposite() {
+      return {dst, src};
     }
 
     bool operator > (const edge_t& other) const {
