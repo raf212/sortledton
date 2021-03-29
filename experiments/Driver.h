@@ -30,6 +30,9 @@ namespace specialize {
       if (isinf(a) && isinf(b)) {
         return true;
       }
+      if (isnan(a) && isnan(b)) {
+        return true;
+      }
       return fabs(a - b) < tolerance;
     }
 }

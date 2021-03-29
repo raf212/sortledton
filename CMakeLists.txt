@@ -93,7 +93,7 @@ set(SRC
         versioning/AdjacencySetTypes.h
         experiments/WCC.cpp experiments/WCC.h
         experiments/CDLP.cpp experiments/CDLP.h
-        experiments/SSSP.cpp experiments/SSSP.h)
+        experiments/SSSP.cpp experiments/SSSP.h experiments/LCC.cpp experiments/LCC.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp

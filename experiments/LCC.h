@@ -1,0 +1,23 @@
+//
+// Created by per on 26.03.21.
+//
+
+#ifndef LIVE_GRAPH_TWO_LCC_H
+#define LIVE_GRAPH_TWO_LCC_H
+
+
+#include <data_types.h>
+#include <ToplogyInterface.h>
+#include "Driver.h"
+
+class LCC {
+public:
+    static vector<pair<vertex_id_t, double>> lcc(Driver& driver, TopologyInterface& ds);
+
+private:
+    static vector<double> lcc_merge_sort(Driver& driver, TopologyInterface& ds);
+    static vector<double> lcc_naive(Driver& driver, TopologyInterface& ds);
+};
+
+
+#endif //LIVE_GRAPH_TWO_LCC_H

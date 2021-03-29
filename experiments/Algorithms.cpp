@@ -24,6 +24,7 @@
 #include "CDLP.h"
 #include "BFSSourceSelector.h"
 #include "SSSP.h"
+#include "LCC.h"
 
 vector<uint> Algorithms::bfs_batched_interface(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex) {
   size_t vertices_traversed = 0;
@@ -410,7 +411,7 @@ Algorithms::wcc(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhoo
 }
 
 vector<pair<vertex_id_t, double>> Algorithms::lcc(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhood) {
-  throw NotImplemented();
+  return LCC::lcc(driver, ds);
 }
 
 vector<pair<vertex_id_t, vertex_id_t>>
