@@ -75,12 +75,18 @@ private:
 
       write_deletion_set<E>(edge_list.begin(), edge_list.begin() + deletion_set_size);
 
-      SortedCSRDataSource csr = convert_to_sorted_csr<E>(edge_list.begin(), edge_list.end() - insertion_set_size,
-                                                      vertex_count, o.make_undirected);
-      write_base_dataset(csr);
+      if (edge_list.end() - insertion_set_size != 0) {
+        if (!o.densify) {
+          cout << "Cannot write base datasets without densifying first." << endl;
+          exit(Options::BAD_CONF);
+        } else {
+          SortedCSRDataSource csr = convert_to_sorted_csr<E>(edge_list.begin(), edge_list.end() - insertion_set_size,
+                                                             vertex_count, o.make_undirected);
+          write_base_dataset(csr);
 
-      write_degree_information(csr);
-
+          write_degree_information(csr);
+        }
+      }
       cout << "End" << endl << endl;
     }
 
