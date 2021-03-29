@@ -7,9 +7,14 @@
 
 #include <cstdint>
 #include <ctime>
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <unordered_set>
 #include <algorithm>
+#include <fstream>
 
+using namespace std;
 
 //#ifdef BITS64
 // Used vertex identifier and destination data structure for all data structrues.
@@ -76,6 +81,70 @@ struct edge_t {
     bool operator==(const edge_t other) const {
       return src == other.src && dst == other.dst;
     }
+
+    static edge_t parse_edge(const string &line, const char seperator, size_t _,
+                               bool densify, unordered_map<string, size_t> &densifyer, size_t &next_vertex_id,
+                               unordered_set<size_t> &vertex_set) {
+      if (densify) {
+        return parse_edge_densifying(line, seperator, densifyer, next_vertex_id);
+      } else {
+        auto first_seperator_index = line.find(seperator);
+        auto second_seperator_index = line.find(seperator, first_seperator_index + 1);
+
+        string src_string = line.substr(0, first_seperator_index);
+        string dst_string = line.substr(first_seperator_index + 1, second_seperator_index - first_seperator_index - 1);
+
+        vertex_id_t src = stoi(src_string);
+        dst_t dst = stoi(dst_string);
+
+        vertex_set.insert(src);
+        vertex_set.insert(dst);
+        return edge_t{src, dst};
+      }
+    }
+
+    static edge_t parse_edge_densifying(const string &line, const char seperator, unordered_map<string, size_t> &densifyer, size_t &next_vertex_id) {
+      auto first_seperator_index = line.find(seperator);
+      auto second_seperator_index = line.find(seperator, first_seperator_index + 1);
+
+      string src_string = line.substr(0, first_seperator_index);
+      string dst_string = line.substr(first_seperator_index + 1, second_seperator_index - first_seperator_index - 1);
+      vertex_id_t src;
+      dst_t dst;
+
+      auto t = densifyer.find(src_string);
+      if (t == densifyer.end()) {
+        densifyer.insert(make_pair(src_string, next_vertex_id));
+        src = next_vertex_id;
+        next_vertex_id++;
+      } else {
+        src = t->second;
+      }
+
+      t = densifyer.find(dst_string);
+      if (t == densifyer.end()) {
+        densifyer.insert(make_pair(dst_string, next_vertex_id));
+        dst = next_vertex_id;
+        next_vertex_id++;
+      } else {
+        dst = t->second;
+      }
+
+      return edge_t{src, dst};
+    }
+
+    void write_edge_to_binary_file(ofstream& f) {
+      f.write((char*) &src, sizeof(src));
+      f.write((char*) &dst, sizeof(dst));
+    }
+
+    edge_t opposite(edge_t e) {
+      return {e.dst, e.src};
+    }
+
+    bool operator > (const edge_t& other) const {
+      return src == other.src ? (dst > other.dst) : (src > other.src);
+    }
 };
 
 struct weighted_edge_t {
@@ -90,6 +159,39 @@ struct weighted_edge_t {
     bool operator==(const edge_t other) const {
       return src == other.src && dst == other.dst;
     }
+
+    static weighted_edge_t parse_edge(const string &line, const char seperator, size_t weight_position,
+                               bool densify, unordered_map<string, size_t> &densifyer, size_t &next_vertex_id,
+                               unordered_set<size_t> &vertex_set) {
+      edge_t edge = edge_t::parse_edge(line, seperator, weight_position, densify, densifyer, next_vertex_id, vertex_set);
+
+      weighted_edge_t t_edge (edge);
+
+      if (weight_position != numeric_limits<size_t>::max()) {
+        size_t weight_index = -1;
+        for (auto i = 0u; i < weight_position; i++) {
+          weight_index = line.find(seperator, weight_index + 1);
+        }
+        size_t afterTempIndex = line.find(seperator, weight_index + 1);
+        t_edge.weight = stod(line.substr(weight_index + 1, afterTempIndex - weight_index - 1));
+      }
+
+      return t_edge;
+    }
+
+    void write_edge_to_binary_file(ofstream& f) {
+      edge_t(src, dst).write_edge_to_binary_file(f);
+      f.write((char*) &weight, sizeof(weight));
+    }
+
+    weighted_edge_t opposite() {
+      return {dst, src, weight};
+    }
+
+    bool operator > (const weighted_edge_t& other) const {
+      return src == other.src ? (dst > other.dst) : (src > other.src);
+    }
+
 };
 
 
@@ -97,18 +199,56 @@ struct temporal_edge_t {
     vertex_id_t src;
     dst_t dst;
     time_t creation_timestamp;
+
+    temporal_edge_t(edge_t e) : src(e.src), dst(e.dst), creation_timestamp(0) {};
+    temporal_edge_t(vertex_id_t src, dst_t dst, time_t time) : src(src), dst(dst), creation_timestamp(time) {};
+
+    static temporal_edge_t parse_edge(const string &line, const char seperator, size_t temporal_value_position,
+                                        bool densify, unordered_map<string, size_t> &densifyer, size_t &next_vertex_id,
+                                        unordered_set<size_t> &vertex_set) {
+      edge_t edge = edge_t::parse_edge(line, seperator, temporal_value_position, densify, densifyer, next_vertex_id, vertex_set);
+
+      temporal_edge_t t_edge (edge);
+
+      if (temporal_value_position != numeric_limits<size_t>::max()) {
+        size_t tempIndex = -1;
+        for (auto i = 0u; i < temporal_value_position; i++) {
+          tempIndex = line.find(seperator, tempIndex + 1);
+        }
+        size_t afterTempIndex = line.find(seperator, tempIndex + 1);
+        t_edge.creation_timestamp = stoi(line.substr(tempIndex + 1, afterTempIndex - tempIndex - 1));
+      }
+
+      return t_edge;
+    }
+
+    void write_edge_to_binary_file(ofstream& f) {
+      edge_t(src, dst).write_edge_to_binary_file(f);
+      f.write((char*) &creation_timestamp, sizeof(creation_timestamp));
+    }
+
+    temporal_edge_t opposite() {
+      return {dst, src, creation_timestamp};
+    }
+
+    bool operator > (const temporal_edge_t& other) const {
+      return creation_timestamp > other.creation_timestamp;
+    }
 };
 
-struct TemporalEdgeEqual {
+template <typename E>
+struct EdgeEqual {
 public:
-    bool operator()(const temporal_edge_t& a, const temporal_edge_t& b) const {
+    bool operator()(const E& a, const E& b) const {
       return a.src == b.src && a.dst == b.dst;
     }
 };
 
-struct TemporalEdgeHash {
+template <typename E>
+struct EdgeHash {
 public:
-    size_t operator()(const temporal_edge_t& e) const {
+
+    size_t operator()(const E& e) const {
       return std::hash<vertex_id_t>()(e.src) + 31 * std::hash<dst_t>()(e.dst);
     }
 };

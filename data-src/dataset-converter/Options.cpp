@@ -12,11 +12,9 @@
 Options parseOptions(int argc, char **argv) {
   Options o;
   int c;
-  int digit_optind = 0;
   optind = 1; // Reset optind for multiple runs
 
   while (1) {
-    int this_option_optind = optind ? optind : 1;
     int option_index = 0;
     static struct option long_options[] = {
             {"temporal",required_argument, 0, 't'},  // If the dataset contains temporal edges, the argument gives the position of the creation timestamp.

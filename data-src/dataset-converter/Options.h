@@ -13,6 +13,7 @@ using namespace std;
 enum InputType {
     EDGELIST_TEXT,
     TEMPORAL_EDGELIST_TEXT,
+    WEIGHTED_EDGELIST_TEXT   // A file with one edge per line: <src dst weight>, weight should be parseable to a double. Examples for this format can be found in the Graphalytics datasets
 };
 
 
