@@ -3,17 +3,18 @@
 //
 
 #include "CDLP.h"
+#include "Algorithms.h"
 
 
 
 vector<vertex_id_t> CDLP::teseo_cdlp(Driver &driver, TopologyInterface &ds, uint64_t max_iterations) {
     const uint64_t num_vertices = ds.max_physical_vertex();
-    vector<uint64_t> labels0(num_vertices);
-    vector<uint64_t> labels1(num_vertices);
+    vector<vertex_id_t> labels0(num_vertices);
+    vector<vertex_id_t> labels1(num_vertices);
 
     // TODO could we use logical vertices from here on and propagate them, then we don't need to translate in the end.
 #pragma omp parallel for
-    for(uint64_t v = 0; v < num_vertices; v++){
+    for(vertex_id_t v = 0; v < num_vertices; v++){
       labels0[v] = ds.logical_id(v);
     }
 
@@ -23,7 +24,7 @@ vector<vertex_id_t> CDLP::teseo_cdlp(Driver &driver, TopologyInterface &ds, uint
     while(current_iteration < max_iterations && change) {
       change = false; // reset the flag
 
-#pragma omp parallel shared(change)
+#pragma omp parallel reduction(||:change)
       {
         sortledton_iterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList*>(dynamic_cast<SnapshotTransaction&>(ds).raw_ds()));
 #pragma omp for
@@ -71,22 +72,5 @@ CDLP::cdlp(Driver &driver, TopologyInterface &ds, uint64_t max_iterations, bool 
     cout << "Starting CDLP" << endl;
     vector<vertex_id_t> physical_results = teseo_cdlp(driver, ds, max_iterations);
 
-    cout << "Starting translation" << endl;
-    auto start = chrono::steady_clock::now();
-    vector<pair<vertex_id_t , vertex_id_t>> logical_result(physical_results.size());
-    auto V = physical_results.size();
-
-#pragma omp parallel for
-    for (uint v = 0; v <  V; v++) {
-      if (ds.has_vertex_p(v)) {
-        logical_result[v] = make_pair(ds.logical_id(v), ds.logical_id(physical_results[v]));
-      } else {
-        logical_result[v] = make_pair(v, numeric_limits<vertex_id_t>::max());
-      }
-    }
-    auto end = chrono::steady_clock::now();
-    auto milliseconds = chrono::duration_cast<chrono::milliseconds>(end - start).count();
-
-    cout << "Translating took: " << milliseconds << " milliseconds" << endl;
-    return logical_result;
+    return Algorithms::translate(ds, physical_results);
 }
