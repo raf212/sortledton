@@ -7,12 +7,26 @@ seperator = " "
 
 input_path = sys.argv[1]
 output_path = sys.argv[2]
+value_output_type = sys.argv[3]
 
 VALUE_TYPE_DOUBLE = 0
 VALUE_TYPE_INT = 1
 
 value_type = -1
 
+if value_output_type == "uint":
+    value_output_type = "I"
+    value_type = VALUE_TYPE_INT
+elif value_output_type == "ulong":
+    value_output_type = "q"
+    value_type = VALUE_TYPE_INT
+elif value_output_type == "double":
+    value_output_type = "d"
+    value_type = VALUE_TYPE_DOUBLE
+else:
+    exit(2)
+
+output_format_string = "q" + value_output_type
 
 def detect_value_type(value):
     try:
@@ -29,6 +43,9 @@ with open(input_path) as i:
         lines += 1
         line = i.readline()
 
+
+
+
 with open(input_path) as i:
     with open(output_path, "bw") as o:
         o.write(struct.pack("q", lines))
@@ -36,15 +53,11 @@ with open(input_path) as i:
         while line:
             [vertex, value] = line.split(seperator)
 
-            if value_type == -1:
-                value_type = detect_value_type(value)
-
             bin = None
             if value_type == VALUE_TYPE_INT:
-                # TODO need to support 64 bit and 32 bit output
-                bin = struct.pack("qI", int(vertex), int(value))
+                bin = struct.pack(output_format_string, int(vertex), int(value))
             elif value_type == VALUE_TYPE_DOUBLE:
-                bin = struct.pack("qd", int(vertex), float(value))
+                bin = struct.pack(output_format_string, int(vertex), float(value))
             o.write(bin)
 
             line = i.readline()
