@@ -9,11 +9,11 @@
 
 
 vector<pair<vertex_id_t, weight_t>>
-SSSP::sssp(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhoud, uint64_t source_vertex_id) {
+SSSP::sssp(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhoud, uint64_t source_vertex_id, double delta) {
   if (use_raw_neighbourhoud) {
     throw NotImplemented();
   }
-  auto distances = gabbs_sssp(driver, ds, ds.physical_id(source_vertex_id), Config::SSSP_DELTA);
+  auto distances = gabbs_sssp(driver, ds, ds.physical_id(source_vertex_id), delta);
   return Algorithms::translate<weight_t>(ds, distances);
 }
 

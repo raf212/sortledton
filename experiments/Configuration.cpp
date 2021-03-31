@@ -5,6 +5,7 @@
 #include "Configuration.h"
 
 #include <getopt.h>
+#include <iostream>
 
 #include "utils/utils.h"
 
@@ -26,7 +27,8 @@ void Config::initialize(int argc, char **argv) {
             {"undirected", no_argument, 0, 'u'},
             {"insert_threads", required_argument, 0, 't'},
             {"omp_threads", required_argument, 0, 'o'},
-            {"weighted", no_argument, 0, 'w'}
+            {"weighted", no_argument, 0, 'w'},
+            {"analytics", required_argument, 0, 'a'},
     };
 
     c = getopt_long(argc, argv, "",
@@ -35,6 +37,9 @@ void Config::initialize(int argc, char **argv) {
       break;
 
     switch (c) {
+      case 'a':
+        graphalytics = GraphalyticsProperties(optarg);
+        break;
       case 't':
         insert_threads = stoi(optarg);
         break;
@@ -90,6 +95,25 @@ void Config::initialize(int argc, char **argv) {
 
   if (optind < argc) {
     throw ConfigurationError("Unknown positional argument.");
+  }
+
+  if (!graphalytics.is_empty()) {
+    if (!undirected) {
+      throw ConfigurationError("Graphalytics is only supported on undirected graphs.");
+    }
+
+    for (auto e : experiment_set) {
+      if (graphalytics.is_graphalytic_experiment(e) && !graphalytics.supports_experiment(e)) {
+        throw ConfigurationError("Graphalytics is used and graph does not support the following experiment: " + e);
+      }
+    }
+
+    insertions = Dataset(graphalytics.insertion_set(), EDGE_LIST);
+    cout << "Using insertion dataset: " + insertions.path;
+    base = Dataset(graphalytics.base_graph(), CSR_SRC);
+    cout << "Using base dataset: " + base.path;
+
+    weighted_graph_source = true;
   }
 }
 
@@ -191,3 +215,62 @@ const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING{
 };
 
 const string Config::gold_standard_directory = "/space/fuchs/shared/graph_two_gold_standards";
+
+double Config::page_rank_error() {
+    return PAGE_RANK_ERROR;
+}
+
+double Config::page_rank_damping_factor() {
+  if (graphalytics.is_empty()) {
+    return PAGE_RANK_DAMPING_FACTOR;
+  } else {
+    return graphalytics.page_rank_damping_factor;
+  }
+}
+
+int Config::page_rank_max_iterations() {
+  if (graphalytics.is_empty()) {
+    return PAGE_RANK_ITERATIONS;
+  } else {
+    return graphalytics.page_rank_num_iterations;
+  }
+}
+
+int Config::cdlp_max_iterations() {
+  if (graphalytics.is_empty()) {
+    return CDLP_MAX_ITERATIONS;
+  } else {
+    return graphalytics.cdlp_max_iterations;
+  }
+}
+
+double Config::sssp_delta() {
+  return SSSP_DELTA;
+}
+
+vertex_id_t Config::sssp_start_vertex() {
+  if (graphalytics.is_empty()) {
+    return numeric_limits<vertex_id_t>::max();
+  } else {
+    return graphalytics.sssp_source_vertex;
+  }
+}
+
+vertex_id_t Config::bfs_start_vertex() {
+  // TODO make graphalytics option
+  if (graphalytics.is_empty()) {
+    return numeric_limits<vertex_id_t>::max();
+  } else {
+    return graphalytics.bfs_source_vertex;
+  }
+}
+
+// TODO clean up for a common interface and to use for all gold standards
+string Config::gold_standard(Experiments e) {
+  auto experiment_name = Config::EXPERIMENT_MAPPING.find(e)->second;
+  if (graphalytics.is_empty()) {
+    return gold_standard_directory + "/" + experiment_name + "_" + base.get_name() + ".goldStandard";;
+  } else {
+    return graphalytics.gold_standard(experiment_name);
+  }
+}

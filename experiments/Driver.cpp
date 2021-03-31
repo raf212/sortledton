@@ -69,16 +69,14 @@ void Driver::run() {
   SortedCSRDataSource base = read_base_dataset();
   cout << "Vertices" << base.vertex_count() << endl;
 
-  EdgeList<edge_t> inserts_no_weights;
+  EdgeList<weighted_edge_t> inserts;
   if (config.experiment_set.find(INSERT) != config.experiment_set.end() ||
       config.experiment_set.find(INSERT_TRANSACTIONS) != config.experiment_set.end()) {
     cout << "Reading insert dataset " << config.insertions.path << endl;
-    inserts_no_weights = read_insert_dataset();
+    inserts = read_insert_dataset();
   }
 
-  EdgeList<weighted_edge_t> inserts = inserts_no_weights.add_weights(config.weighted);
-
-  EdgeList<edge_t> deletes;
+  EdgeList<weighted_edge_t> deletes;
   if (config.experiment_set.find(DELETE) != config.experiment_set.end()) {
     cout << "Reading delete dataset " << config.deletions.path << endl;
     deletes = read_delete_dataset();
@@ -98,7 +96,7 @@ void Driver::run() {
 }
 
 void
-Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts, EdgeList<edge_t> &deletes,
+Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts, EdgeList<weighted_edge_t> &deletes,
                            DataStructures ds, const vector<string> &ds_parameters,
                            vector<vector<vertex_id_t>> &neighbourhood_2_sources) {
   reporter.set_data_structure(ds, ds_parameters);
@@ -461,8 +459,12 @@ void Driver::run_analytics(Experiments ex, TopologyInterface &ds, bool run_on_ra
 void
 Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool aquire_locks, bool after_inserts,
                            bool gapbs) {
-  BFSSourceSelector ss(*this, config.base, ds);
-  vertex_id_t start_vertex = ss.get_source();
+  // TODO make option
+  auto start_vertex = config.bfs_start_vertex();
+  if (start_vertex == numeric_limits<vertex_id_t>::max()) {
+    BFSSourceSelector ss(*this, config.base, ds);
+    start_vertex = ss.get_source();
+  }
 
   cout << "Running BFS experiment ";
   cout.flush();
@@ -490,7 +492,7 @@ Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood,
     if (typeid(ds) == typeid(SnapshotTransaction)) {
       version = after_inserts ? dynamic_cast<SnapshotTransaction &>(ds).get_version() : FIRST_VERSION;
     }
-    check_bfs(start_vertex, distances, version);
+    check_analytics(BFS, distances);
 #endif
   }
 
@@ -700,7 +702,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
 }
 
 
-void Driver::run_delete_experiment(TopologyInterface &ds, EdgeList<edge_t> &el) {
+void Driver::run_delete_experiment(TopologyInterface &ds, EdgeList<weighted_edge_t> &el) {
   throw NotImplemented();
 }
 
@@ -818,19 +820,26 @@ void Driver::run_neighbourhood_2_experiment(TopologyInterface &ds,
   cout << endl << "2 neighbourhood counting run in average in " << average << " milliseconds " << endl;
 }
 
-EdgeList<edge_t> Driver::read_insert_dataset() {
-  EdgeList<edge_t> edge_list;
-  edge_list.read_from_binary_file(config.insertions.path);
+EdgeList<weighted_edge_t> Driver::read_insert_dataset() {
+  EdgeList<weighted_edge_t> edge_list;
+  if (config.weighted_graph_source) {
+    edge_list.read_from_binary_file(config.insertions.path);
+  } else {
+    EdgeList<edge_t> t;
+    t.read_from_binary_file(config.insertions.path);
+    edge_list = t.add_weights(config.weighted);
+  }
   return edge_list;
 }
 
-EdgeList<edge_t> Driver::read_delete_dataset() {
+EdgeList<weighted_edge_t> Driver::read_delete_dataset() {
   throw NotImplemented();
 }
 
 SortedCSRDataSource Driver::read_base_dataset() {
   SortedCSRDataSource out;
-  out.read_from_binary_file(config.base.path);
+//  out.read_from_binary_file(config.base.path);
+  // TODO reactivate
   return out;
 }
 
@@ -860,69 +869,9 @@ EdgeIterator &Driver::getSingleEdgeIter(TopologyInterface &ds) {
   }
 }
 
-void Driver::check_bfs(vertex_id_t start_vertex, vector<pair<vertex_id_t, uint>> &distances, version_t version) {
-  string inserts = "base";
-
-  // Sort by the logical vertex
-  sort(distances.begin(),
-       distances.end());  // Sorts lexicographical which is the same than on the first element if the first element is distinct.
-
-  if (version == FIRST_VERSION) {
-    inserts = "base";
-  } else if (version == 1) {
-    inserts = "inserts";
-  } else {
-    inserts = "inserts";
-  }
-  const string gold_standard_file =
-          config.gold_standard_directory + "/bfs_" + config.base.get_name() + "_" + to_string(start_vertex) + "_" +
-          inserts + ".goldStandard";
-  if (!file_exists(gold_standard_file)) {
-    cout << "Writing new gold standard for: " << gold_standard_file << endl;
-    ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
-
-    if (!f.good()) {
-      assert(false);
-    }
-
-    size_t size = distances.size();
-    f.write((char *) &size, sizeof(size));
-
-    for (auto d : distances) {
-      f.write((char *) &d.second, sizeof(d.second));
-    }
-    f.close();
-  } else {
-    cout << "Validating bfs experiment against " << gold_standard_file << endl;
-    ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
-
-    size_t size;
-    f.read((char *) &size, sizeof(size));
-    // TODO reactivate
-//    assert(size == distances.size());
-
-    uint e;
-    uint i = 0;
-    uint errors = 0;
-    for (auto d : distances) {
-      if (i < size) {
-        f.read((char *) &e, sizeof(e));
-        if (d.second != e && errors < 100) {
-          errors += 1;
-          cout << "i " << i << " d " << d.second << " e " << e << "logical vertex " << d.first << endl;
-        }
-        assert(d.second == e);
-      }
-      i += 1;
-    }
-
-    f.close();
-  }
-}
-
 void
 Driver::validate_graph_structure(TopologyInterface &ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts,
-                                 EdgeList<edge_t> &deletes) {
+                                 EdgeList<weighted_edge_t> &deletes) {
   cout << "Validating data structure." << endl;
   auto vertices = base.vertex_count();
 
@@ -1084,7 +1033,7 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
   } else {
     distances = Algorithms::bfs(*this, ds, start_vertex);
   }
-  check_bfs(start_vertex, distances, 1);
+  check_analytics(BFS, distances);
 }
 
 void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts) {
@@ -1207,8 +1156,7 @@ void Driver::check_page_rank(vector<pair<vertex_id_t, double>> &scores) {
 
   string inserts = "base";
 
-  const string gold_standard_file =
-          config.gold_standard_directory + "/pr_" + config.base.get_name() + ".goldStandard";
+  const string gold_standard_file = config.gold_standard(PR);
   if (!file_exists(gold_standard_file)) {
     cout << "Writing new gold standard for: " << gold_standard_file << endl;
     ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
@@ -1234,11 +1182,13 @@ void Driver::check_page_rank(vector<pair<vertex_id_t, double>> &scores) {
     vertex_id_t v = 0;
     double e = 0.0;
     auto errors = 0;
+
+    double tolerance = config.page_rank_error();
     for (auto i = 0u; i < scores.size(); i++) {
       auto d = scores[i];
       f.read((char *) &v, sizeof(v));
       f.read((char *) &e, sizeof(double));
-      auto correct = fabs(d.second - e) < Config::PAGE_RANK_ERROR;  // TODO move precision to configuration+
+      auto correct = fabs(d.second - e) < tolerance;  // TODO move precision to configuration+
 
       assert(v == d.first);\
       if (!correct && errors < 100) {
@@ -1293,5 +1243,14 @@ Driver::run_gc_experiment(TransactionManager &tm, VersionedTopologyInterface &ds
 }
 
 void Driver::check_gc_experiment(VersionedTopologyInterface &ds) {
+}
+
+vertex_id_t Driver::sssp_start_vertex(TopologyInterface& ds) {
+  auto v = config.sssp_start_vertex();
+  if (v == numeric_limits<vertex_id_t>::max()) {
+    BFSSourceSelector ss(*this, config.base, ds);
+    return ss.get_source();
+  }
+  return v;
 }
 

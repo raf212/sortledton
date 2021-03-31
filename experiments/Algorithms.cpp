@@ -395,14 +395,12 @@ unordered_map<vertex_id_t, size_t> Algorithms::neighbourhood_2(Driver &driver,
 }
 
 vector<pair<vertex_id_t, double>> Algorithms::page_rank(Driver &driver, TopologyInterface &ds, bool run_on_raw_neighbourhood, bool use_gapbs) {
-  return PageRank::page_rank(driver, ds, Config::PAGE_RANK_ITERATIONS, run_on_raw_neighbourhood, use_gapbs);
+  return PageRank::page_rank(driver, ds, driver.config.page_rank_max_iterations(), driver.config.page_rank_damping_factor(), run_on_raw_neighbourhood, use_gapbs);
 }
 
 vector<pair<vertex_id_t, weight_t>>
 Algorithms::sssp(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhood) {
-  BFSSourceSelector ss(driver, driver.config.base, ds);
-  vertex_id_t start_vertex = ss.get_source();
-  return SSSP::sssp(driver, ds, use_raw_neighbourhood, start_vertex);
+  return SSSP::sssp(driver, ds, use_raw_neighbourhood, driver.sssp_start_vertex(ds), driver.config.sssp_delta());
 }
 
 vector<pair<vertex_id_t, vertex_id_t>>
@@ -416,5 +414,5 @@ vector<pair<vertex_id_t, double>> Algorithms::lcc(Driver &driver, TopologyInterf
 
 vector<pair<vertex_id_t, vertex_id_t>>
 Algorithms::cdlp(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhood) {
-  return CDLP::cdlp(driver, ds, Config::CDLP_MAX_ITERATIONS, use_raw_neighbourhood);
+  return CDLP::cdlp(driver, ds, driver.config.cdlp_max_iterations(), use_raw_neighbourhood);
 }

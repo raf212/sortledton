@@ -14,12 +14,12 @@
 
 class PageRank {
 public:
-    static vector<pair<vertex_id_t, double>> page_rank(Driver& driver, TopologyInterface& ds, int iterations, bool use_raw_neighbourhood, bool use_gapbs);
+    static vector<pair<vertex_id_t, double>> page_rank(Driver& driver, TopologyInterface& ds, int iterations, double damping_factor, bool use_raw_neighbourhood, bool use_gapbs);
 
 private:
-    static vector<double> page_rank_batched_interface(Driver& driver, TopologyInterface& ds, int iterations);
-    static vector<double> page_rank_raw_neighbourhood(Driver& driver, TopologyInterface& ds, int iterations);
-    static vector<double> page_rank_bs(Driver& driver, TopologyInterface& ds, int iterations);
+    static vector<double> page_rank_batched_interface(Driver& driver, TopologyInterface& ds, int iterations, double damping_factor);
+    static vector<double> page_rank_raw_neighbourhood(Driver& driver, TopologyInterface& ds, int iterations, double damping_factor);
+    static vector<double> page_rank_bs(Driver& driver, TopologyInterface& ds, int iterations, double damping_factor);
 };
 
 

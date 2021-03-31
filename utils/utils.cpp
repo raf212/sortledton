@@ -2,11 +2,12 @@
 // Created by per on 31.08.20.
 //
 
+#include "utils.h"
 #include <sys/stat.h>
 #include <iostream>
-#include "utils.h"
 #include <sstream>
 #include <algorithm>
+#include <cctype>
 
 bool file_exists(const string &name) {
   struct stat buffer;

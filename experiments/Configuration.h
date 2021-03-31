@@ -13,6 +13,9 @@
 
 #include <utils/utils.h>
 
+#include "Experiments.h"
+#include "GraphalyticsProperties.h"
+
 using namespace std;
 
 class ConfigurationError : exception {
@@ -41,24 +44,6 @@ enum DataStructures {
     HASH_SET_SIMULATOR_AL,
     HASH_SET_AL,
     VERSIONED
-};
-
-enum Experiments {
-    INSERT,   // Inserts edges one-by-one but uses only one transaction in the versioned case.
-    INSERT_TRANSACTIONS,  // Inserts edges one-by-one using one transaction per edge.
-    DELETE,
-    TRIANGLE_COUNTING,
-    BFS,
-    PR,
-    NEIGHBOUR_2,
-    STORAGE,
-    GC,
-    GAPBS_BFS,
-    GAPBS_PR,
-    SSSP,
-    WCC,
-    LCC,
-    CDLP
 };
 
 class Dataset {
@@ -113,13 +98,6 @@ public:
 
     uint repetitions;
 
-    constexpr static double PAGE_RANK_ERROR = 1e-4;
-    constexpr static int PAGE_RANK_ITERATIONS = 5;
-    constexpr static double PAGE_RANK_DAMPING_FACTOR = 0.85;
-    constexpr static int CDLP_MAX_ITERATIONS = 30;
-    constexpr static double SSSP_DELTA= 2.0;
-
-
     // TODO remove it turned out to be not beneficial and is not used
     /**
      * Configures the BlockedBatchedEdgeIterator to prefetch <prefetch_blocks> ahead.
@@ -144,15 +122,36 @@ public:
     uint omp_threads = 0;
 
     bool weighted = false;
+    bool weighted_graph_source = false;
 
     void initialize(int argc, char **argv);
 
+    double page_rank_error();
+    double page_rank_damping_factor();
+    int page_rank_max_iterations();
+    int cdlp_max_iterations();
+    double sssp_delta();
+    vertex_id_t  sssp_start_vertex();
+
+    vertex_id_t bfs_start_vertex();
+
+    string gold_standard(Experiments experiments);
+
 private:
+    constexpr static double PAGE_RANK_ERROR = 1e-4;
+    constexpr static int PAGE_RANK_ITERATIONS = 5;
+    constexpr static double PAGE_RANK_DAMPING_FACTOR = 0.85;
+    constexpr static int CDLP_MAX_ITERATIONS = 30;
+    constexpr static double SSSP_DELTA= 2.0;
+
+    // TODO deduplicate with split from graphalytics class
     vector<string> string_split(char seperator, string list);
 
     vector<pair<DataStructures, vector<string>>> parse_data_structures(string arg);
 
     vector<pair<Experiments, vector<string>>> parse_experiments(string arg);
+
+    GraphalyticsProperties graphalytics;
 };
 
 #endif //LIVE_GRAPH_TWO_CONFIGURATION_H

@@ -23,6 +23,7 @@ Options parseOptions(int argc, char **argv) {
             {"insert_percentage", required_argument, 0, 'i'}, // The percentage of edges to be choosen for insertion.
             {"delete_percentage", required_argument, 0, 'd'}, // The percentage of edges to be choosen for deletion.
             {"make_undirected", no_argument, 0, 'u'}, // Creates edge list which include only edge with src < dst and base dataset which have edges in both directions
+            {"weighted", no_argument, 0, 'w'}, // Creates edge list which include only edge with src < dst and base dataset which have edges in both directions
     };
 
     c = getopt_long(argc, argv,"",
@@ -39,6 +40,9 @@ Options parseOptions(int argc, char **argv) {
         break;
       case 'e':
         o.densify = true;
+        break;
+      case 'w':
+        o.input_format = WEIGHTED_EDGELIST_TEXT;
         break;
       case 't':
         o.input_format = TEMPORAL_EDGELIST_TEXT;

@@ -1,0 +1,29 @@
+//
+// Created by per on 30.03.21.
+//
+
+#ifndef LIVE_GRAPH_TWO_EXPERIMENTS_H
+#define LIVE_GRAPH_TWO_EXPERIMENTS_H
+
+#include <unordered_map>
+
+enum Experiments {
+    INSERT,   // Inserts edges one-by-one but uses only one transaction in the versioned case.
+    INSERT_TRANSACTIONS,  // Inserts edges one-by-one using one transaction per edge.
+    DELETE,
+    TRIANGLE_COUNTING,
+    BFS,
+    PR,
+    NEIGHBOUR_2,
+    STORAGE,
+    GC,
+    GAPBS_BFS,
+    GAPBS_PR,
+    SSSP,
+    WCC,
+    LCC,
+    CDLP
+};
+
+
+#endif //LIVE_GRAPH_TWO_EXPERIMENTS_H

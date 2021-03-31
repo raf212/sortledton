@@ -8,28 +8,28 @@
 #include <third-party/gapbs.h>
 #include "Algorithms.h"
 
-vector<pair<vertex_id_t, double>> PageRank::page_rank(Driver &driver, TopologyInterface &ds, int iterations, bool use_raw_neighbourhood, bool use_gapbs) {
+vector<pair<vertex_id_t, double>> PageRank::page_rank(Driver &driver, TopologyInterface &ds, int iterations, double damping_factor, bool use_raw_neighbourhood, bool use_gapbs) {
   if (use_gapbs && use_raw_neighbourhood) {
     throw ConfigurationError("Cannot run gapbs page rank on the raw neighbourhood");
   }
   vector<double> scores;
   if (use_raw_neighbourhood) {
-    scores = page_rank_raw_neighbourhood(driver, ds, iterations);
+    scores = page_rank_raw_neighbourhood(driver, ds, iterations, damping_factor);
   } else if (use_gapbs) {
-    scores = page_rank_bs(driver, ds, iterations);
+    scores = page_rank_bs(driver, ds, iterations, damping_factor);
   } else {
-    scores = page_rank_batched_interface(driver, ds, iterations);
+    scores = page_rank_batched_interface(driver, ds, iterations, damping_factor);
   }
 
   return Algorithms::translate(ds, scores);
 }
 
 
-vector<double> PageRank::page_rank_batched_interface(Driver &driver, TopologyInterface &ds, int max_iters) {
+vector<double> PageRank::page_rank_batched_interface(Driver &driver, TopologyInterface &ds, int max_iters, double damping_factor) {
   const size_t vertices = ds.vertex_count();
 
   const double init_score = 1.0f / vertices;
-  const double base_score = (1.0f - Config::PAGE_RANK_DAMPING_FACTOR) / vertices;
+  const double base_score = (1.0f -  damping_factor) / vertices;
 
   vector<double> scores(vertices, init_score);
   vector<double> outgoing_contrib(vertices);
@@ -66,17 +66,17 @@ vector<double> PageRank::page_rank_batched_interface(Driver &driver, TopologyInt
           incoming_total += outgoing_contrib[v];
         }
       }
-      scores[u] = base_score + Config::PAGE_RANK_DAMPING_FACTOR * incoming_total;
+      scores[u] = base_score +  damping_factor * incoming_total;
     }
   }
   return scores;
 }
 
-vector<double> PageRank::page_rank_raw_neighbourhood(Driver &driver, TopologyInterface &ds, int max_iters) {
+vector<double> PageRank::page_rank_raw_neighbourhood(Driver &driver, TopologyInterface &ds, int max_iters, double damping_factor) {
   const size_t vertices = ds.vertex_count();
 
   const double init_score = 1.0f / vertices;
-  const double base_score = (1.0f - Config::PAGE_RANK_DAMPING_FACTOR) / vertices;
+  const double base_score = (1.0f - damping_factor) / vertices;
 
   vector<double> scores(vertices, init_score);
   vector<double> outgoing_contrib(vertices);
@@ -112,7 +112,7 @@ vector<double> PageRank::page_rank_raw_neighbourhood(Driver &driver, TopologyInt
           incoming_total += outgoing_contrib[*ns];
           ns++;
         }
-        scores[u] = base_score + Config::PAGE_RANK_DAMPING_FACTOR * incoming_total;
+        scores[u] = base_score + damping_factor * incoming_total;
       }
     }
   } else if (typeid(ds) == typeid(BlockedSkipListAdjacencyLists)) {
@@ -148,7 +148,7 @@ vector<double> PageRank::page_rank_raw_neighbourhood(Driver &driver, TopologyInt
             block = block->next;
           }
         }
-        scores[u] = base_score + Config::PAGE_RANK_DAMPING_FACTOR * incoming_total;
+        scores[u] = base_score + damping_factor * incoming_total;
       }
     }
   } else {
@@ -201,12 +201,12 @@ updates in the pull direction to remove the need for atomics.
 */
 
 // The error computation has been removed and the concept of dangling sum has been added from the original GAPBS implementation.
-vector<double> PageRank::page_rank_bs(Driver& driver, TopologyInterface& ds, int num_iterations) {
+vector<double> PageRank::page_rank_bs(Driver& driver, TopologyInterface& ds, int num_iterations, double damping_factor) {
   const uint64_t num_vertices = ds.vertex_count();
   const uint64_t max_physical_vertices = ds.max_physical_vertex();
 
   const double init_score = 1.0 / num_vertices;
-  const double base_score = (1.0 - Config::PAGE_RANK_DAMPING_FACTOR) / num_vertices;
+  const double base_score = (1.0 - damping_factor) / num_vertices;
 
   vector<double> scores(max_physical_vertices);
 
@@ -249,7 +249,7 @@ vector<double> PageRank::page_rank_bs(Driver& driver, TopologyInterface& ds, int
           auto d = iter.next();
           incoming_total += outgoing_contrib[d];
         }
-        scores[v] = base_score + Config::PAGE_RANK_DAMPING_FACTOR * (incoming_total + dangling_sum);
+        scores[v] = base_score + damping_factor * (incoming_total + dangling_sum);
       }
     }
   }

@@ -49,13 +49,17 @@ public:
     unordered_set<dst_t> get_neighbours(TopologyInterface& ds, vertex_id_t v);
 
     Config config;
+
+    // TODO organize as in BFS start vertex
+    vertex_id_t sssp_start_vertex(TopologyInterface& ds);
+
 private:
     Reporter reporter;
     SortedCSRDataSource read_base_dataset();
-    EdgeList<edge_t> read_insert_dataset();
-    EdgeList<edge_t> read_delete_dataset();
+    EdgeList<weighted_edge_t> read_insert_dataset();
+    EdgeList<weighted_edge_t> read_delete_dataset();
 
-    void run_data_structure(SortedCSRDataSource& base, EdgeList<weighted_edge_t>& inserts, EdgeList<edge_t>& deletes,
+    void run_data_structure(SortedCSRDataSource& base, EdgeList<weighted_edge_t>& inserts, EdgeList<weighted_edge_t>& deletes,
                             DataStructures ds,
                             const vector<string>& ds_parameters,
                             vector<vector<vertex_id_t>>& neighbour_2_sources);
@@ -67,18 +71,10 @@ private:
                                           size_t base_edge_count);
     void check_insert(TopologyInterface& ds, EdgeList<weighted_edge_t>& el, size_t base_edge_count);
 
-    void run_delete_experiment(TopologyInterface& ds, EdgeList<edge_t>& el);
+    void run_delete_experiment(TopologyInterface& ds, EdgeList<weighted_edge_t>& el);
 
     void run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool aquire_locks, bool after_inserts,
                             bool gabbs);
-
-    /**
-     * Checks the BFS search result (distances of all vertices to the start vertex) against a gold standard result.
-     * @param start_vertex
-     * @param distances
-     * @param version 0 for base version without inserts, 1 for version after all inserts, all others for that specific version.
-     */
-    void check_bfs(vertex_id_t start_vertex, vector<pair<vertex_id_t, uint>>& distances, version_t version);
 
     void run_page_rank_experiment(TopologyInterface& ds, bool run_on_raw_neighbourhood, bool gapbs);
 
@@ -91,7 +87,7 @@ private:
     void run_neighbourhood_2_experiment(TopologyInterface& ds, const vector<vector<vertex_id_t>>& sources, bool run_on_raw_neighbourhood);
     void check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts);
 
-    void validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts, EdgeList<edge_t> &deletes);
+    void validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts, EdgeList<weighted_edge_t> &deletes);
 
     void print_graph(TopologyInterface& ds);
 
@@ -120,8 +116,7 @@ private:
 
       string inserts = "base";
 
-      const string gold_standard_file =
-              config.gold_standard_directory + "/" + experiment_name + "_" + config.base.get_name() + ".goldStandard";
+      const string gold_standard_file = config.gold_standard(ex);
       if (!file_exists(gold_standard_file)) {
         cout << "Writing new gold standard for: " << gold_standard_file << endl;
         ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
@@ -148,12 +143,16 @@ private:
         vertex_id_t v = 0;
         T e = 0.0;
         auto errors = 0;
+
+        auto tolerance = config.page_rank_error();
         for (auto i = 0u; i < values.size(); i++) {
           auto d = values[i];
           f.read((char*) &v, sizeof(v));
           f.read((char *) &e, sizeof(T));
 
-          auto correct = check_equal(d.second, e, Config::PAGE_RANK_ERROR);
+//          cout << v << " " << e << endl;
+
+          auto correct = check_equal(d.second, e, tolerance);
 
           assert(v == d.first);
           if (i < 100) {
@@ -163,7 +162,7 @@ private:
             errors += 1;
             cout << i << "Actual: " << d.second << "Expected: " << e << "Difference: " << fabs(d.second - e) << endl;
           }
-//          assert(correct);
+          assert(correct);
         }
         f.close();
       }

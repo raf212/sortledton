@@ -36,7 +36,7 @@ public:
       edges.clear();
       edges.resize(edge_count);
 
-      f.read((char*) edges.data(), edge_count * sizeof(edge_t));
+      f.read((char*) edges.data(), edge_count * sizeof(et));
 
       f.close();
     };

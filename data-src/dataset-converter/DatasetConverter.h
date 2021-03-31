@@ -75,7 +75,7 @@ private:
 
       write_deletion_set<E>(edge_list.begin(), edge_list.begin() + deletion_set_size);
 
-      if (edge_list.end() - insertion_set_size != 0) {
+      if (edge_list.size() - insertion_set_size != 0) {
         if (!o.densify) {
           cout << "Cannot write base datasets without densifying first." << endl;
           exit(Options::BAD_CONF);
@@ -112,7 +112,7 @@ private:
           continue;
         }
 
-        E e = E::parse_edge(line, seperator, o.temporal_value_position, o.densify, translation, next_vertex_id,
+        E e = E::parse_edge(line, seperator, 2, o.densify, translation, next_vertex_id,
                             vertex_set);
         out.push_back(e);
       }
