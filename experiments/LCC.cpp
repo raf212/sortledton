@@ -78,9 +78,9 @@ vector<double> LCC::lcc_merge_sort(Driver &driver, TopologyInterface &ds) {
 #pragma omp parallel for
   for (vertex_id_t v = 0; v < N; v++) {
     uint64_t degree = ds.neighbourhood_size_p(v);
-    if (degree != 0) {
-      uint64_t max_num_edges = degree * (degree - 1);
-      lcc_values[v] = (double) (triangles_per_vertex[v]) / max_num_edges;
+    uint64_t max_num_edges = degree * (degree - 1);
+    if (max_num_edges != 0) {
+      lcc_values[v] = ((double) triangles_per_vertex[v]) / max_num_edges;
     } else {
       lcc_values[v] = 0.0;
     }

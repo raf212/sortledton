@@ -156,7 +156,7 @@ string GraphalyticsProperties::insertion_set() {
 }
 
 string GraphalyticsProperties::gold_standard(string e) {
-  return base_dir.concat("/" + e + ".gold_standard");
+  return base_dir / (e + ".gold_standard");
 }
 
 bool GraphalyticsProperties::is_graphalytic_experiment(Experiments e) {

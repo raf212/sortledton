@@ -57,6 +57,8 @@ with open(input_path) as i:
             if value_type == VALUE_TYPE_INT:
                 bin = struct.pack(output_format_string, int(vertex), int(value))
             elif value_type == VALUE_TYPE_DOUBLE:
+                print(vertex, value)
+                print(int(vertex), float(value))
                 bin = struct.pack(output_format_string, int(vertex), float(value))
             o.write(bin)
 

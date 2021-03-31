@@ -78,8 +78,6 @@ private:
 
     void run_page_rank_experiment(TopologyInterface& ds, bool run_on_raw_neighbourhood, bool gapbs);
 
-    void check_page_rank(vector<pair<vertex_id_t, double>>& scores);
-
     void run_triangle_counting_experiment(TopologyInterface& ds);
     void check_triangle_counting(size_t count);
 

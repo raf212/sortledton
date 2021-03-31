@@ -1141,66 +1141,12 @@ void Driver::run_page_rank_experiment(TopologyInterface &ds, bool run_on_raw_nei
     cout.flush();
 
 #ifdef DEBUG
-    check_page_rank(scores);
+    check_analytics(PR, scores);
 #endif
   }
 
   double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
   cout << endl << "PR run in average in " << average << " milliseconds " << endl;
-}
-
-void Driver::check_page_rank(vector<pair<vertex_id_t, double>> &scores) {
-  cout << "Validating Page Rank experiment" << endl;
-
-  sort(scores.begin(), scores.end());
-
-  string inserts = "base";
-
-  const string gold_standard_file = config.gold_standard(PR);
-  if (!file_exists(gold_standard_file)) {
-    cout << "Writing new gold standard for: " << gold_standard_file << endl;
-    ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
-
-    if (!f.good()) {
-      assert(false);
-    }
-
-    size_t size = scores.size();
-    f.write((char *) &size, sizeof(size));
-
-    for (auto s : scores) {
-      f.write((char *) &s.first, sizeof(s.first));
-      f.write((char *) &s.second, sizeof(s.second));
-    }
-    f.close();
-  } else {
-    ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
-
-    size_t size;
-    f.read((char *) &size, sizeof(size));
-    assert(size == scores.size());
-    vertex_id_t v = 0;
-    double e = 0.0;
-    auto errors = 0;
-
-    double tolerance = config.page_rank_error();
-    for (auto i = 0u; i < scores.size(); i++) {
-      auto d = scores[i];
-      f.read((char *) &v, sizeof(v));
-      f.read((char *) &e, sizeof(double));
-      auto correct = fabs(d.second - e) < tolerance;  // TODO move precision to configuration+
-
-      assert(v == d.first);\
-      if (!correct && errors < 100) {
-
-        errors += 1;
-        cout << i << "Actual: " << d.second << "Expected: " << e << "Difference: " << fabs(d.second - e) << endl;
-      }
-//      assert(correct);
-    }
-
-    f.close();
-  }
 }
 
 void Driver::show_storage_sizes(string ds_name, TopologyInterface &ds) {
