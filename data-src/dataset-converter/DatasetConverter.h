@@ -60,6 +60,10 @@ private:
 
       size_t deletion_set_size = o.deletion_percentage * edge_list.size();
       size_t insertion_set_size = o.insert_percentage * edge_list.size();
+      if (o.insert_percentage > 0.9999999999) {
+        insertion_set_size = edge_list.size();
+      }
+
 
       cout << "Creating " << insertion_set_size << " updates and " << deletion_set_size << " deletions." << endl;
 
@@ -136,7 +140,9 @@ private:
       f.write((char *) &count, sizeof(count));
 
       auto pos = begin;
+      auto i = 0;
       while (pos < end) {
+        i++;
         pos->write_edge_to_binary_file(f);
         pos++;
       }

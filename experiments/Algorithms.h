@@ -37,7 +37,7 @@ public:
     static uint traversed_vertices(TopologyInterface& ds, vector<pair<vertex_id_t, uint>>& vector);
 
     template <typename T>
-    static vector<pair<vertex_id_t , T>> translate(TopologyInterface& ds, vector<T> values) {
+    static vector<pair<vertex_id_t , T>> translate(TopologyInterface& ds, vector<T>& values) {
       auto start = chrono::steady_clock::now();
       vector<pair<vertex_id_t , T>> logical_result(values.size());
       auto V = values.size();

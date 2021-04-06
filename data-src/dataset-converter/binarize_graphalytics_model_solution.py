@@ -11,6 +11,7 @@ value_output_type = sys.argv[3]
 
 VALUE_TYPE_DOUBLE = 0
 VALUE_TYPE_INT = 1
+VALUE_TYPE_LONG = 3
 
 value_type = -1
 
@@ -19,7 +20,7 @@ if value_output_type == "uint":
     value_type = VALUE_TYPE_INT
 elif value_output_type == "ulong":
     value_output_type = "q"
-    value_type = VALUE_TYPE_INT
+    value_type = VALUE_TYPE_LONG
 elif value_output_type == "double":
     value_output_type = "d"
     value_type = VALUE_TYPE_DOUBLE
@@ -55,11 +56,14 @@ with open(input_path) as i:
 
             bin = None
             if value_type == VALUE_TYPE_INT:
-                bin = struct.pack(output_format_string, int(vertex), int(value))
+                v = int(value)
+                if 4294967295 < v:
+                    v = 4294967295
+                bin = struct.pack(output_format_string, int(vertex), v)
             elif value_type == VALUE_TYPE_DOUBLE:
-                print(vertex, value)
-                print(int(vertex), float(value))
                 bin = struct.pack(output_format_string, int(vertex), float(value))
+            elif value_type == VALUE_TYPE_LONG:
+                bin = struct.pack(output_format_string, int(vertex), int(value))
             o.write(bin)
 
             line = i.readline()

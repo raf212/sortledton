@@ -6,7 +6,8 @@
 #include "Algorithms.h"
 
 vector<pair<vertex_id_t, double>> LCC::lcc(Driver &driver, TopologyInterface &ds) {
-  return Algorithms::translate<double>(ds, lcc_merge_sort(driver, ds));
+  auto lcc_values = lcc_merge_sort(driver, ds);
+  return Algorithms::translate<double>(ds, lcc_values);
 }
 
 vector<double> LCC::lcc_merge_sort(Driver &driver, TopologyInterface &ds) {

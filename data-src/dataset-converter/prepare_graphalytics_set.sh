@@ -10,7 +10,9 @@ ALL_INSERT="--insert_percentage 1.0 --delete_percentage 0.0"
 
 cd $src_dir || exit 1
 
-$dc ${ALL_INSERT} ${graph_name}.e .
+rm -f "${src_dir}/insertions.edgeList"
+
+$dc ${ALL_INSERT} --weighted --make-undirected ${graph_name}.e ./
 
 for a in "PR" "LCC"
 do
@@ -28,5 +30,5 @@ done
 for a in "BFS"
 do
   b=$(echo $a | awk '{print tolower($0)}')
-  $bi "./${graph_name}-${a}" "./${b}.gold_standard" uint
+  echo $bi "./${graph_name}-${a}" "./${b}.gold_standard" uint
 done
