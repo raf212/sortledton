@@ -160,6 +160,7 @@ private:
             errors += 1;
             cout << i << "Actual: " << d.second << "Expected: " << e << "Difference: " << fabs(d.second - e) << endl;
           }
+          // TODO should I implement WCC checking?
           assert(correct);
         }
         f.close();
