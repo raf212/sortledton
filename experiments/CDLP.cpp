@@ -14,7 +14,7 @@ vector<vertex_id_t> CDLP::teseo_cdlp(TopologyInterface &ds, uint64_t max_iterati
 
     // TODO could we use logical vertices from here on and propagate them, then we don't need to translate in the end.
 #pragma omp parallel for
-    for(vertex_id_t v = 0; v < num_vertices; v++){
+    for(vertex_id_t v = 0; v < num_vertices; v++) {
       labels0[v] = ds.logical_id(v);
     }
 
@@ -24,10 +24,10 @@ vector<vertex_id_t> CDLP::teseo_cdlp(TopologyInterface &ds, uint64_t max_iterati
     while(current_iteration < max_iterations && change) {
       change = false; // reset the flag
 
-#pragma omp parallel reduction(||:change)
+#pragma omp parallel
       {
         sortledton_iterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList*>(dynamic_cast<SnapshotTransaction&>(ds).raw_ds()));
-#pragma omp for
+#pragma omp for schedule(dynamic, 64)
         for (uint64_t v = 0; v < num_vertices; v++) {
           unordered_map<uint64_t, uint64_t> histogram;
 
