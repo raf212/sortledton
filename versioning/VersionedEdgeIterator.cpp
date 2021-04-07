@@ -56,6 +56,7 @@ bool VersionedEdgeIterator::has_next_fast() {
     data += 1;
     return true;
   } else {
+    // TODO use close here?
     ds.release_vertex_lock_p(src);
     return false;
   }

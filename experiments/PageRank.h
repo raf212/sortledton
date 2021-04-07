@@ -19,6 +19,7 @@ public:
     static vector<double> page_rank_batched_interface(Driver& driver, TopologyInterface& ds, int iterations, double damping_factor);
     static vector<double> page_rank_raw_neighbourhood(Driver& driver, TopologyInterface& ds, int iterations, double damping_factor);
     static vector<double> page_rank_bs(TopologyInterface& ds, int iterations, double damping_factor);
+    static vector<double> page_rank_bs_raw(TopologyInterface& ds, int iterations, double damping_factor);
 };
 
 

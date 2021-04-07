@@ -451,7 +451,7 @@ void Driver::run_analytics(Experiments ex, TopologyInterface &ds, bool run_on_ra
 #endif
   }
 
-  double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
+  double average = (((double) sum(run_times)) / (double) run_times.size()) / 1000.0;
   cout << endl << experiment_name << " run in average in " << average << " milliseconds " <<
        endl;
 }
@@ -1145,7 +1145,7 @@ void Driver::run_page_rank_experiment(TopologyInterface &ds, bool run_on_raw_nei
 #endif
   }
 
-  double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
+  double average = ((double) sum(run_times)) / (double) run_times.size() / 1000;
   cout << endl << "PR run in average in " << average << " milliseconds " << endl;
 }
 
