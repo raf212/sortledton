@@ -13,6 +13,7 @@
 #include <versioning/TransactionManager.h>
 #include <versioning/SizeVersionChainEntry.h>
 #include "VersionedTopologyInterface.h"
+#include "HugePageBackedPool.h"
 
 #include "VertexIndex.h"
 #include "EdgeBlock.h"
@@ -124,6 +125,8 @@ private:
     // Skiplist constant, likelyhood for being x level high is p^x. 0.25 is a typical value from prior work.
     const float p = 0.25;
     static thread_local mt19937 level_generator;
+
+    HugePageBackedPool skiplist_pool;
 
     void* write_to_blocks(const dst_t* start, const dst_t* end);
 
