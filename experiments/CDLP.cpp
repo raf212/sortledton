@@ -7,7 +7,7 @@
 
 
 
-vector<vertex_id_t> CDLP::teseo_cdlp(Driver &driver, TopologyInterface &ds, uint64_t max_iterations) {
+vector<vertex_id_t> CDLP::teseo_cdlp(TopologyInterface &ds, uint64_t max_iterations) {
     const uint64_t num_vertices = ds.max_physical_vertex();
     vector<vertex_id_t> labels0(num_vertices);
     vector<vertex_id_t> labels1(num_vertices);
@@ -70,7 +70,7 @@ CDLP::cdlp(Driver &driver, TopologyInterface &ds, uint64_t max_iterations, bool 
     }
 
     cout << "Starting CDLP" << endl;
-    vector<vertex_id_t> physical_results = teseo_cdlp(driver, ds, max_iterations);
+    vector<vertex_id_t> physical_results = teseo_cdlp(ds, max_iterations);
 
     return Algorithms::translate(ds, physical_results);
 }

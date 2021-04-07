@@ -35,7 +35,7 @@ more consistent performance for undirected graphs.
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
-vector<vertex_id_t> WCC::gapbs_wcc(Driver &driver, TopologyInterface &ds) {
+vector<vertex_id_t> WCC::gapbs_wcc(TopologyInterface &ds) {
   // TODO this WCC assigns each component the biggest physical id not the biggest logical id.
   const uint64_t V = ds.max_physical_vertex();
   vector<vertex_id_t> components(V);
@@ -88,11 +88,11 @@ vector<vertex_id_t> WCC::gapbs_wcc(Driver &driver, TopologyInterface &ds) {
 }
 #pragma clang diagnostic pop
 
-vector<pair<vertex_id_t, vertex_id_t>> WCC::wcc(Driver &driver, TopologyInterface &ds, bool run_on_raw_neighbourhoud) {
+vector<pair<vertex_id_t, vertex_id_t>> WCC::wcc(Driver& driver, TopologyInterface &ds, bool run_on_raw_neighbourhoud) {
   if (run_on_raw_neighbourhoud) {
     throw NotImplemented();
   }
-  vector<vertex_id_t> physical_results = gapbs_wcc(driver, ds);
+  vector<vertex_id_t> physical_results = gapbs_wcc( ds);
 
   auto start = chrono::steady_clock::now();
   vector<pair<vertex_id_t , vertex_id_t>> logical_result(physical_results.size());

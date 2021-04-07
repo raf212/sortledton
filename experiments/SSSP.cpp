@@ -9,11 +9,11 @@
 
 
 vector<pair<vertex_id_t, weight_t>>
-SSSP::sssp(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhoud, uint64_t source_vertex_id, double delta) {
+SSSP::sssp(TopologyInterface &ds, bool use_raw_neighbourhoud, uint64_t source_vertex_id, double delta) {
   if (use_raw_neighbourhoud) {
     throw NotImplemented();
   }
-  auto distances = gabbs_sssp(driver, ds, ds.physical_id(source_vertex_id), delta);
+  auto distances = gabbs_sssp(ds, ds.physical_id(source_vertex_id), delta);
   return Algorithms::translate<weight_t>(ds, distances);
 }
 
@@ -47,7 +47,7 @@ SSSP::sssp(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhoud, ui
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-vector<weight_t> SSSP::gabbs_sssp(Driver &driver, TopologyInterface &ds, uint64_t physical_source, double delta) {
+vector<weight_t> SSSP::gabbs_sssp(TopologyInterface &ds, uint64_t physical_source, double delta) {
   const size_t kMaxBin = numeric_limits<size_t>::max() / 2;
 
   const uint64_t num_vertices = ds.max_physical_vertex();

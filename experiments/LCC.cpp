@@ -6,11 +6,11 @@
 #include "Algorithms.h"
 
 vector<pair<vertex_id_t, double>> LCC::lcc(Driver &driver, TopologyInterface &ds) {
-  auto lcc_values = lcc_merge_sort(driver, ds);
+  auto lcc_values = lcc_merge_sort(ds);
   return Algorithms::translate<double>(ds, lcc_values);
 }
 
-vector<double> LCC::lcc_merge_sort(Driver &driver, TopologyInterface &ds) {
+vector<double> LCC::lcc_merge_sort(TopologyInterface &ds) {
   if (typeid(ds) != typeid(SnapshotTransaction &)) {
     throw ConfigurationError("Cannot run sort merge lcc on any unsorted data structure");
   }
@@ -90,7 +90,7 @@ vector<double> LCC::lcc_merge_sort(Driver &driver, TopologyInterface &ds) {
   return lcc_values;
 }
 
-vector<double> LCC::lcc_naive(Driver &driver, TopologyInterface &ds) {
+vector<double> LCC::lcc_naive(TopologyInterface &ds) {
   auto N = ds.max_physical_vertex();
 
   auto raw_ds = dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(dynamic_cast<SnapshotTransaction &>(ds).raw_ds());

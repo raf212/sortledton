@@ -16,7 +16,7 @@ vector<pair<vertex_id_t, double>> PageRank::page_rank(Driver &driver, TopologyIn
   if (use_raw_neighbourhood) {
     scores = page_rank_raw_neighbourhood(driver, ds, iterations, damping_factor);
   } else if (use_gapbs) {
-    scores = page_rank_bs(driver, ds, iterations, damping_factor);
+    scores = page_rank_bs(ds, iterations, damping_factor);
   } else {
     scores = page_rank_batched_interface(driver, ds, iterations, damping_factor);
   }
@@ -201,7 +201,7 @@ updates in the pull direction to remove the need for atomics.
 */
 
 // The error computation has been removed and the concept of dangling sum has been added from the original GAPBS implementation.
-vector<double> PageRank::page_rank_bs(Driver& driver, TopologyInterface& ds, int num_iterations, double damping_factor) {
+vector<double> PageRank::page_rank_bs(TopologyInterface& ds, int num_iterations, double damping_factor) {
   const uint64_t num_vertices = ds.vertex_count();
   const uint64_t max_physical_vertices = ds.max_physical_vertex();
 

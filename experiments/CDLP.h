@@ -31,8 +31,7 @@ class CDLP {
 public:
     static vector<pair<vertex_id_t, vertex_id_t>> cdlp(Driver& driver, TopologyInterface& ds, uint64_t max_iterations, bool run_on_raw_neighbourhoud);
 
-private:
-    static vector<vertex_id_t> teseo_cdlp(Driver& driver, TopologyInterface& ds, uint64_t max_iterations);
+    static vector<vertex_id_t> teseo_cdlp(TopologyInterface& ds, uint64_t max_iterations);
 };
 
 

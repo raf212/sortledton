@@ -400,7 +400,7 @@ vector<pair<vertex_id_t, double>> Algorithms::page_rank(Driver &driver, Topology
 
 vector<pair<vertex_id_t, weight_t>>
 Algorithms::sssp(Driver &driver, TopologyInterface &ds, bool use_raw_neighbourhood) {
-  return SSSP::sssp(driver, ds, use_raw_neighbourhood, driver.sssp_start_vertex(ds), driver.config.sssp_delta());
+  return SSSP::sssp(ds, use_raw_neighbourhood, driver.sssp_start_vertex(ds), driver.config.sssp_delta());
 }
 
 vector<pair<vertex_id_t, vertex_id_t>>

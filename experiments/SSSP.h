@@ -6,14 +6,13 @@
 #define LIVE_GRAPH_TWO_SSSP_H
 
 #include "Driver.h"
+#include <optional>
 
 class SSSP {
 
 public:
-    static vector<pair<vertex_id_t, weight_t>> sssp(Driver& driver, TopologyInterface& ds, bool use_raw_neighbourhoud, uint64_t source_vertex_id, double delta);
-
-private:
-    static vector<weight_t> gabbs_sssp(Driver& driver, TopologyInterface& ds, uint64_t physical_source, double delta);
+    static vector<pair<vertex_id_t, weight_t>> sssp(TopologyInterface& ds, bool use_raw_neighbourhoud, uint64_t source_vertex_id, double delta);
+    static vector<weight_t> gabbs_sssp(TopologyInterface& ds, uint64_t physical_source, double delta);
 };
 
 

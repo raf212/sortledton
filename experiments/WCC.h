@@ -12,8 +12,7 @@ class WCC {
 public:
     static vector<pair<vertex_id_t, vertex_id_t>> wcc(Driver& driver, TopologyInterface& ds, bool run_on_raw_neighbourhoud);
 
-private:
-    static vector<vertex_id_t> gapbs_wcc(Driver& driver, TopologyInterface& ds);
+    static vector<vertex_id_t> gapbs_wcc(TopologyInterface& ds);
 };
 
 
