@@ -126,7 +126,7 @@ private:
     const float p = 0.25;
     static thread_local mt19937 level_generator;
 
-    HugePageBackedPool skiplist_pool;
+//    HugePageBackedPool skiplist_pool;
 
     void* write_to_blocks(const dst_t* start, const dst_t* end);
 

@@ -511,7 +511,9 @@ bool VersioningBlockedSkipListAdjacencyList::size_is_versioned(vertex_id_t v) {
 
 VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size, size_t property_size,
                                                                                TransactionManager &tm)
-        : tm(tm), block_size(block_size), property_size(property_size), skiplist_pool(memory_block_size()) {
+        : tm(tm), block_size(block_size), property_size(property_size),
+        //skiplist_pool(memory_block_size())
+        {
   if (round_up_power_of_two(block_size) != block_size) {
     throw ConfigurationError("Block size needs to be a power of two.");
   }
@@ -984,8 +986,8 @@ void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHea
   if (from->next_levels[0] != nullptr) {
     from->next_levels[0]->before = to;
   }
-  skiplist_pool.free_block(from);
-//  free(from);
+//  skiplist_pool.free_block(from);
+  free(from);
 //  cout << "merge" << endl;
 //  cout << gc_merges << endl;
   gc_merges += 1;
@@ -1008,8 +1010,8 @@ void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id
 
     e_b.copy_into(new_e_b);
 
-    skiplist_pool.free_block(skip_list_block);
-//    free(skip_list_block);
+//    skiplist_pool.free_block(skip_list_block);
+    free(skip_list_block);
 
     adjacency_index.store_single_block(v, new_e_b.get_single_block_pointer(), new_e_b.get_block_capacity(),
                                        new_e_b.get_edges_and_versions(), new_e_b.get_property_count(),
@@ -1176,9 +1178,9 @@ void VersioningBlockedSkipListAdjacencyList::free_adjacency_set(vertex_id_t v) {
 
       while (skip_list_header != nullptr) {
         auto next = skip_list_header->next_levels[0];
-        skiplist_pool.free_block(skip_list_header);
+//        skiplist_pool.free_block(skip_list_header);
 
-//        free(skip_list_header);
+        free(skip_list_header);
         skip_list_header = next;
       }
       adjacency_index[v].adjacency_set = (uint64_t) nullptr;
@@ -1256,8 +1258,8 @@ EdgeBlock VersioningBlockedSkipListAdjacencyList::new_single_edge_block(size_t c
 }
 
 VSkipListHeader *VersioningBlockedSkipListAdjacencyList::new_skip_list_block() {
-  auto h = (VSkipListHeader*) skiplist_pool.get_block();
-//  auto h = (VSkipListHeader *) aligned_alloc(PAGE_SIZE, memory_block_size());
+//  auto h = (VSkipListHeader*) skiplist_pool.get_block();
+  auto h = (VSkipListHeader *) aligned_alloc(PAGE_SIZE, memory_block_size());
   h->data = get_data_pointer(h);
   h->before = nullptr;
 
