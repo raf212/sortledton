@@ -511,8 +511,8 @@ bool VersioningBlockedSkipListAdjacencyList::size_is_versioned(vertex_id_t v) {
 
 VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size, size_t property_size,
                                                                                TransactionManager &tm)
-        : tm(tm), block_size(block_size), property_size(property_size),
-        //skiplist_pool(memory_block_size())
+        : tm(tm), block_size(block_size), property_size(property_size)
+//        , skiplist_pool(memory_block_size())
         {
   if (round_up_power_of_two(block_size) != block_size) {
     throw ConfigurationError("Block size needs to be a power of two.");

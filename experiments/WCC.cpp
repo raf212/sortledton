@@ -49,12 +49,12 @@ vector<vertex_id_t> WCC::gapbs_wcc(TopologyInterface &ds) {
   while (change) {
     change = false;
 
-#pragma omp parallel shared(change)
+#pragma omp parallel
     {
       sortledton_iterator iter(
               *dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(dynamic_cast<SnapshotTransaction &>(ds).raw_ds()));
 
-#pragma omp for reduction(|| : change)
+#pragma omp for schedule(dynamic, 64)
       for (uint64_t v = 0; v < V; v++) {
 
         ds.neighbourhood_p(v, iter);
