@@ -11,6 +11,7 @@
 #include "GAPBSAlgorithms.h"
 #include "Algorithms.h"
 #include <versioning/VersionedEdgeIterator.h>
+#include <versioning/VersionedBlockedEdgeIterator.h>
 
 using namespace gapbs;
 
@@ -53,6 +54,7 @@ namespace { // anonymous
         if (distances[u] < 0) { // the node has not been visited yet
           bool done = false;
 
+          // TODO needs implementation of early end
           sortledton_iterator iter(*ds);
           tx.neighbourhood_p(u, iter);
           while (!done && iter.has_next()) {
@@ -82,18 +84,14 @@ namespace { // anonymous
         for (auto q_iter = queue.begin(); q_iter < queue.end(); q_iter++) {
           int64_t u = *q_iter;
 
+          SORTLEDTON_ITERATE(tx, u, {
+            int64_t curr_val = distances[e];
 
-          sortledton_iterator iter(*ds);
-          tx.neighbourhood_p(u, iter);
-          while (iter.has_next()) {
-            dst_t destination = iter.next();
-            int64_t curr_val = distances[destination];
-
-            if (curr_val < 0 && compare_and_swap(distances[destination], curr_val, distance)) {
-              lqueue.push_back(destination);
+            if (curr_val < 0 && compare_and_swap(distances[e], curr_val, distance)) {
+              lqueue.push_back(e);
               scout_count += -curr_val;
             }
-          }
+          });
         }
         lqueue.flush();
       }
@@ -140,8 +138,6 @@ namespace { // anonymous
 
 vector<uint>
 GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neighbourhood, int alpha, int beta) {
-  cout << "Using GAPBS" << endl;
-
   if (typeid(ti) != typeid(SnapshotTransaction &)) {
     throw NotImplemented();
   }
@@ -191,6 +187,7 @@ GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neig
     }
   }
 
+  // TODO remove and do later and only once
   // Translation for correct distnace return values.
   int N = distances.size();
   vector<uint> ret(N);

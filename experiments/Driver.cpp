@@ -431,7 +431,10 @@ void Driver::run_analytics(Experiments ex, TopologyInterface &ds, bool run_on_ra
 
 #ifdef DEBUG
     switch (ex) {
-      case (WCC): // Fallthrough
+      case (WCC): {
+        // TODO this needs an check and bijektive translation, which is not implemented yet.
+        break;
+      }
       case (CDLP): {
         check_analytics<uint64_t>(ex, integral_values);
         break;

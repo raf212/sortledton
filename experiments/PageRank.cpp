@@ -16,7 +16,7 @@ PageRank::page_rank(Driver &driver, TopologyInterface &ds, int iterations, doubl
   if (use_raw_neighbourhood && !use_gapbs) {
     scores = page_rank_raw_neighbourhood(driver, ds, iterations, damping_factor);
   } else if (use_gapbs && use_raw_neighbourhood) {
-    scores = page_rank_bs_blocked(ds, iterations, damping_factor);
+    scores = page_rank_bs_raw(ds, iterations, damping_factor);
   } else if (use_gapbs && !use_raw_neighbourhood) {
     scores = page_rank_bs(ds, iterations, damping_factor);
   } else {
@@ -27,7 +27,8 @@ PageRank::page_rank(Driver &driver, TopologyInterface &ds, int iterations, doubl
 }
 
 
-vector<double> PageRank::page_rank_batched_interface(Driver &driver, TopologyInterface &ds, int max_iters, double damping_factor) {
+vector<double>
+PageRank::page_rank_batched_interface(Driver &driver, TopologyInterface &ds, int max_iters, double damping_factor) {
   const size_t vertices = ds.vertex_count();
 
   const double init_score = 1.0f / vertices;
@@ -74,7 +75,8 @@ vector<double> PageRank::page_rank_batched_interface(Driver &driver, TopologyInt
   return scores;
 }
 
-vector<double> PageRank::page_rank_raw_neighbourhood(Driver &driver, TopologyInterface &ds, int max_iters, double damping_factor) {
+vector<double>
+PageRank::page_rank_raw_neighbourhood(Driver &driver, TopologyInterface &ds, int max_iters, double damping_factor) {
   const size_t vertices = ds.vertex_count();
 
   const double init_score = 1.0f / vertices;
@@ -237,22 +239,14 @@ vector<double> PageRank::page_rank_bs(TopologyInterface &ds, int num_iterations,
 
     dangling_sum /= num_vertices;
 
-#pragma omp parallel
-    {
-      // TODO assert when we enter this that we can only do this for Versioned yet. Or built an alterantive way of getting iterators for others.
-      sortledton_iterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList*>(dynamic_cast<SnapshotTransaction&>(ds).raw_ds()));
-      // compute the new score for each node in the graph
-#pragma omp for schedule(dynamic, 64)
-      for (uint64_t v = 0; v < max_physical_vertices; v++) {
-        ds.neighbourhood_p(v, iter);
-        double incoming_total = 0;
-
-        while (iter.has_next()) {
-          auto d = iter.next();
-          incoming_total += outgoing_contrib[d];
-        }
-        scores[v] = base_score + damping_factor * (incoming_total + dangling_sum);
-      }
+    // compute the new score for each node in the graph
+#pragma omp parallel for schedule(dynamic, 64)
+    for (uint64_t v = 0; v < max_physical_vertices; v++) {
+      double incoming_total = 0;
+      SORTLEDTON_ITERATE(ds, v, {
+        incoming_total += outgoing_contrib[e];
+      });
+      scores[v] = base_score + damping_factor * (incoming_total + dangling_sum);
     }
   }
 
@@ -348,68 +342,6 @@ vector<double> PageRank::page_rank_bs_raw(TopologyInterface &ds, int num_iterati
   auto end = chrono::steady_clock::now();
   size_t milliseconds = chrono::duration_cast<chrono::milliseconds>(end - start).count();
   cout << "PR (" << num_iterations << ") took " << milliseconds << " milliseconds" << endl;
-
-  return scores;
-}
-
-
-// The error computation has been removed and the concept of dangling sum has been added from the original GAPBS implementation.
-vector<double> PageRank::page_rank_bs_blocked(TopologyInterface &ds, int num_iterations, double damping_factor) {
-  cout << "Using pagerank with blocked iterators" << endl;
-  if (typeid(ds) != typeid(SnapshotTransaction &)) {
-    throw ConfigurationError("Cannot run GAPBS page rank for anything but VersioningBlockedAdjacencyList");
-  }
-
-  const uint64_t num_vertices = ds.vertex_count();
-  const uint64_t max_physical_vertices = ds.max_physical_vertex();
-
-  const double init_score = 1.0 / num_vertices;
-  const double base_score = (1.0 - damping_factor) / num_vertices;
-
-  vector<double> scores(max_physical_vertices);
-
-#pragma omp parallel for
-  for (uint64_t v = 0; v < max_physical_vertices; v++) {
-    scores[v] = init_score;
-  }
-
-  gapbs::pvector<double> outgoing_contrib(max_physical_vertices, 0.0);
-
-  // pagerank iterations
-  for (int iteration = 0; iteration < num_iterations; iteration++) {
-    double dangling_sum = 0.0;
-
-    // for each node, precompute its contribution to all of its outgoing neighbours and, if it's a sink,
-    // add its rank to the `dangling sum' (to be added to all nodes).
-#pragma omp parallel for reduction(+:dangling_sum)
-    for (uint64_t v = 0; v < max_physical_vertices; v++) {
-      uint64_t out_degree = ds.neighbourhood_size_p(v);
-      if (out_degree == 0) { // this is a sink
-        dangling_sum += scores[v];
-      } else {
-        outgoing_contrib[v] = scores[v] / out_degree;
-      }
-    }
-
-    dangling_sum /= num_vertices;
-
-#pragma omp parallel
-    {
-      // TODO assert when we enter this that we can only do this for Versioned yet. Or built an alterantive way of getting iterators for others.
-      sortledton_iterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList*>(dynamic_cast<SnapshotTransaction&>(ds).raw_ds()));
-      // compute the new score for each node in the graph
-#pragma omp for schedule(dynamic, 64)
-      for (uint64_t v = 0; v < max_physical_vertices; v++) {
-        double incoming_total = 0;
-
-        SORTLEDTON_ITERATE(ds, v, {
-          incoming_total += outgoing_contrib[e];
-        });
-
-        scores[v] = base_score + damping_factor * (incoming_total + dangling_sum);
-      }
-    }
-  }
 
   return scores;
 }

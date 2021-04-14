@@ -4,6 +4,7 @@
 
 #include "WCC.h"
 #include "Algorithms.h"
+#include <versioning/VersionedBlockedEdgeIterator.h>
 
 /*
 GAP Benchmark Suite
@@ -48,20 +49,12 @@ vector<vertex_id_t> WCC::gapbs_wcc(TopologyInterface &ds) {
   while (change) {
     change = false;
 
-#pragma omp parallel
-    {
-      sortledton_iterator iter(
-              *dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(dynamic_cast<SnapshotTransaction &>(ds).raw_ds()));
-
-#pragma omp for schedule(dynamic, 64)
+    // TODO define change as shared?
+#pragma omp parallel for schedule(dynamic, 64)
       for (uint64_t v = 0; v < V; v++) {
-
-        ds.neighbourhood_p(v, iter);
-        while (iter.has_next()) {
-          auto n = iter.next();
-
+        SORTLEDTON_ITERATE(ds, v, {
           uint64_t comp_v = components[v];
-          uint64_t comp_n = components[n];
+          uint64_t comp_n = components[e];
           if (comp_n != comp_v) {
             // Hooking condition so lower component ID wins independent of direction
             uint64_t high_comp = std::max(comp_n, comp_v);
@@ -71,17 +64,16 @@ vector<vertex_id_t> WCC::gapbs_wcc(TopologyInterface &ds) {
               components[high_comp] = low_comp;
             }
           }
-        }
+        });
       }
 
-
-#pragma omp for
+#pragma omp parallel for
       for (uint64_t v = 0; v < V; v++) {
         while (components[v] != components[components[v]]) {
           components[v] = components[components[v]];
         }
       }
-    }
+
   }
   return components;
 }
