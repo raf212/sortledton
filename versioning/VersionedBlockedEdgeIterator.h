@@ -19,7 +19,7 @@
     auto [_versioned, _bs, _be] = _iter.next_block();                   \
     if (_versioned) {                          \
        while (_iter.has_next_edge()) {         \
-         auto e = _iter.next();                \
+         [[maybe_unused]] auto e = _iter.next();                \
          on_edge\
        }                                           \
     } else {                                   \
@@ -28,7 +28,8 @@
         on_edge\
       }                                           \
     }\
-  }                                               \
+  }                                            \
+  [[maybe_unused]] end_iteration: ; \
 }
 
 

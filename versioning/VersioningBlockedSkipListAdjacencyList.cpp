@@ -1311,5 +1311,8 @@ VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_p(vertex_i
     case VSKIP_LIST: {
       return VersionedBlockedEdgeIterator(this, src, (VSkipListHeader *) set, adjacency_index.size_is_versioned(src), version);
     }
+    default: {
+      throw NotImplemented();
+    }
   }
 }

@@ -52,21 +52,14 @@ namespace { // anonymous
 #pragma omp parallel for reduction(+ : awake_count) schedule(dynamic, 1024)
       for (int64_t u = 0; u < N; u++) {
         if (distances[u] < 0) { // the node has not been visited yet
-          bool done = false;
-
-          // TODO needs implementation of early end
-          sortledton_iterator iter(*ds);
-          tx.neighbourhood_p(u, iter);
-          while (!done && iter.has_next()) {
-            dst_t n = iter.next();
-            if (front.get_bit(n)) {
+          SORTLEDTON_ITERATE(tx, u, {
+            if (front.get_bit(e)) {
               distances[u] = distance; // on each BUStep, all nodes will have the same distance
               awake_count++;
               next.set_bit(u);
-              done = true;
-              iter.close();
+              goto end_iteration;
             }
-          }
+          });
         }
       }
       return awake_count;
