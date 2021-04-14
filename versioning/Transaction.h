@@ -11,6 +11,7 @@
 #include "Precondition.h"
 
 class VersionedPropertyEdgeIterator;
+class VersionedBlockedEdgeIterator;
 
 class Transaction : public TopologyInterface {
 public :
@@ -20,8 +21,10 @@ public :
 
     bool insert_safe(edge_t e) override { throw NotImplemented(); }
 
+    // TODO lower to topology interface
     virtual void neighbourhood_with_properties(vertex_id_t src, VersionedPropertyEdgeIterator& iter) = 0;
     virtual void neighbourhood_with_properties_p(vertex_id_t src, VersionedPropertyEdgeIterator& iter) = 0;
+    virtual VersionedBlockedEdgeIterator neighbourhood_blocked_p(vertex_id_t src) = 0;
 
     virtual version_t get_version() const = 0;
 };

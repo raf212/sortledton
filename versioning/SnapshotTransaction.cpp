@@ -4,8 +4,9 @@
 
 #include <versioning/VersioningBlockedSkipListAdjacencyList.h>
 
-#include "SnapshotTransaction.h"
 #include <iostream>
+#include "SnapshotTransaction.h"
+#include "VersionedBlockedEdgeIterator.h"
 
 SnapshotTransaction::SnapshotTransaction(version_t version, VersionedTopologyInterface *ds)
         : version(version), ds(ds) {
@@ -303,4 +304,8 @@ void SnapshotTransaction::neighbourhood_with_properties(vertex_id_t src, Version
 
 void SnapshotTransaction::neighbourhood_with_properties_p(vertex_id_t src, VersionedPropertyEdgeIterator &iter) {
   ds->neighbourhood_version_with_properties_p(src, iter, version);
+}
+
+VersionedBlockedEdgeIterator SnapshotTransaction::neighbourhood_blocked_p(vertex_id_t src) {
+  return ds->neighbourhood_version_blocked_p(src, version);
 }

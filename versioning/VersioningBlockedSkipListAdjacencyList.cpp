@@ -1300,16 +1300,16 @@ size_t VersioningBlockedSkipListAdjacencyList::get_property_size() {
 }
 
 VersionedBlockedEdgeIterator
-VersioningBlockedSkipListAdjacencyList::neighbourhood_version_p_blocked(vertex_id_t src, version_t version) {
+VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_p(vertex_id_t src, version_t version) {
   void *set = raw_neighbourhood_version(src, version);
 
   switch (get_set_type(src, version)) {
     case VSINGLE_BLOCK: {
       auto[capacity, s, pc, is_versioned] = adjacency_index.get_block_size(src);
-      return VersionedBlockedEdgeIterator(this, src, (dst_t *) set, s, is_versioned);
+      return VersionedBlockedEdgeIterator(this, src, (dst_t *) set, s, is_versioned, version);
     }
     case VSKIP_LIST: {
-      return VersionedBlockedEdgeIterator(this, src, (VSkipListHeader *) set, adjacency_index.size_is_versioned(src));
+      return VersionedBlockedEdgeIterator(this, src, (VSkipListHeader *) set, adjacency_index.size_is_versioned(src), version);
     }
   }
 }

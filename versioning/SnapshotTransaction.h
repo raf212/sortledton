@@ -62,6 +62,7 @@ public:
 
     void neighbourhood_p(vertex_id_t src, BatchedEdgeIterator& iter) override { throw NotImplemented(); };
     void neighbourhood_p(vertex_id_t src, EdgeIterator& iter) override;
+    VersionedBlockedEdgeIterator neighbourhood_blocked_p(vertex_id_t src) override;
 
     void neighbourhood_with_properties(vertex_id_t src, VersionedPropertyEdgeIterator& iter) override;
     void neighbourhood_with_properties_p(vertex_id_t src, VersionedPropertyEdgeIterator& iter) override;

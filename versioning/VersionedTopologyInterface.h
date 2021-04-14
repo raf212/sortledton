@@ -17,6 +17,7 @@ class NoProperties : exception {
 };
 
 class VersionedPropertyEdgeIterator;
+class VersionedBlockedEdgeIterator;
 
 using namespace std;
 
@@ -53,6 +54,7 @@ public:
     virtual void neighbourhood_version(vertex_id_t src, EdgeIterator& iter, version_t version) = 0;
     virtual void neighbourhood_version_with_properties(vertex_id_t src, VersionedPropertyEdgeIterator& iter, version_t version) = 0;
     virtual void neighbourhood_version_p(vertex_id_t src, EdgeIterator& iter, version_t version) = 0;
+    virtual VersionedBlockedEdgeIterator neighbourhood_version_blocked_p(vertex_id_t src, version_t version) = 0;
     virtual void neighbourhood_version_with_properties_p(vertex_id_t src, VersionedPropertyEdgeIterator& iter, version_t version) = 0;
     virtual void* raw_neighbourhood_version(vertex_id_t src, version_t version) = 0;
     virtual void intersect_neighbourhood_version(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) = 0;

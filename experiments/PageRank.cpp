@@ -16,7 +16,7 @@ PageRank::page_rank(Driver &driver, TopologyInterface &ds, int iterations, doubl
   if (use_raw_neighbourhood && !use_gapbs) {
     scores = page_rank_raw_neighbourhood(driver, ds, iterations, damping_factor);
   } else if (use_gapbs && use_raw_neighbourhood) {
-    scores = page_rank_bs_raw(ds, iterations, damping_factor);
+    scores = page_rank_bs_blocked(ds, iterations, damping_factor);
   } else if (use_gapbs && !use_raw_neighbourhood) {
     scores = page_rank_bs(ds, iterations, damping_factor);
   } else {
@@ -361,8 +361,6 @@ vector<double> PageRank::page_rank_bs_blocked(TopologyInterface &ds, int num_ite
   }
 
   auto tx = dynamic_cast<SnapshotTransaction &>(ds);
-  auto raw_ds = dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(tx.raw_ds());
-
 
   const uint64_t num_vertices = ds.vertex_count();
   const uint64_t max_physical_vertices = ds.max_physical_vertex();
@@ -405,13 +403,10 @@ vector<double> PageRank::page_rank_bs_blocked(TopologyInterface &ds, int num_ite
 #pragma omp for schedule(dynamic, 64)
       for (uint64_t v = 0; v < max_physical_vertices; v++) {
         double incoming_total = 0;
-        auto iter = raw_ds->neighbourhood_version_p_blocked(v, tx.get_version());
-        while (iter.has_next_block()) {
-          auto [start, end] = iter.next_block();
-          for (auto n = start; n < end; n++) {
-            incoming_total += outgoing_contrib[*n];
-          }
-        }
+
+        SORTLEDTON_ITERATE(tx, v, {
+          incoming_total += outgoing_contrib[e];
+        });
 
         scores[v] = base_score + damping_factor * (incoming_total + dangling_sum);
       }

@@ -9,13 +9,36 @@
 
 #include <data_types.h>
 #include "AdjacencySetTypes.h"
+#include "TransactionManager.h"
+
+// TODO define early stop
+
+#define SORTLEDTON_ITERATE(tx, src, on_edge) { \
+  VersionedBlockedEdgeIterator _iter = tx.neighbourhood_blocked_p(src); \
+  while (_iter.has_next_block()) {             \
+    auto [_versioned, _bs, _be] = _iter.next_block();                   \
+    if (_versioned) {                          \
+       while (_iter.has_next_edge()) {         \
+         auto e = _iter.next();                \
+         on_edge\
+       }                                           \
+    } else {                                   \
+      for (auto _i = _bs; _i < _be; _i++) {     \
+        auto e = *_i;                          \
+        on_edge\
+      }                                           \
+    }\
+  }                                               \
+}
+
+
 
 class VersioningBlockedSkipListAdjacencyList;
 
 class VersionedBlockedEdgeIterator {
 public:
-    VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, dst_t* block, size_t size, bool versioned);
-    VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, VSkipListHeader* block, bool versioned);
+    VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, dst_t* block, size_t size, bool versioned, version_t version);
+    VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, VSkipListHeader* block, bool versioned, version_t version);
 
     VersionedBlockedEdgeIterator(VersionedBlockedEdgeIterator& other) = delete;
     VersionedBlockedEdgeIterator& operator=(const VersionedBlockedEdgeIterator&) = delete;
@@ -23,21 +46,51 @@ public:
     ~VersionedBlockedEdgeIterator();
 
     bool has_next_block();
-    pair<dst_t*, dst_t*> next_block();
+
+    /**
+     * Moves the iterator to the next block.
+     * has_next_edge() and next() can be used to iterate over the block.
+     *
+     * If the block is unversioned it can be iterated in a loop as contiguous memory from start to end to avoid function calls.
+     *
+     * @return <is_versioned, start, end>
+     */
+    tuple<bool, dst_t*, dst_t*> next_block();
+
+    /**
+     *
+     * @return true if there are still edges in the current block, false otherwise
+     */
+    bool has_next_edge();
+
+    /**
+     *
+     * @return the next edge in the current block.
+     */
+    dst_t next();
 
     void open();
     void close();
     bool is_open();
+
 private:
     VersioningBlockedSkipListAdjacencyList* ds = nullptr;
     vertex_id_t src = 0;
 
     VSkipListHeader* n_block = nullptr;
+
     dst_t* block = nullptr;
-    size_t current_size = 0;
+    dst_t* current_block_end = 0;
+    bool current_block_is_versioned = false;
+    version_t  version = NO_TRANSACTION;
+
+    dst_t* data = nullptr;
+    dst_t current_edge = 0;
 
     bool first_block = true;
     bool opened = false;
+
+    bool move_to_next_edge_in_current_block();
 };
 
 
