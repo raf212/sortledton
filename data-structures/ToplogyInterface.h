@@ -8,6 +8,8 @@
 #include "adjacency-lists/BatchedEdgeIterator.h"
 #include "adjacency-lists/EdgeIterator.h"
 
+class VersionedBlockedEdgeIterator;
+
 class EdgeExistsException : exception {
 public:
     const edge_t edge;
@@ -64,6 +66,7 @@ public:
     virtual void neighbourhood_p(vertex_id_t src, BatchedEdgeIterator& iter) = 0;
     virtual void neighbourhood(vertex_id_t src, EdgeIterator& iter);
     virtual void neighbourhood_p(vertex_id_t src, EdgeIterator& iter) = 0;
+    virtual VersionedBlockedEdgeIterator neighbourhood_blocked_p(vertex_id_t src);
     virtual void* raw_neighbourhood(vertex_id_t src) = 0;
     virtual void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t>& out);
     virtual void intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) = 0;

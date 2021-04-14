@@ -360,8 +360,6 @@ vector<double> PageRank::page_rank_bs_blocked(TopologyInterface &ds, int num_ite
     throw ConfigurationError("Cannot run GAPBS page rank for anything but VersioningBlockedAdjacencyList");
   }
 
-  auto tx = dynamic_cast<SnapshotTransaction &>(ds);
-
   const uint64_t num_vertices = ds.vertex_count();
   const uint64_t max_physical_vertices = ds.max_physical_vertex();
 
@@ -404,7 +402,7 @@ vector<double> PageRank::page_rank_bs_blocked(TopologyInterface &ds, int num_ite
       for (uint64_t v = 0; v < max_physical_vertices; v++) {
         double incoming_total = 0;
 
-        SORTLEDTON_ITERATE(tx, v, {
+        SORTLEDTON_ITERATE(ds, v, {
           incoming_total += outgoing_contrib[e];
         });
 

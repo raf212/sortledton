@@ -5,6 +5,8 @@
 #include "ToplogyInterface.h"
 #include <iostream>
 
+#include <versioning/VersionedBlockedEdgeIterator.h>
+
 TopologyInterface::~TopologyInterface() {
 }
 
@@ -42,4 +44,8 @@ bool TopologyInterface::has_vertex(vertex_id_t v) {
 
 size_t TopologyInterface::max_physical_vertex() {
   return vertex_count(); // Assumes dense vertex sets
+}
+
+VersionedBlockedEdgeIterator TopologyInterface::neighbourhood_blocked_p(vertex_id_t src) {
+  throw NotImplemented();
 }
