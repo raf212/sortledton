@@ -22,6 +22,8 @@ class MultipleVersionException : exception {
 
 };
 
+class VersionedBlockedEdgeIterator;
+
 class VersioningBlockedSkipListAdjacencyList : public VersionedTopologyInterface {
 
 public:
@@ -52,6 +54,7 @@ public:
     void* raw_neighbourhood_version(vertex_id_t src, version_t version) override;
     VAdjacencySetType get_set_type(vertex_id_t v, version_t version);
     void* raw_neighbourhood_size_entry(vertex_id_t v);
+    VersionedBlockedEdgeIterator neighbourhood_version_p_blocked(vertex_id_t src, version_t version);
 
     void intersect_neighbourhood_version(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) override { throw NotImplemented(); };
     void intersect_neighbourhood_version_p(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) override;

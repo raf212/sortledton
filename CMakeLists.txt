@@ -96,7 +96,8 @@ set(SRC
         experiments/SSSP.cpp experiments/SSSP.h experiments/LCC.cpp experiments/LCC.h
         experiments/GraphalyticsProperties.cpp experiments/GraphalyticsProperties.h
         experiments/Experiments.cpp experiments/Experiments.h
-        versioning/HugePageBackedPool.cpp versioning/HugePageBackedPool.h)
+        versioning/HugePageBackedPool.cpp versioning/HugePageBackedPool.h
+        versioning/VersionedBlockedEdgeIterator.cpp versioning/VersionedBlockedEdgeIterator.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp

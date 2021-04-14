@@ -12,7 +12,6 @@ vector<vertex_id_t> CDLP::teseo_cdlp(TopologyInterface &ds, uint64_t max_iterati
     vector<vertex_id_t> labels0(num_vertices);
     vector<vertex_id_t> labels1(num_vertices);
 
-    // TODO could we use logical vertices from here on and propagate them, then we don't need to translate in the end.
 #pragma omp parallel for
     for(vertex_id_t v = 0; v < num_vertices; v++) {
       labels0[v] = ds.logical_id(v);

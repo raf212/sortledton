@@ -36,7 +36,6 @@ more consistent performance for undirected graphs.
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
 vector<vertex_id_t> WCC::gapbs_wcc(TopologyInterface &ds) {
-  // TODO this WCC assigns each component the biggest physical id not the biggest logical id.
   const uint64_t V = ds.max_physical_vertex();
   vector<vertex_id_t> components(V);
 

@@ -15,6 +15,7 @@
 #include "SizeVersionChainEntry.h"
 #include "VersionedEdgeIterator.h"
 #include "VersionedPropertyEdgeIterator.h"
+#include "VersionedBlockedEdgeIterator.h"
 #include "EdgeBlock.h"
 
 #define MIN_BLOCK_SIZE 2u
@@ -513,7 +514,7 @@ VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(s
                                                                                TransactionManager &tm)
         : tm(tm), block_size(block_size), property_size(property_size)
 //        , skiplist_pool(memory_block_size())
-        {
+{
   if (round_up_power_of_two(block_size) != block_size) {
     throw ConfigurationError("Block size needs to be a power of two.");
   }
@@ -1020,7 +1021,8 @@ void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id
   }
 }
 
-size_t VersioningBlockedSkipListAdjacencyList::assert_edge_block_consistency(EdgeBlock eb, vertex_id_t src, version_t version) {
+size_t VersioningBlockedSkipListAdjacencyList::assert_edge_block_consistency(EdgeBlock eb, vertex_id_t src,
+                                                                             version_t version) {
 #if defined(DEBUG) && ASSERT_WEIGHTS
   auto l_v = logical_id(src);
   auto property_start = eb.properties_start();
@@ -1279,14 +1281,14 @@ void VersioningBlockedSkipListAdjacencyList::neighbourhood_version_with_properti
   assert(property_size != 0 && "Cannot get neighbourhood with properties from a adjacency set with no properties.");
   bool is_versioned = size_is_versioned(src);
   auto set_type = get_set_type(src, version);
-  void* set = raw_neighbourhood_version(src, version);
+  void *set = raw_neighbourhood_version(src, version);
 
   auto size = 0;
-  char* properties = nullptr;
+  char *properties = nullptr;
   if (set_type == VSINGLE_BLOCK) {
-    auto [capacity, s, pc, _] = adjacency_index.get_block_size(src);
+    auto[capacity, s, pc, _] = adjacency_index.get_block_size(src);
     size = s;
-    auto eb = EdgeBlock::from_single_block((dst_t*) set, capacity, s, pc, property_size);
+    auto eb = EdgeBlock::from_single_block((dst_t *) set, capacity, s, pc, property_size);
     properties = eb.properties_start();
   }
 
@@ -1295,4 +1297,19 @@ void VersioningBlockedSkipListAdjacencyList::neighbourhood_version_with_properti
 
 size_t VersioningBlockedSkipListAdjacencyList::get_property_size() {
   return property_size;
+}
+
+VersionedBlockedEdgeIterator
+VersioningBlockedSkipListAdjacencyList::neighbourhood_version_p_blocked(vertex_id_t src, version_t version) {
+  void *set = raw_neighbourhood_version(src, version);
+
+  switch (get_set_type(src, version)) {
+    case VSINGLE_BLOCK: {
+      auto[capacity, s, pc, is_versioned] = adjacency_index.get_block_size(src);
+      return VersionedBlockedEdgeIterator(this, src, (dst_t *) set, s, is_versioned);
+    }
+    case VSKIP_LIST: {
+      return VersionedBlockedEdgeIterator(this, src, (VSkipListHeader *) set, adjacency_index.size_is_versioned(src));
+    }
+  }
 }
