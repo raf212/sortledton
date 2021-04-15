@@ -4,6 +4,7 @@
 
 #include "LCC.h"
 #include "Algorithms.h"
+#include <versioning/VersionedBlockedEdgeIterator.h>
 
 vector<pair<vertex_id_t, double>> LCC::lcc(Driver &driver, TopologyInterface &ds) {
   auto lcc_values = lcc_merge_sort(ds);
@@ -25,9 +26,6 @@ vector<double> LCC::lcc_merge_sort(TopologyInterface &ds) {
 #pragma omp parallel
   {
     vector<dst_t> a_neighbours;
-    sortledton_iterator a_n(*raw_ds);
-    sortledton_iterator b_n(*raw_ds);
-
     auto triangles_a = 0u;
     auto triangles_b = 0u;
 
@@ -35,24 +33,16 @@ vector<double> LCC::lcc_merge_sort(TopologyInterface &ds) {
     for (vertex_id_t a = 0; a < N; a++) {
       a_neighbours.clear();
 
-      ds.neighbourhood_p(a, a_n);
-      while (a_n.has_next()) {
-        auto b = a_n.next();
-
+      SORTLEDTON_ITERATE_NAMED(ds, a, b, end_a, {
         if (a < b) {  // We search triangles for which a > b.
-          a_n.close();
-          break;
+          goto end_a;
         } else {
           a_neighbours.push_back(b);
           auto merge_marker = 0;
 
-          ds.neighbourhood_p(b, b_n);
-          while (b_n.has_next()) {
-            auto c = b_n.next();
-
+          SORTLEDTON_ITERATE_NAMED(ds, b, c, end_b, {
             if (b < c) {  // We search for triangles for which b > c.
-              b_n.close();
-              break;
+              goto end_b;
             } else {
               auto e = lower_bound(a_neighbours.begin() + merge_marker, a_neighbours.end(), c);
               if (e == a_neighbours.end()) {
@@ -64,11 +54,12 @@ vector<double> LCC::lcc_merge_sort(TopologyInterface &ds) {
                 triangles_per_vertex[c] += 2;
               }
             }
-          }
+          });
         }
         triangles_per_vertex[b] += triangles_b;
         triangles_b = 0;
-      }
+      });
+
       triangles_per_vertex[a] += triangles_a;
       triangles_a = 0;
     }
