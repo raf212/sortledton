@@ -13,7 +13,7 @@
 #include <versioning/TransactionManager.h>
 #include <versioning/SizeVersionChainEntry.h>
 #include "VersionedTopologyInterface.h"
-#include "HugePageBackedPool.h"
+#include "memory_allocation/BlockProvider.h"
 
 #include "VertexIndex.h"
 #include "EdgeBlock.h"
@@ -129,7 +129,7 @@ private:
     const float p = 0.25;
     static thread_local mt19937 level_generator;
 
-//    HugePageBackedPool skiplist_pool;
+//    BlockProvider pool;
 
     void* write_to_blocks(const dst_t* start, const dst_t* end);
 
@@ -205,6 +205,11 @@ private:
     void free_adjacency_set(vertex_id_t v);
 
     size_t get_max_vertex();
+
+    size_t get_single_block_memory_size(size_t capacity);
+
+    void* get_block(size_t size);
+    void free_block(void* block, size_t size);
 
 };
 

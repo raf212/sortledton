@@ -513,7 +513,7 @@ bool VersioningBlockedSkipListAdjacencyList::size_is_versioned(vertex_id_t v) {
 VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(size_t block_size, size_t property_size,
                                                                                TransactionManager &tm)
         : tm(tm), block_size(block_size), property_size(property_size)
-//        , skiplist_pool(memory_block_size())
+//        , pool(memory_block_size())
 {
   if (round_up_power_of_two(block_size) != block_size) {
     throw ConfigurationError("Block size needs to be a power of two.");
@@ -589,7 +589,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
 
       adjacency_index[edge.src].adjacency_set = (uint64_t) new_block;
 
-      free(eb.get_single_block_pointer());
+      free_block(eb.get_single_block_pointer(), get_single_block_memory_size(block_capacity));
 
       // recursive call of depth 2, inefficient could be done with one time less copying.
       return insert_skip_list(edge, version, properties);
@@ -598,7 +598,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
       eb.copy_into(new_eb);
       new_eb.insert_edge(edge.dst, version, properties);
 
-      free(eb.get_single_block_pointer());
+      free_block(eb.get_single_block_pointer(), get_single_block_memory_size(block_capacity));
       adjacency_index.store_single_block(edge.src, new_eb.get_single_block_pointer(), new_eb.get_block_capacity(),
                                          new_eb.get_edges_and_versions(), new_eb.get_property_count(), true);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
@@ -987,8 +987,7 @@ void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHea
   if (from->next_levels[0] != nullptr) {
     from->next_levels[0]->before = to;
   }
-//  skiplist_pool.free_block(from);
-  free(from);
+  free_block(from, memory_block_size());
 //  cout << "merge" << endl;
 //  cout << gc_merges << endl;
   gc_merges += 1;
@@ -1003,7 +1002,7 @@ void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id
   auto size = (uint64_t) skip_list_block->size;
   if (size < block_size / 2) {
     auto single_block_size = round_up_power_of_two(size);
-    auto single_block = (dst_t *) malloc(single_block_size * sizeof(dst_t));
+    auto single_block = (dst_t*) get_block(get_single_block_memory_size(single_block_size));
 
     EdgeBlock e_b(get_data_pointer(skip_list_block), block_size, skip_list_block->size, skip_list_block->properties,
                   property_size);
@@ -1011,8 +1010,7 @@ void VersioningBlockedSkipListAdjacencyList::skip_list_to_single_block(vertex_id
 
     e_b.copy_into(new_e_b);
 
-//    skiplist_pool.free_block(skip_list_block);
-    free(skip_list_block);
+    free_block(skip_list_block, memory_block_size());
 
     adjacency_index.store_single_block(v, new_e_b.get_single_block_pointer(), new_e_b.get_block_capacity(),
                                        new_e_b.get_edges_and_versions(), new_e_b.get_property_count(),
@@ -1180,9 +1178,8 @@ void VersioningBlockedSkipListAdjacencyList::free_adjacency_set(vertex_id_t v) {
 
       while (skip_list_header != nullptr) {
         auto next = skip_list_header->next_levels[0];
-//        skiplist_pool.free_block(skip_list_header);
+        free_block(skip_list_header, memory_block_size());
 
-        free(skip_list_header);
         skip_list_header = next;
       }
       adjacency_index[v].adjacency_set = (uint64_t) nullptr;
@@ -1191,7 +1188,8 @@ void VersioningBlockedSkipListAdjacencyList::free_adjacency_set(vertex_id_t v) {
     }
     case VSINGLE_BLOCK: {
       auto block = (dst_t *) raw_neighbourhood_version(v, FIRST_VERSION);
-      free(block);
+      auto [c, _, _1, _2] = adjacency_index.get_block_size(v);
+      free_block(block, get_single_block_memory_size(c));
       adjacency_index.set_block_size(v, 0, 0, 0, false);
       adjacency_index[v].adjacency_set = (uint64_t) nullptr;
       break;
@@ -1254,14 +1252,14 @@ EdgeBlock VersioningBlockedSkipListAdjacencyList::new_single_edge_block(size_t c
   assert(capacity <= block_size);
   assert(MIN_BLOCK_SIZE <= capacity);
 
-  auto block = (dst_t *) aligned_alloc(CACHELINE_SIZE, capacity * sizeof(dst_t) + capacity * property_size);
+  auto block = (dst_t*) get_block(get_single_block_memory_size(capacity));
 
   return EdgeBlock(block, capacity, 0, 0, property_size);
 }
 
 VSkipListHeader *VersioningBlockedSkipListAdjacencyList::new_skip_list_block() {
-//  auto h = (VSkipListHeader*) skiplist_pool.get_block();
-  auto h = (VSkipListHeader *) aligned_alloc(PAGE_SIZE, memory_block_size());
+  auto h = (VSkipListHeader*) get_block(memory_block_size());
+
   h->data = get_data_pointer(h);
   h->before = nullptr;
 
@@ -1316,3 +1314,22 @@ VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_p(vertex_i
     }
   }
 }
+
+void* VersioningBlockedSkipListAdjacencyList::get_block(size_t size) {
+//  return pool.get_block(size);
+  if (size == memory_block_size()) {
+    return aligned_alloc(PAGE_SIZE, size);
+  } else {
+    return aligned_alloc(CACHELINE_SIZE, size);
+  }
+}
+
+void VersioningBlockedSkipListAdjacencyList::free_block(void *block, size_t size) {
+//  pool.free_block(block, size);
+  free(block);
+}
+
+size_t VersioningBlockedSkipListAdjacencyList::get_single_block_memory_size(size_t capacity) {
+  return capacity * sizeof(dst_t) + capacity * property_size;
+}
+

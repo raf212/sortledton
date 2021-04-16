@@ -96,8 +96,8 @@ set(SRC
         experiments/SSSP.cpp experiments/SSSP.h experiments/LCC.cpp experiments/LCC.h
         experiments/GraphalyticsProperties.cpp experiments/GraphalyticsProperties.h
         experiments/Experiments.cpp experiments/Experiments.h
-        versioning/HugePageBackedPool.cpp versioning/HugePageBackedPool.h
-        versioning/VersionedBlockedEdgeIterator.cpp versioning/VersionedBlockedEdgeIterator.h)
+        versioning/VersionedBlockedEdgeIterator.cpp versioning/VersionedBlockedEdgeIterator.h
+        versioning/memory_allocation/BlockProvider.cpp versioning/memory_allocation/BlockProvider.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp
@@ -108,9 +108,9 @@ set(DATASET_CONVERTER_SRC
 
 
 add_executable(dataset_converter data-src/dataset-converter/main.cpp ${DATASET_CONVERTER_SRC})
-add_executable(bitset_analysis dataset_bitset_analyser.cpp ${SRC})
-target_link_libraries (bitset_analysis Threads::Threads)
-target_link_libraries(bitset_analysis OpenMP::OpenMP_CXX)
+#add_executable(bitset_analysis dataset_bitset_analyser.cpp ${SRC})
+#target_link_libraries (bitset_analysis Threads::Threads)
+#target_link_libraries(bitset_analysis OpenMP::OpenMP_CXX)
 
 
 #add_executable(Google_Tests_run ${TESTS} ${DATASET_CONVERTER_SRC} ${SRC})
