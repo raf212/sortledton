@@ -8,7 +8,7 @@
 #include <utils/NotImplemented.h>
 
 VersionedBlockedEdgeIterator::VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v,dst_t *block, size_t size, bool versioned, version_t version)
-        : ds(ds), src(v), block(block), current_block_end(block + size), current_block_is_versioned(versioned), version(version), data(block), current_edge(*data) {
+        : ds(ds), src(v), block(block), current_block_end(block + size), current_block_is_versioned(versioned), version(version), data(block) {
   open();
 }
 

@@ -43,6 +43,13 @@ namespace { // anonymous
         November 2012.
     */
 
+
+    static auto average_steps = 0;
+    static auto average_jumps = 0;
+    static auto average_size = 0;
+
+#define PREFETCH_AHEAD 3
+
     static int64_t
     BUStep(VersioningBlockedSkipListAdjacencyList *ds, SnapshotTransaction &tx, pvector<int64_t> &distances,
            int64_t distance, Bitmap &front, Bitmap &next) {
@@ -52,13 +59,14 @@ namespace { // anonymous
 #pragma omp parallel for reduction(+ : awake_count) schedule(dynamic, 1024)
       for (int64_t u = 0; u < N; u++) {
         if (distances[u] < 0) { // the node has not been visited yet
+          __builtin_prefetch(ds->raw_neighbourhood_version(u+PREFETCH_AHEAD, FIRST_VERSION), 0, 3);
           SORTLEDTON_ITERATE(tx, u, {
-            if (front.get_bit(e)) {
+                  if (front.get_bit(e)) {
               distances[u] = distance; // on each BUStep, all nodes will have the same distance
-              awake_count++;
-              next.set_bit(u);
-              goto end_iteration;
-            }
+                    awake_count++;
+                    next.set_bit(u);
+                    goto end_iteration;
+                  }
           });
         }
       }
