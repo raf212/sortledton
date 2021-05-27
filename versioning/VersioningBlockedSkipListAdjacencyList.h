@@ -219,7 +219,7 @@ private:
      * This function rebalances both blocks if block->size + block->next->size > block_size and merges them otherwise.
      * @param block
      */
-    void potentially_merge_skip_list_blocks(VSkipListHeader* block);
+    void potentially_merge_skip_list_blocks(VSkipListHeader* block, vertex_id_t src);
     void rebalance_blocks(VSkipListHeader* block1, VSkipListHeader* block2);
 
 };

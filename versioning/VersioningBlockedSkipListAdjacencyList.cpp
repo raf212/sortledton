@@ -715,7 +715,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
 #if defined(DEBUG) && ASSERT_CONSISTENCY
     assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
 #endif
-    potentially_merge_skip_list_blocks(block);
+    potentially_merge_skip_list_blocks(block, edge.src);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
     assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
 #endif
@@ -993,9 +993,20 @@ void VersioningBlockedSkipListAdjacencyList::merge_skip_list_blocks(VSkipListHea
   if (from->next_levels[0] != nullptr) {
     from->next_levels[0]->before = to;
   }
+
+  auto from_eb = EdgeBlock::from_vskip_list_header(from, block_size, property_size);
+  auto to_eb = EdgeBlock::from_vskip_list_header(to, block_size, property_size);
+
+  auto properties_to_move = from_eb.get_property_count();
+
+  // Make place for the properties
+  memmove(to_eb.properties_start() - properties_to_move * property_size, to_eb.properties_start(), to_eb.get_property_count() * property_size);
+  // Move properties over
+  memcpy((char*) to_eb.end - properties_to_move * property_size, (char*) from_eb.properties_start(), properties_to_move* property_size);
+
+  to->properties += from->properties;
+
   free_block(from, memory_block_size());
-//  cout << "merge" << endl;
-//  cout << gc_merges << endl;
   gc_merges += 1;
 }
 
@@ -1342,11 +1353,11 @@ size_t VersioningBlockedSkipListAdjacencyList::get_single_block_memory_size(size
   return capacity * sizeof(dst_t) + capacity * property_size;
 }
 
-void VersioningBlockedSkipListAdjacencyList::potentially_merge_skip_list_blocks(VSkipListHeader *block) {
+void VersioningBlockedSkipListAdjacencyList::potentially_merge_skip_list_blocks(VSkipListHeader *block, vertex_id_t src) {
   if (block->size < low_skiplist_block_bound()) {   // Block is too empty
     auto next_block = block->next_levels[0];
 
-    if (next_block == nullptr) {
+    if (next_block == nullptr) {  // Special case last block
       auto before = block->before;
       if (before == nullptr) {
         // TODO single block.
@@ -1354,10 +1365,13 @@ void VersioningBlockedSkipListAdjacencyList::potentially_merge_skip_list_blocks(
         // TODO potentially merge into block before.
       }
     } else {
-      if (block->size + next_block->size <= block_size) {
-        // TODO get predecessors of next_block
-        // TODO implement merging
-        //merge_skip_list_blocks(next_block, block, );
+      if (block->size + next_block->size <= block_size) {  // We merge both blocks, we keep block
+        cout << "Merging" << endl;
+        VSkipListHeader* predecessors[SKIP_LIST_LEVELS];
+
+        auto start_block = (VSkipListHeader*) (VSkipListHeader *) raw_neighbourhood_version(src, FIRST_VERSION);
+        find_block(start_block, *(next_block->data), predecessors);
+        merge_skip_list_blocks(next_block, block, predecessors);
       } else {
         rebalance_blocks(block, next_block);
       }

@@ -160,7 +160,7 @@ public:
 
       auto equal_amount_of_elements = (b1.edges_and_versions + b2.edges_and_versions) / 2;
       auto to_move = equal_amount_of_elements - b1.edges_and_versions;
-      if (is_versioned(*(b2.start + to_move))) {
+      if (is_versioned(*(b2.start + to_move - 1))) {
         to_move += 1;
       }
 
@@ -274,13 +274,15 @@ public:
       cout << endl;
     }
 
+    /**
+    * End of the memory region.
+    */
+    char* end;
+
 private:
     size_t capacity;
 
-    /**
-     * End of the memory region.
-     */
-    char* end;
+
 
     /**
      * The number of version records and edges.
