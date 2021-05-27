@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cstring>
 #include <utils/utils.h>
+#include <iostream>
 #include "AdjacencySetTypes.h"
 
 inline version_t inline_version(bool deletion, bool more_versions, version_t version) {
@@ -140,6 +141,72 @@ public:
       return {split, property_split};
     }
 
+    /**
+     * Balances both block such that they contain an equal amount of elements after.
+     *
+     * Assumes both blocks have the same capacity.
+     * Assumes that the sum edges_and_versions of b1 and b2 is higher than capacity / 2
+     * Assumes that we move elements from b2 to b1, i.e. that b2 has more elements than b1.
+     *
+     * If b1.max < b2.min holds before then it hold after the function.
+     *
+     * @param b1
+     * @param b2
+     */
+    static void balance(EdgeBlock& b1, EdgeBlock& b2) {
+      assert(b1.capacity == b2.capacity);
+      assert(b1.edges_and_versions + b2.edges_and_versions > b1.capacity);
+      assert(b1.edges_and_versions < b2.edges_and_versions);
+
+      auto equal_amount_of_elements = (b1.edges_and_versions + b2.edges_and_versions) / 2;
+      auto to_move = equal_amount_of_elements - b1.edges_and_versions;
+      if (is_versioned(*(b2.start + to_move))) {
+        to_move += 1;
+      }
+
+      cout << "Size b1 before " << b1.edges_and_versions;
+      cout << "size b2 before " << b2.edges_and_versions;
+
+
+      auto properties_to_move = to_move - b2.count_versions_before(to_move);
+      cout << "Moving " << to_move << "and properties " << properties_to_move << endl;
+
+      // Move elements from b2 to b1.
+      memcpy((char*) (b1.start + b1.edges_and_versions), (char*) (b2.start), to_move * sizeof(dst_t));
+
+      cout << "Moved" << endl;
+      for (auto i = b2.start; i < b2.start + to_move; i++) {
+        cout << " " << *i;
+      }
+      cout << endl;
+
+      cout << "Will move" << endl;
+      for (auto i = b2.start + to_move; i < b2.start + b2.edges_and_versions; i++) {
+        cout << " " << *i;
+      }
+      cout << endl;
+      // Move elements in b2 to the beginning.
+      memmove((char*) b2.start, (char*) (b2.start + to_move), (b2.edges_and_versions - to_move) * sizeof(dst_t));
+
+
+      b1.edges_and_versions += to_move;
+      b2.edges_and_versions -= to_move;
+      cout << "b1 size after " << b1.edges_and_versions << endl;
+      cout << "b2 size after " << b2.edges_and_versions << endl;
+
+      // TODO move properties
+      // Move Properties
+      // Make place for properties
+      memmove(b1.properties_start() - properties_to_move * b1.property_size, b1.properties_start(), b1.properties * b1.property_size);
+
+      // Move properties
+      memcpy(((char*) b1.end) - properties_to_move * b1.property_size , (char*) b2.properties_start(), properties_to_move * b2.property_size);
+
+
+      b1.properties += properties_to_move;
+      b2.properties -= properties_to_move;
+    }
+
     dst_t* get_single_block_pointer() {
       return start;
     }
@@ -178,6 +245,34 @@ public:
    * Start of the memory region
    */
     dst_t *start;
+
+    void print_block(function<dst_t(dst_t)> physical_to_logical) {
+      cout << "Physical Edges: " << endl;
+      for (auto i = start; i < start + edges_and_versions; i++) {
+        auto e = make_unversioned(*i);
+        cout << " " << e;
+        if (is_versioned(*i)) {
+          i++;  // Jump over version
+        }
+
+      }
+      cout << endl;
+      cout << "Logical Edges: " << endl;
+      for (auto i = start; i < start + edges_and_versions; i++) {
+        auto e = make_unversioned(*i);
+        cout << " " << physical_to_logical(e);
+        if (is_versioned(*i)) {
+          i++;  // Jump over version
+        }
+
+      }
+      cout << endl;
+      cout << "Properties: " << endl;
+      for (dst_t* i = (dst_t*) properties_start(); i < (dst_t*) properties_start() + properties; i++) {
+        cout << " " << *i;
+      }
+      cout << endl;
+    }
 
 private:
     size_t capacity;

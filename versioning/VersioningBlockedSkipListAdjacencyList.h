@@ -211,6 +211,17 @@ private:
     void* get_block(size_t size);
     void free_block(void* block, size_t size);
 
+    size_t low_skiplist_block_bound();
+
+    /**
+     * Merges this skip list block with the next block if it is less full than low_fullness threshold.
+     *
+     * This function rebalances both blocks if block->size + block->next->size > block_size and merges them otherwise.
+     * @param block
+     */
+    void potentially_merge_skip_list_blocks(VSkipListHeader* block);
+    void rebalance_blocks(VSkipListHeader* block1, VSkipListHeader* block2);
+
 };
 
 

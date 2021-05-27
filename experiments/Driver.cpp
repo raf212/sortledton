@@ -36,7 +36,7 @@
 #include "TwoNeighbour.h"
 
 
-#define CHECKINSERT 0
+#define CHECKINSERT 1
 
 vector<vector<vertex_id_t>> Driver::select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
   vector<vector<vertex_id_t>> out;
@@ -944,7 +944,7 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
     // TODO support undirected mode in data structure?
     edge_count /= 2;
     expected_edge_count = el.edges.size();  // The undirected mode does not load the edges from the base set
-    assert(edge_count == expected_edge_count);
+//    assert(edge_count == expected_edge_count);
   } else {
     assert(edge_count == expected_edge_count);
   }
@@ -964,27 +964,31 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
   }
 
   // Check properties
-  cout << "Checking properties" << endl;
   if (config.weighted && typeid(ds) == typeid(SnapshotTransaction &)) {
-    auto tx = dynamic_cast<SnapshotTransaction &>(ds);
-#pragma omp parallel
-    {
-      sortledton_property_iterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(tx.raw_ds()));
-#pragma omp for
-      for (vertex_id_t v = 0; v < ds.max_physical_vertex(); v++) {
-        auto l_v = ds.logical_id(v);
-        tx.neighbourhood_with_properties_p(v, iter);
-        while (iter.has_next()) {
-          auto[d, pp] = iter.next_with_properties();
-          auto p = *((dst_t *) pp);
-          if (p != l_v) {
-            auto l_d = ds.logical_id(d);
-            assert(l_d == p);
+    if (typeid(weight_t) != typeid(dst_t)) {
+      cerr << "Weight type needs to be dst_t to check properties" << endl;
+    } else {
+      cout << "Checking properties" << endl;
+
+      auto tx = dynamic_cast<SnapshotTransaction &>(ds);
+  #pragma omp parallel
+      {
+        sortledton_property_iterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(tx.raw_ds()));
+  #pragma omp for
+        for (vertex_id_t v = 0; v < ds.max_physical_vertex(); v++) {
+          auto l_v = ds.logical_id(v);
+          tx.neighbourhood_with_properties_p(v, iter);
+          while (iter.has_next()) {
+            auto[d, pp] = iter.next_with_properties();
+            auto p = *((dst_t *) pp);
+            if (p != l_v) {
+              auto l_d = ds.logical_id(d);
+              assert(l_d == p);
+            }
           }
         }
       }
     }
-
   }
 
 

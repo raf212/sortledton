@@ -20,7 +20,7 @@ using namespace std;
 // Used vertex identifier and destination data structure for all data structrues.
   typedef uint64_t vertex_id_t;
   typedef vertex_id_t dst_t;
-  typedef double weight_t;
+  typedef dst_t weight_t;
 
   // Version used to indicate that this is the first version of any version chain. This does not need to be
   // the original first version from system start but could be a later version after GC.
