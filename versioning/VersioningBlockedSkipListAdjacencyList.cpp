@@ -25,7 +25,7 @@
 
 #define COLLECT_VERSIONS_ON_INSERT 1
 
-#define ASSERT_CONSISTENCY  1
+#define ASSERT_CONSISTENCY  0
 #define ASSERT_WEIGHTS 0
 
 #define likely(x)       __builtin_expect((x),1)
@@ -1380,7 +1380,7 @@ void VersioningBlockedSkipListAdjacencyList::potentially_merge_skip_list_blocks(
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::low_skiplist_block_bound() {
-  return block_size / 2;
+  return block_size * 0.4;  // We choose 0.4 to avoid going back and forth between growing and shrinking blocks due to removing versions.
 }
 
 void VersioningBlockedSkipListAdjacencyList::rebalance_blocks(VSkipListHeader* block1, VSkipListHeader* block2) {
