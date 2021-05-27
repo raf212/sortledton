@@ -967,6 +967,8 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
   if (config.weighted && typeid(ds) == typeid(SnapshotTransaction &)) {
     if (typeid(weight_t) != typeid(dst_t)) {
       cerr << "Weight type needs to be dst_t to check properties" << endl;
+    } else if (config.weighted_graph_source) {
+      cerr << "Weights are given externally, cannot check them." << endl;
     } else {
       cout << "Checking properties" << endl;
 
