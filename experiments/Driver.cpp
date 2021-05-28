@@ -1035,6 +1035,10 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
   }
 
   vertex_id_t start_vertex = config.bfs_start_vertex();
+  if (start_vertex == numeric_limits<vertex_id_t>::max()) {
+    BFSSourceSelector ss(*this, config.base, ds);
+    start_vertex = ss.get_source();
+  }
 
   vector<pair<vertex_id_t, uint>> distances;
   if (typeid(ds) == typeid(SnapshotTransaction)) {
