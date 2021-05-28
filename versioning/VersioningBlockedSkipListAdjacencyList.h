@@ -214,14 +214,11 @@ private:
     size_t low_skiplist_block_bound();
 
     /**
-     * Merges this skip list block with the next block if it is less full than low_fullness threshold.
+     * Balances the block with either the block before or after.
      *
-     * This function rebalances both blocks if block->size + block->next->size > block_size and merges them otherwise.
-     * @param block
+     * If the number of edges in this block and its neighbours are less than the threshold it merges the block.
      */
-    void potentially_merge_skip_list_blocks(VSkipListHeader* block, vertex_id_t src);
-    void rebalance_blocks(VSkipListHeader* block1, VSkipListHeader* block2);
-
+    void balance_block(VSkipListHeader* block, vertex_id_t src);
 };
 
 

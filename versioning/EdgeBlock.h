@@ -142,69 +142,120 @@ public:
     }
 
     /**
-     * Balances both block such that they contain an equal amount of elements after.
+     * Moves `elements` number of edges and versions from b1 to b2.
+     * If b1 and b2 are sorted internally and b1.max < b2.min, then the condition holds afterwards.
      *
-     * Assumes both blocks have the same capacity.
-     * Assumes that the sum edges_and_versions of b1 and b2 is higher than capacity / 2
-     * Assumes that we move elements from b2 to b1, i.e. that b2 has more elements than b1.
-     *
-     * If b1.max < b2.min holds before then it hold after the function.
-     *
-     * @param b1
-     * @param b2
+     * If b1[elements] is a versioned edge, it moves one element more to keep edge and version together.
      */
-    static void balance(EdgeBlock& b1, EdgeBlock& b2) {
-      assert(b1.capacity == b2.capacity);
-      assert(b1.edges_and_versions + b2.edges_and_versions > b1.capacity);
-      assert(b1.edges_and_versions < b2.edges_and_versions);
+    static void move_forward(EdgeBlock& from, EdgeBlock& to, size_t elements) {
+      assert(from.edges_and_versions >= elements);
+      assert(to.edges_and_versions + elements + 1 <= to.capacity);
+      assert(from.get_max_edge() < to.get_min_edge());
+      assert(to.property_size == from.property_size);
+      auto property_size = to.property_size;
 
-      auto equal_amount_of_elements = (b1.edges_and_versions + b2.edges_and_versions) / 2;
-      auto to_move = equal_amount_of_elements - b1.edges_and_versions;
-      if (is_versioned(*(b2.start + to_move - 1))) {
-        to_move += 1;
+      auto elements_not_to_move = from.edges_and_versions - elements;
+      // Keep version and edge together.
+      if (is_versioned(from.start[elements_not_to_move-1])) {
+        elements += 1;
+        elements_not_to_move -=1;
       }
 
-      cout << "Size b1 before " << b1.edges_and_versions;
-      cout << "size b2 before " << b2.edges_and_versions;
+      auto versions_before = from.count_versions_before(elements_not_to_move);
+      auto properties_not_to_move = elements_not_to_move - versions_before;
+      auto properties_to_move = from.properties - properties_not_to_move;
 
+//#ifdef DEBUG
+//      vector<dst_t> before;
+//      for (auto i = from.start; i < from.start + from.edges_and_versions; i++) {
+//        before.emplace_back(*i);
+//      }
+//
+//      for (auto i = to.start; i < to.start + to.edges_and_versions; i++) {
+//        before.emplace_back(*i);
+//      }
+//#endif
 
-      auto properties_to_move = to_move - b2.count_versions_before(to_move);
-      cout << "Moving " << to_move << "and properties " << properties_to_move << endl;
+      // Move elements in to backwards to make place
+      memmove((char*) (to.start + elements), (char*) to.start, to.edges_and_versions * sizeof(dst_t));
 
-      // Move elements from b2 to b1.
-      memcpy((char*) (b1.start + b1.edges_and_versions), (char*) (b2.start), to_move * sizeof(dst_t));
+      // Move elements from to to from
+      memcpy((char*) to.start, (char*) (from.start + elements_not_to_move), elements * sizeof(dst_t));
 
-      cout << "Moved" << endl;
-      for (auto i = b2.start; i < b2.start + to_move; i++) {
-        cout << " " << *i;
+      // Move Properties from to to from
+      memcpy(to.properties_start() - properties_to_move * property_size, from.properties_start() + properties_not_to_move * property_size, properties_to_move * property_size);
+
+      // Move properties in from to the end
+      memmove(from.end - properties_not_to_move * property_size, from.properties_start(), properties_not_to_move * property_size);
+
+      from.edges_and_versions -= elements;
+      from.properties -= properties_to_move;
+      to.edges_and_versions += elements;
+      to.properties += properties_to_move;
+
+//#ifdef DEBUG
+//      vector<dst_t> after;
+//      for (auto i = from.start; i < from.start + from.edges_and_versions; i++) {
+//        after.emplace_back(*i);
+//      }
+//      for (auto i = to.start; i < to.start + to.edges_and_versions; i++) {
+//        after.emplace_back(*i);
+//      }
+//
+//      bool matching = before == after;
+//      if (!matching) {
+//        cout << from.edges_and_versions << " " << to.edges_and_versions << endl;
+//        cout << "Moved " << elements << " elements";
+//        cout << "Content before" << endl;
+//        for (auto i = 0; i < before.size(); i++) {
+//          if (i == elements_not_to_move) {
+//
+//          }
+//          cout << before[i] << " ";
+//        }
+//        cout << endl;
+//        cout << "Content after:" << endl;
+//        for (auto i = 0; i < before.size(); i++) {
+//          cout << after[i] << " ";
+//        }
+//        cout << endl;
+//        assert(false);
+//      }
+//#endif
+    }
+
+    static void move_backward(EdgeBlock& from, EdgeBlock& to, size_t elements) {
+      assert(from.edges_and_versions >= elements);
+      assert(to.edges_and_versions + elements + 1 <= to.capacity);
+      assert(from.get_min_edge() > to.get_max_edge());
+      assert(to.property_size == from.property_size);
+      auto property_size = to.property_size;
+
+      // Keep version and edge together.
+      if (is_versioned(from.start[elements - 1])) {
+        elements += 1;
       }
-      cout << endl;
 
-      cout << "Will move" << endl;
-      for (auto i = b2.start + to_move; i < b2.start + b2.edges_and_versions; i++) {
-        cout << " " << *i;
-      }
-      cout << endl;
-      // Move elements in b2 to the beginning.
-      memmove((char*) b2.start, (char*) (b2.start + to_move), (b2.edges_and_versions - to_move) * sizeof(dst_t));
+      auto versions_to_move = from.count_versions_before(elements);
+      auto properties_to_move = elements - versions_to_move;
 
+      // Move elements from to to from
+      memcpy((char*) (to.start + to.edges_and_versions), (char*) from.start, elements * sizeof(dst_t));
 
-      b1.edges_and_versions += to_move;
-      b2.edges_and_versions -= to_move;
-      cout << "b1 size after " << b1.edges_and_versions << endl;
-      cout << "b2 size after " << b2.edges_and_versions << endl;
+      // Move elements in from backwards
+      memmove((char*) from.start, (char*) (from.start + elements), (from.edges_and_versions - elements) * sizeof(dst_t));
 
-      // TODO move properties
       // Move Properties
       // Make place for properties
-      memmove(b1.properties_start() - properties_to_move * b1.property_size, b1.properties_start(), b1.properties * b1.property_size);
+      memmove(to.properties_start() - properties_to_move * property_size, to.properties_start(), to.properties * property_size);
 
       // Move properties
-      memcpy(((char*) b1.end) - properties_to_move * b1.property_size , (char*) b2.properties_start(), properties_to_move * b2.property_size);
+      memcpy( to.end - properties_to_move * property_size , from.properties_start(), properties_to_move * property_size);
 
-
-      b1.properties += properties_to_move;
-      b2.properties -= properties_to_move;
+      from.edges_and_versions -= elements;
+      from.properties -= properties_to_move;
+      to.edges_and_versions += elements;
+      to.properties += properties_to_move;
     }
 
     dst_t* get_single_block_pointer() {
@@ -229,6 +280,10 @@ public:
       } else {
         return start[edges_and_versions - 1];
       }
+    }
+
+    dst_t get_min_edge() {
+      return make_unversioned(*start);
     }
 
     void update_skip_list_header(VSkipListHeader *h) {
