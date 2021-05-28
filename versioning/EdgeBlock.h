@@ -37,7 +37,7 @@ inline version_t inline_version(bool deletion, bool more_versions, version_t ver
 class EdgeBlock {
 public:
     EdgeBlock(dst_t *start, size_t capacity, size_t edges_and_versions, size_t properties, size_t property_size)
-            : start(start), capacity(capacity), end(((char*) start) + capacity * sizeof(dst_t) + capacity * property_size), edges_and_versions(edges_and_versions), properties(properties),
+            : start(start), end(((char*) start) + capacity * sizeof(dst_t) + capacity * property_size), capacity(capacity), edges_and_versions(edges_and_versions), properties(properties),
               property_size(property_size) {};
 
 
