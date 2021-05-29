@@ -63,7 +63,7 @@ public:
 
     bool insert_edge_version(edge_t edge, version_t version) override;
     bool insert_edge_version(edge_t edge, version_t version, char* properties, size_t properties_size) override;
-    bool delete_edge_version(edge_t edge, version_t version) override { throw NotImplemented(); };
+    bool delete_edge_version(edge_t edge, version_t version) override;
 
     size_t get_property_size() override;
 
@@ -213,6 +213,10 @@ private:
      * If the number of edges in this block and its neighbours are less than the threshold it merges the block.
      */
     void balance_block(VSkipListHeader* block, VSkipListHeader* head, vertex_id_t src);
+
+    bool delete_from_single_block(edge_t edge, version_t version);
+
+    bool delete_skip_list(edge_t edge, version_t version);
 };
 
 

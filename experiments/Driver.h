@@ -57,9 +57,8 @@ private:
     Reporter reporter;
     SortedCSRDataSource read_base_dataset();
     EdgeList<weighted_edge_t> read_insert_dataset();
-    EdgeList<weighted_edge_t> read_delete_dataset();
 
-    void run_data_structure(SortedCSRDataSource& base, EdgeList<weighted_edge_t>& inserts, EdgeList<weighted_edge_t>& deletes,
+    void run_data_structure(SortedCSRDataSource& base, EdgeList<weighted_edge_t>& inserts,
                             DataStructures ds,
                             const vector<string>& ds_parameters,
                             vector<vector<vertex_id_t>>& neighbour_2_sources);
@@ -71,7 +70,9 @@ private:
                                           size_t base_edge_count);
     void check_insert(TopologyInterface& ds, EdgeList<weighted_edge_t>& el, size_t base_edge_count);
 
-    void run_delete_experiment(TopologyInterface& ds, EdgeList<weighted_edge_t>& el);
+    void run_delete_experiment(TransactionManager &tm, VersionedTopologyInterface *ds,
+                               EdgeList<weighted_edge_t> &existing_edges);
+    void check_deletions(TopologyInterface& ds, EdgeList<weighted_edge_t>& el);
 
     void run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool aquire_locks, bool after_inserts,
                             bool gabbs);
@@ -85,7 +86,7 @@ private:
     void run_neighbourhood_2_experiment(TopologyInterface& ds, const vector<vector<vertex_id_t>>& sources, bool run_on_raw_neighbourhood);
     void check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts);
 
-    void validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts, EdgeList<weighted_edge_t> &deletes);
+    void validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts);
 
     void print_graph(TopologyInterface& ds);
 
@@ -171,6 +172,8 @@ private:
     inline bool check_equal(T a, T b, double tolerance) {
       return specialize::check_equal(a, b, tolerance);
     }
+
+    EdgeList<weighted_edge_t> generate_deletions(EdgeList<weighted_edge_t>& existing_edges, double deletion_percentage);
 
 };
 

@@ -76,12 +76,6 @@ void Driver::run() {
     inserts = read_insert_dataset();
   }
 
-  EdgeList<weighted_edge_t> deletes;
-  if (config.experiment_set.find(DELETE) != config.experiment_set.end()) {
-    cout << "Reading delete dataset " << config.deletions.path << endl;
-    deletes = read_delete_dataset();
-  }
-
   vector<vector<vertex_id_t>> neighbour_2_sources;
   if (config.experiment_set.find(NEIGHBOUR_2) != config.experiment_set.end()) {
     neighbour_2_sources = select_2_neighbourhood_src(base, 1000);
@@ -91,12 +85,12 @@ void Driver::run() {
 
   for (const auto &ds : config.data_structures) {
     cout << "Running data structure: " << ds.first << endl;
-    run_data_structure(base, inserts, deletes, ds.first, ds.second, neighbour_2_sources);
+    run_data_structure(base, inserts, ds.first, ds.second, neighbour_2_sources);
   }
 }
 
 void
-Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts, EdgeList<weighted_edge_t> &deletes,
+Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts,
                            DataStructures ds, const vector<string> &ds_parameters,
                            vector<vector<vertex_id_t>> &neighbourhood_2_sources) {
   reporter.set_data_structure(ds, ds_parameters);
@@ -342,10 +336,13 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
           throw NotImplemented();
         }
         // Master thread generates its own transaction after insertion happened.
+        if (versioned_data_structure == nullptr) {
+          throw NotImplemented();
+        }
         if (versioned_data_structure != nullptr) {
           tm.transactionCompleted(transaction);
         }
-        run_delete_experiment(*data_structure, deletes);
+        run_delete_experiment(tm, versioned_data_structure, inserts);
         break;
       }
       case (GC): {
@@ -372,7 +369,7 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
   }
 
   if (config.validate_datastructures) {
-    validate_graph_structure(*data_structure, base, inserts, deletes);
+    validate_graph_structure(*data_structure, base, inserts);
   }
 
   if (data_structure != nullptr && typeid(*data_structure) != typeid(SnapshotTransaction)) {
@@ -705,8 +702,79 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
 }
 
 
-void Driver::run_delete_experiment(TopologyInterface &ds, EdgeList<weighted_edge_t> &el) {
-  throw NotImplemented();
+void
+run_deletes_in_transactions(size_t thread_id, TransactionManager &tm, EdgeList<weighted_edge_t> &el,
+                            atomic_uint &deletion_position,
+                            VersionedTopologyInterface *ds, uint total_partitions, uint partition,
+                            bool undirected) {
+  tm.register_thread(thread_id);
+  const uint batch_size = 3000;
+
+  const uint total_work = el.edges.size();
+  SnapshotTransaction tx = tm.getSnapshotTransaction(ds);
+  while (deletion_position.load() < total_work) {
+    int work = deletion_position.fetch_add(batch_size);
+    int work_end = min(total_work, work + batch_size);
+
+    while (work < work_end) {
+      auto e = el.edges[work];
+      edge_t edge(e.src, e.dst);
+
+      if (undirected) {
+        auto opposite = edge_t{e.dst, e.src};
+        tx.delete_edge(opposite);
+      }
+      tx.delete_edge(edge);
+      tx.execute();
+      tm.transactionCompleted(tx);
+      tm.getSnapshotTransaction(ds, tx);
+      work++;
+    }
+  }
+  tm.transactionCompleted(tx);
+  tm.deregister_thread(thread_id);
+}
+
+
+void Driver::run_delete_experiment(TransactionManager &tm, VersionedTopologyInterface *ds,
+                                   EdgeList<weighted_edge_t> &existing_edges) {
+  auto to_delete = generate_deletions(existing_edges, 0.1);
+
+  cout << "Running delete experiment deleting " << to_delete.edges.size() << " edges." << endl;
+  uint threads = config.insert_threads;
+
+  auto start = chrono::steady_clock::now();
+  atomic<uint> deletion_index(0);
+  vector<thread> ts;
+  uint partition = 0;
+  for (uint i = 1; i < threads + 1; i++) {
+    ts.emplace_back(run_deletes_in_transactions, i, ref(tm), ref(to_delete), ref(deletion_index), ds,
+                    config.insert_threads,  // TODO rename to writer threads
+                    partition, config.undirected);
+    partition++;
+  }
+
+  for (auto &t : ts) {
+    t.join();
+  }
+  auto end = chrono::steady_clock::now();
+
+  size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
+  reporter.add_repetition(DELETE, 0, microseconds);
+
+  cout << "Deleting took: " << microseconds / 1000 << " milliseconds " << endl;
+  cout << "This is " << ((float) to_delete.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
+#if defined(DEBUG) && CHECKINSERT
+  cout << "Checking deletions" << endl;
+  auto tx = tm.getSnapshotTransaction(ds);
+  check_deletions(tx, to_delete);
+  tm.transactionCompleted(tx);
+#endif
+  // TODO quickfix for no multiple versions allowed.
+  this_thread::sleep_for(3s);
+  ds->gc_all();
+  // Reinsert the edges so we can run further elements and use the same gold standards.
+  run_insert_experiment_one_by_one(tm, ds, to_delete, 0);
 }
 
 void Driver::run_triangle_counting_experiment(TopologyInterface &ds) {
@@ -835,9 +903,6 @@ EdgeList<weighted_edge_t> Driver::read_insert_dataset() {
   return edge_list;
 }
 
-EdgeList<weighted_edge_t> Driver::read_delete_dataset() {
-  throw NotImplemented();
-}
 
 SortedCSRDataSource Driver::read_base_dataset() {
   SortedCSRDataSource out;
@@ -873,8 +938,7 @@ EdgeIterator &Driver::getSingleEdgeIter(TopologyInterface &ds) {
 }
 
 void
-Driver::validate_graph_structure(TopologyInterface &ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts,
-                                 EdgeList<weighted_edge_t> &deletes) {
+Driver::validate_graph_structure(TopologyInterface &ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts) {
   cout << "Validating data structure." << endl;
   auto vertices = base.vertex_count();
 
@@ -883,14 +947,11 @@ Driver::validate_graph_structure(TopologyInterface &ds, SortedCSRDataSource &bas
   if (config.experiment_set.find(INSERT) != config.experiment_set.end()) {
     insert_map = inserts.to_map();
   }
-  if (config.experiment_set.find(DELETE) != config.experiment_set.end()) {
-    delete_map = deletes.to_map();
-  }
+
   for (vertex_id_t v = 0; v < vertices; v++) {
 //    cout << "Vertex " << v << endl;
     unordered_set<dst_t> e_neighbours = base.get_neighbour_set(v);
 
-    unordered_set<dst_t> e_deleted = get_values_from_multimap(delete_map, v);
     unordered_set<dst_t> e_inserted = get_values_from_multimap(insert_map, v);
 
     unordered_set<dst_t> a_neighbours = get_neighbours(ds, v);
@@ -898,16 +959,14 @@ Driver::validate_graph_structure(TopologyInterface &ds, SortedCSRDataSource &bas
     for (auto n : a_neighbours) {
       if (e_neighbours.find(n) == e_neighbours.end()) {
         assert(e_inserted.find(n) != e_inserted.end());
-      } else {
-        assert(e_deleted.find(n) == e_deleted.end());
       }
     }
 
     for (auto n : e_neighbours) {
-      assert(a_neighbours.find(n) != a_neighbours.end() || e_deleted.find(n) != e_deleted.end());
+      assert(a_neighbours.find(n) != a_neighbours.end());
     }
     for (auto n: e_inserted) {
-      assert(a_neighbours.find(n) != a_neighbours.end() || e_deleted.find(n) != e_deleted.end());
+      assert(a_neighbours.find(n) != a_neighbours.end());
     }
   }
 }
@@ -973,10 +1032,10 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
       cout << "Checking properties" << endl;
 
       auto tx = dynamic_cast<SnapshotTransaction &>(ds);
-  #pragma omp parallel
+#pragma omp parallel
       {
         sortledton_property_iterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(tx.raw_ds()));
-  #pragma omp for
+#pragma omp for
         for (vertex_id_t v = 0; v < ds.max_physical_vertex(); v++) {
           auto l_v = ds.logical_id(v);
           tx.neighbourhood_with_properties_p(v, iter);
@@ -1204,12 +1263,38 @@ Driver::run_gc_experiment(TransactionManager &tm, VersionedTopologyInterface &ds
 void Driver::check_gc_experiment(VersionedTopologyInterface &ds) {
 }
 
-vertex_id_t Driver::sssp_start_vertex(TopologyInterface& ds) {
+vertex_id_t Driver::sssp_start_vertex(TopologyInterface &ds) {
   auto v = config.sssp_start_vertex();
   if (v == numeric_limits<vertex_id_t>::max()) {
     BFSSourceSelector ss(*this, config.base, ds);
     return ss.get_source();
   }
   return v;
+}
+
+EdgeList<weighted_edge_t>
+Driver::generate_deletions(EdgeList<weighted_edge_t> &existing_edges, double deletion_percentage) {
+  EdgeList<weighted_edge_t> to_delete;
+  to_delete.edges.reserve(existing_edges.edges.size() * deletion_percentage);
+
+  auto rng = std::default_random_engine{};
+  shuffle(existing_edges.edges.begin(), existing_edges.edges.end(), rng);
+
+  for (auto i = 0; i < existing_edges.edges.size() * deletion_percentage; i++) {
+    to_delete.edges.push_back(existing_edges.edges[i]);
+  }
+  return to_delete;
+}
+
+void Driver::check_deletions(TopologyInterface &ds, EdgeList<weighted_edge_t> &el) {
+  for (const auto& e : el) {
+    assert(!ds.has_edge(edge_t {e.src, e.dst}));
+    if (config.undirected) {
+      edge_t opposite = {e.dst, e.src};
+      assert(!ds.has_edge(opposite));
+    }
+  }
+
+  // TODO check sizes after deletions
 }
 

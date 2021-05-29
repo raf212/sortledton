@@ -9,6 +9,7 @@
 #include <cstring>
 #include <utils/utils.h>
 #include <iostream>
+#include <utils/NotImplemented.h>
 #include "AdjacencySetTypes.h"
 
 inline version_t inline_version(bool deletion, bool more_versions, version_t version) {
@@ -55,6 +56,10 @@ public:
       return edges_and_versions + 2 <= get_block_capacity();
     };
 
+    bool has_space_to_delete_edge() {
+      return edges_and_versions + 1 <= get_block_capacity();
+    }
+
     /**
      * Finds the correct place to add edge, version record and properties and inserts them by shifthing.
      *
@@ -62,15 +67,41 @@ public:
      * @param version
      * @param properties
      */
-    void insert_edge(dst_t e, version_t version, char *properties) {
+    bool insert_edge(dst_t e, version_t version, char *properties) {
       assert(has_space_to_insert_edge());
-      int offset = insert_edge_and_version_by_shift(e, version);
-      offset -= count_versions_before(offset);
 
-      insert_properties_by_shift(properties, offset);
-      edges_and_versions += 2;
-      this->properties += 1;
+      // TODO now that I check down he
+      auto pos = find_upper_bound(start, start + edges_and_versions, e);
+      if (pos == start + edges_and_versions || make_unversioned(*pos) != e) {  // No version of this edge exists.
+        // TODO rewrite to use memmove.
+        int offset = insert_edge_and_version_by_shift(e, version);
+        offset -= count_versions_before(offset);
+
+        insert_properties_by_shift(properties, offset);
+        edges_and_versions += 2;
+        this->properties += 1;
+      } else { // Earlier version of this edge exists.
+        // TODO implement multiple versions
+        throw NotImplemented();
+      }
     };
+
+    bool delete_edge(dst_t e, version_t version) {
+      assert(has_space_to_delete_edge());
+
+      auto ptr = find_upper_bound(start, start + edges_and_versions, e);
+      if (ptr == start + edges_and_versions || make_unversioned(*ptr) != e) {  // Edge does not exist
+        return false;
+      } else if (is_versioned(*ptr)) {
+        throw NotImplemented();
+      } else {
+        memmove((char*) (ptr + 2), ptr + 1, (start + edges_and_versions - ptr - 1) * sizeof(dst_t));
+        *ptr |= VERSION_MASK;
+        *(ptr + 1) = version | DELETION_MASK;
+        edges_and_versions += 1;
+        return true;
+      }
+    }
 
     /**
      * Removes all version records < min_version.
@@ -83,11 +114,14 @@ public:
       size_t new_size = edges_and_versions;
       for (auto i = start; i < start + edges_and_versions; i++) {
         auto e = *i;
-        if (is_versioned(e) && timestamp(*(i + 1) < min_version)) {
-          if (is_deletion(*(i + 1))) {
+        auto v = *(i+1);
+        if (is_versioned(e) && timestamp(v) < min_version) {
+          if (is_deletion(v)) {
             new_size -= 2;
             shift += 2;
-            i += 2;
+            i += 1;
+            properties -= 1;
+            // TODO need to clean properties
           } else {
             *(i - shift) = make_unversioned(e);
             new_size -= 1;
@@ -103,7 +137,7 @@ public:
       }
       edges_and_versions = new_size;
       return version_remaining;
-      // TODO need to clean properties
+
     };
 
     void copy_into(EdgeBlock &other) {
@@ -327,6 +361,52 @@ public:
         cout << " " << *i;
       }
       cout << endl;
+    }
+
+     /**
+     * Finds the upper bound for value in a sorted array.
+     *
+     * Ignores versions.
+     *
+     * @param start
+     * @param end
+     * @param value
+     * @return a pointer to the position of the upper bound or end.
+     * @return a pointer to the position of the upper bound or end.
+     */
+    static dst_t* find_upper_bound(dst_t *start, dst_t *end, dst_t value) {
+      auto l = 0;
+      auto r = end - start;
+      while ((r - l) > 16) {  // Incorrect if not ended before r-l > 4 because there could be an endless loop.
+        auto m = l + (r - l) / 2;
+
+        auto v = 0 < m && is_versioned(start[m - 1]) ? make_unversioned(start[m - 1]) : make_unversioned(start[m]);
+        if (value > v) {
+          l = m + 1;
+        } else if (v == value) {
+          if (0 < m && is_versioned(start[m - 1])) {
+            return start + m - 1;
+          } else {
+            return start + m;
+          }
+        } else {
+          r = m;
+        }
+      }
+      dst_t *ptr = start + l;
+      if (ptr != start && is_versioned(*(ptr - 1))) { // Do not start on a version record.
+        ptr -= 1;
+      }
+      for (; ptr < end; ptr++) {
+        auto v = *ptr;
+        if (value <= make_unversioned(v)) {
+          return ptr;
+        }
+        if (is_versioned(v)) {
+          ptr++;  // Skip inline version record.
+        }
+      }
+      return end;
     }
 
     /**
