@@ -112,6 +112,9 @@ public:
       auto shift = 0; // The forward shift to use, increases when versions are removed.
       bool version_remaining = false;
       size_t new_size = edges_and_versions;
+
+      // Tracks how many edges we encountered and left so far, with out counting versions and deleted edges
+      auto edges_so_far = 0;
       for (auto i = start; i < start + edges_and_versions; i++) {
         auto e = *i;
         auto v = *(i+1);
@@ -120,19 +123,28 @@ public:
             new_size -= 2;
             shift += 2;
             i += 1;
+
+            // Removes property by moving all properties before by 1
+            memmove(properties_start() + property_size, properties_start(), edges_so_far * property_size);
             properties -= 1;
-            // TODO need to clean properties
           } else {
             *(i - shift) = make_unversioned(e);
             new_size -= 1;
             shift += 1;
             i += 1;
+            edges_so_far += 1;
           }
         } else {
           if (is_versioned(e)) {
             version_remaining = true;
+            *(i - shift) = e;
+            *(i - shift + 1) = v;
+            edges_so_far += 1;
+            i += 1;
+          } else {
+            *(i - shift) = e;
+            edges_so_far += 1;
           }
-          *(i - shift) = e;
         }
       }
       edges_and_versions = new_size;

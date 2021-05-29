@@ -1053,24 +1053,24 @@ size_t VersioningBlockedSkipListAdjacencyList::assert_edge_block_consistency(Edg
 
     }
 #if defined(DEBUG) && ASSERT_WEIGHTS
-    if (typeid(weight_t) == typeid(dst_t)) {
-      auto p = ((dst_t *) property_start)[property_offset];
-      if (p != l_v) {
-        auto uv = adjacency_index.logical_id(make_unversioned(e));
-        if (uv != p) {
-          eb.print_block([&index = adjacency_index](dst_t p_id)->dst_t{ return index.logical_id(p_id);});
-          cout << "eb: " << eb.start << endl;
+      if (typeid(weight_t) == typeid(dst_t)) {
+        auto p = ((dst_t *) property_start)[property_offset];
+        if (p != l_v) {
+          auto uv = adjacency_index.logical_id(make_unversioned(e));
+          if (uv != p) {
+            eb.print_block([&index = adjacency_index](dst_t p_id) -> dst_t { return index.logical_id(p_id); });
+            cout << "eb: " << eb.start << endl;
+          }
+          assert(p == uv);
         }
-        assert(p == uv);
+      } else if (typeid(weight_t) == typeid(double)) {
+        auto p = ((double *) property_start)[property_offset];
+        assert(p < 1.1);
+        assert(0.01 <= p);
+      } else {
+        throw ConfigurationError("Cannot check weight conistency for types other than dst_t or double");
       }
-    } else if (typeid(weight_t) == typeid(double)) {
-      auto p = ((double *) property_start)[property_offset];
-      assert(p < 1.1);
-      assert(0.01 <= p);
-    } else {
-      throw ConfigurationError("Cannot check weight conistency for types other than dst_t or double");
-    }
-    property_offset += 1;
+      property_offset += 1;
 #endif
   }
   return versions;
@@ -1486,7 +1486,13 @@ bool VersioningBlockedSkipListAdjacencyList::delete_skip_list(edge_t edge, versi
 
 #if COLLECT_VERSIONS_ON_INSERT
   eb.gc(tm.getMinActiveVersion());
+  eb.update_skip_list_header(block);
+#if defined(DEBUG) && ASSERT_CONSISTENCY
+  assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
 #endif
+#endif
+
+
 
   // Handle a full block
   if (!eb.has_space_to_delete_edge()) {
