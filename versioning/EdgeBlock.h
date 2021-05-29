@@ -149,7 +149,6 @@ public:
      */
     static void move_forward(EdgeBlock& from, EdgeBlock& to, size_t elements) {
       assert(from.edges_and_versions >= elements);
-      assert(to.edges_and_versions + elements + 1 <= to.capacity);
       assert(from.get_max_edge() < to.get_min_edge());
       assert(to.property_size == from.property_size);
       auto property_size = to.property_size;
@@ -157,6 +156,7 @@ public:
       auto elements_not_to_move = from.edges_and_versions - elements;
       // Keep version and edge together.
       if (is_versioned(from.start[elements_not_to_move-1])) {
+        assert(to.edges_and_versions + elements + 1 <= to.capacity);
         elements += 1;
         elements_not_to_move -=1;
       }
@@ -226,13 +226,13 @@ public:
 
     static void move_backward(EdgeBlock& from, EdgeBlock& to, size_t elements) {
       assert(from.edges_and_versions >= elements);
-      assert(to.edges_and_versions + elements + 1 <= to.capacity);
       assert(from.get_min_edge() > to.get_max_edge());
       assert(to.property_size == from.property_size);
       auto property_size = to.property_size;
 
       // Keep version and edge together.
       if (is_versioned(from.start[elements - 1])) {
+        assert(to.edges_and_versions + elements + 1 <= to.capacity);
         elements += 1;
       }
 

@@ -944,7 +944,7 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
     // TODO support undirected mode in data structure?
     edge_count /= 2;
     expected_edge_count = el.edges.size();  // The undirected mode does not load the edges from the base set
-    assert(edge_count == expected_edge_count);
+//    assert(edge_count == expected_edge_count);
   } else {
     assert(edge_count == expected_edge_count);
   }

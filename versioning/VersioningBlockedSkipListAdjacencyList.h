@@ -168,18 +168,12 @@ private:
     SizeVersionChainEntry* gc_adjacency_size(SizeVersionChainEntry* start, version_t collect_after);
 
     /**
-     * Merges to skip list blocks into one. Frees the other.
+     * Removes block from the skip list by merging it into its predecessor or successor.
      *
-     * Assumes that to->size + from->size <= block_size.
-     * Assumes to --> from relationship on the first skip list level, in other words, expects that the to block
-     * is the predecessor of the from block.
-     *
-     * @param from all elements are moved to "to", "from" is freed.
-     * @param to combines the elements of both blocks
-     * @param blocks all blocks from the skip list that point to from that is one per level of from. This function
-     * guarantues not too touch any of these elements if they do not point to from.
+     * @param block Block to remove
+     * @param head head of the skiplist the blocks belongs to.
      */
-    void merge_skip_list_blocks(VSkipListHeader* from, VSkipListHeader* to, VSkipListHeader* blocks[SKIP_LIST_LEVELS]);
+    void merge_skip_list_blocks(VSkipListHeader* block, VSkipListHeader* head, vertex_id_t src);
 
     /**
      * Converts a SkipList adjacency list with only one block back into a single block.
@@ -218,7 +212,7 @@ private:
      *
      * If the number of edges in this block and its neighbours are less than the threshold it merges the block.
      */
-    void balance_block(VSkipListHeader* block, vertex_id_t src);
+    void balance_block(VSkipListHeader* block, VSkipListHeader* head, vertex_id_t src);
 };
 
 
