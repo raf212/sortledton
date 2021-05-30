@@ -18,10 +18,6 @@
 #include "VertexIndex.h"
 #include "EdgeBlock.h"
 
-class MultipleVersionException : exception {
-
-};
-
 class VersionedBlockedEdgeIterator;
 
 class VersioningBlockedSkipListAdjacencyList : public VersionedTopologyInterface {
@@ -83,9 +79,6 @@ public:
 
     void gc_all() override;
     void gc_vertex(vertex_id_t v) override;
-
-    // TODO make protected
-    bool traverse_version_chain(edge_t edge, version_t required_version, version_t inline_version);
 
     thread_local static int gced_edges;
     thread_local static int gc_merges;

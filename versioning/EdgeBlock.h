@@ -11,6 +11,7 @@
 #include <iostream>
 #include <utils/NotImplemented.h>
 #include "AdjacencySetTypes.h"
+#include "EdgeVersionRecord.h"
 
 inline version_t inline_version(bool deletion, bool more_versions, version_t version) {
   if (more_versions) {
@@ -80,11 +81,16 @@ public:
         insert_properties_by_shift(properties, offset);
         edges_and_versions += 2;
         this->properties += 1;
-      } else { // Earlier version of this edge exists.
-        // TODO implement multiple versions
-        throw NotImplemented();
+      } else { // Earlier version of this edge exists and pos points to it.
+        int offset = pos - start;
+        int property_offset = offset - count_versions_before(offset);
+        char* property = properties_start() + property_offset * property_size;
+        EdgeVersionRecord vr {make_unversioned(*pos), pos + 1, property, true, property_size};
+        vr.write(version, INSERTION, properties);
       }
+      return true;
     };
+
 
     bool delete_edge(dst_t e, version_t version) {
       assert(has_space_to_delete_edge());
@@ -93,7 +99,12 @@ public:
       if (ptr == start + edges_and_versions || make_unversioned(*ptr) != e) {  // Edge does not exist
         return false;
       } else if (is_versioned(*ptr)) {
-        throw NotImplemented();
+        int offset = ptr - start;
+        int property_offset = offset - count_versions_before(offset);
+        char* property = properties_start() + property_offset * property_size;
+        EdgeVersionRecord vr {make_unversioned(*ptr), ptr + 1, property, true, property_size};
+        vr.write(version, DELETION, nullptr);
+        return true;
       } else {
         memmove((char*) (ptr + 2), ptr + 1, (start + edges_and_versions - ptr - 1) * sizeof(dst_t));
         *ptr |= VERSION_MASK;
@@ -118,7 +129,16 @@ public:
       for (auto i = start; i < start + edges_and_versions; i++) {
         auto e = *i;
         auto v = *(i+1);
-        if (is_versioned(e) && timestamp(v) < min_version) {
+
+        // Prune version chain and inline it if possible.
+        if (is_versioned(e)) {
+          EdgeVersionRecord vr {make_unversioned(e), (version_t*) i+1, nullptr, false, property_size};
+          vr.gc(min_version);
+          v = *(i+1);
+        }
+
+        // Remove inline versions
+        if (is_versioned(e) && !(v & MORE_VERSION_MASK) && timestamp(v) < min_version) {
           if (is_deletion(v)) {
             new_size -= 2;
             shift += 2;
@@ -134,7 +154,7 @@ public:
             i += 1;
             edges_so_far += 1;
           }
-        } else {
+        } else {  // Version cannot be removed or is not versioned.
           if (is_versioned(e)) {
             version_remaining = true;
             *(i - shift) = e;

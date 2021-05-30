@@ -15,8 +15,6 @@
 #include "Transaction.h"
 #include "SnapshotTransaction.h"
 
-#define NO_TRANSACTION numeric_limits<version_t>::max()
-
 #define MIN_VERSION_UPDATER_INTERVAL 100 // The interval in which the minimal version is updated, in microseconds.
 
 class TransactionManager {

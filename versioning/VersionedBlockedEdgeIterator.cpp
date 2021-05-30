@@ -4,6 +4,7 @@
 
 #include "VersioningBlockedSkipListAdjacencyList.h"
 #include "VersionedBlockedEdgeIterator.h"
+#include "EdgeVersionRecord.h"
 
 #include <utils/NotImplemented.h>
 
@@ -67,7 +68,8 @@ bool VersionedBlockedEdgeIterator::has_next_edge() {
 bool VersionedBlockedEdgeIterator::move_to_next_edge_in_current_block() {
   while (data < current_block_end) {
     if (is_versioned(*data)) {
-      bool exists = ds->traverse_version_chain({src, make_unversioned(*data)}, version, *(data + 1));
+      const EdgeVersionRecord vr {make_unversioned(*data), data + 1, nullptr, false, 0};
+      bool exists = vr.exists_in_version(version);
       if (exists) {
         current_edge = make_unversioned(*data);
         data += 2;

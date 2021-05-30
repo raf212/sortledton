@@ -17,6 +17,7 @@
 #include "VersionedPropertyEdgeIterator.h"
 #include "VersionedBlockedEdgeIterator.h"
 #include "EdgeBlock.h"
+#include "EdgeVersionRecord.h"
 
 #define MIN_BLOCK_SIZE 2u
 
@@ -263,7 +264,12 @@ bool VersioningBlockedSkipListAdjacencyList::has_edge_version_p(edge_t edge, ver
   } else if (!is_versioned(*pos)) {
     return *pos == edge.dst;
   } else {
-    return make_unversioned(*pos) == edge.dst && traverse_version_chain(edge, version, *(pos + 1));
+    if (make_unversioned(*pos) == edge.dst) {
+      EdgeVersionRecord vr {edge.dst, pos + 1, nullptr, false, 0};
+      return vr.exists_in_version(version);
+    } else {
+      return false;
+    }
   }
 }
 
@@ -281,34 +287,6 @@ bool VersioningBlockedSkipListAdjacencyList::has_edge_version_p(edge_t edge, ver
 dst_t *VersioningBlockedSkipListAdjacencyList::find_upper_bound(dst_t *start, dst_t *end, dst_t value) {
   return EdgeBlock::find_upper_bound(start, end, value);
 }
-
-/**
- * Returns if an edge exists in version required_version.
- *
- * @param edge
- * @param required_version
- * @param inline_version the inline version record for this edge.
- * @return
- */
-bool VersioningBlockedSkipListAdjacencyList::traverse_version_chain(edge_t edge, version_t required_version,
-                                                                    version_t inline_version) {
-  if (timestamp(inline_version) <= required_version) { // We want the newest version
-    if (is_deletion(inline_version)) { // Latest change was a deletion.
-      return false;
-    } else {
-      return true;
-    }
-  } else if (!more_versions_existing(inline_version)) {  // We want an old version but there is only one version.
-    if (is_deletion(inline_version)) { // The latest change is a deletion, hence the edge existed before
-      return true;
-    } else {
-      return false;
-    }
-  } else {  // We want an old version and there are multiple versions.
-    throw MultipleVersionException();  // TODO multiple versions not yet supported
-  }
-}
-
 
 void VersioningBlockedSkipListAdjacencyList::intersect_neighbourhood_version_p(vertex_id_t a, vertex_id_t b,
                                                                                vector<dst_t> &out, version_t version) {
@@ -1040,9 +1018,16 @@ size_t VersioningBlockedSkipListAdjacencyList::assert_edge_block_consistency(Edg
       auto ue = make_unversioned(e);
       assert(before < (long) ue);
       before = make_unversioned(e);
+
       assert(i + 1 < start + size);
-      auto timest = timestamp(*(i+1));
-      assert(version <= timest);
+
+      if (*(i+1) & MORE_VERSION_MASK) {
+        EdgeVersionRecord vr {make_unversioned(e), i+1, nullptr, false, 0};
+        vr.assert_version_list(version);
+      } else {
+        auto timest = timestamp(*(i+1));
+        assert(version <= timest);
+      }
       i += 1; // Jump over version
     } else {
       if (! (before < (long) e)) {
@@ -1430,12 +1415,10 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
 #if defined(DEBUG) && ASSERT_CONSISTENCY
   assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
 #endif
-//  eb.print_block([](dst_t i) {return i;});
   if (eb.has_space_to_delete_edge()) {
     bool ret = eb.delete_edge(edge.dst, version);
     adjacency_index.set_block_size(edge.src, eb.get_block_capacity(), eb.get_edges_and_versions(),
                                    eb.get_property_count(), true);
-//    eb.print_block([](dst_t i) {return i;});
 #if defined(DEBUG) && ASSERT_CONSISTENCY
     assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
 #endif
@@ -1463,7 +1446,7 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
     } else { // Block full: we double size and copy.
       auto new_eb = new_single_edge_block(block_capacity * 2);
       eb.copy_into(new_eb);
-      new_eb.delete_edge(edge.dst, version);
+      auto ret = new_eb.delete_edge(edge.dst, version);
 
       free_block(eb.get_single_block_pointer(), get_single_block_memory_size(block_capacity));
       adjacency_index.store_single_block(edge.src, new_eb.get_single_block_pointer(), new_eb.get_block_capacity(),
@@ -1471,6 +1454,7 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
 #if defined(DEBUG) && ASSERT_CONSISTENCY
       assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
 #endif
+      return ret;
     }
   }
 

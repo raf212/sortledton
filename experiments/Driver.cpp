@@ -770,9 +770,7 @@ void Driver::run_delete_experiment(TransactionManager &tm, VersionedTopologyInte
   check_deletions(tx, to_delete);
   tm.transactionCompleted(tx);
 #endif
-  // TODO quickfix for no multiple versions allowed.
-  this_thread::sleep_for(3s);
-  ds->gc_all();
+
   // Reinsert the edges so we can run further elements and use the same gold standards.
   run_insert_experiment_one_by_one(tm, ds, to_delete, 0);
 }
