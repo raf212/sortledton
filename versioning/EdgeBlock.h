@@ -71,11 +71,14 @@ public:
     bool insert_edge(dst_t e, version_t version, char *properties) {
       assert(has_space_to_insert_edge());
 
-      // TODO now that I check down he
+      // TODO now that I check down here, do I want to check this up as well?
       auto pos = find_upper_bound(start, start + edges_and_versions, e);
       if (pos == start + edges_and_versions || make_unversioned(*pos) != e) {  // No version of this edge exists.
-        // TODO rewrite to use memmove.
-        int offset = insert_edge_and_version_by_shift(e, version);
+        memmove((char*) (pos + 2), (char*) pos, (edges_and_versions - (pos - start)) * sizeof(dst_t));
+        *pos = make_versioned(e);
+        *(pos + 1) = inline_version(false, false, version);
+
+        auto offset = pos - start;
         offset -= count_versions_before(offset);
 
         insert_properties_by_shift(properties, offset);
@@ -388,6 +391,7 @@ public:
 
       }
       cout << endl;
+      cout << endl;
       cout << "Properties: " << endl;
       for (dst_t* i = (dst_t*) properties_start(); i < (dst_t*) properties_start() + properties; i++) {
         cout << " " << *i;
@@ -470,33 +474,6 @@ private:
     size_t size() {
       return (end - (char*) start);
     };
-
-
-
-    size_t insert_edge_and_version_by_shift(dst_t e, version_t version) {
-      auto i = start + edges_and_versions - 1;
-      for (; start <= i; i--) {
-        if (start < i && is_versioned(*(i - 1))) {
-          if (e < make_unversioned(*(i - 1))) {
-            *(i + 2) = *i;
-            i--;
-            *(i + 2) = *i;
-          } else {
-            break;
-          }
-        } else if (e < make_unversioned(*i)) {
-          *(i + 2) = *i;
-        } else {
-          break;
-        }
-      }
-
-      i++;
-
-      *i = make_versioned(e);
-      *(i + 1) = inline_version(false, false, version);
-      return i - start;
-    }
 
     void insert_properties_by_shift(char *properties, size_t offset) {
       if (offset == 0) {
