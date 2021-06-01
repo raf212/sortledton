@@ -20,6 +20,7 @@ public :
     virtual void use_edge_does_not_exists_semantics() = 0;
 
     bool insert_safe(edge_t e) override { throw NotImplemented(); }
+    virtual bool insert_or_update_edge(edge_t edge, char* properties, size_t property_size) = 0;
 
     // TODO lower to topology interface
     virtual void neighbourhood_with_properties(vertex_id_t src, VersionedPropertyEdgeIterator& iter) = 0;

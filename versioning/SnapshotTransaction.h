@@ -56,6 +56,7 @@ public:
     size_t edge_count() override;
     bool insert_edge(edge_t edge) override;
     bool insert_edge(edge_t edge, char* properties, size_t property_size) override;
+    bool insert_or_update_edge(edge_t edge, char* properties, size_t property_size) override;
     bool delete_edge(edge_t edge) override;
 
     size_t neighbourhood_size_p(vertex_id_t src) override;
@@ -122,6 +123,7 @@ private:
     vector<vertex_id_t> vertices_to_insert {};
     vector<vertex_id_t> vertices_to_insert_if_not_exists {};
     vector<edge_t> edges_to_delete {};
+    vector<tuple<edge_t, char*, size_t>> edges_to_update_or_insert {};
     vector<tuple<edge_t, char*, size_t>> edges_to_insert {};
 
     vector<RollbackAction> rollbacks {};

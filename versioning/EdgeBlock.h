@@ -71,7 +71,6 @@ public:
     bool insert_edge(dst_t e, version_t version, char *properties) {
       assert(has_space_to_insert_edge());
 
-      // TODO now that I check down here, do I want to check this up as well?
       auto pos = find_upper_bound(start, start + edges_and_versions, e);
       if (pos == start + edges_and_versions || make_unversioned(*pos) != e) {  // No version of this edge exists.
         memmove((char*) (pos + 2), (char*) pos, (edges_and_versions - (pos - start)) * sizeof(dst_t));
@@ -89,7 +88,12 @@ public:
         int property_offset = offset - count_versions_before(offset);
         char* property = properties_start() + property_offset * property_size;
         EdgeVersionRecord vr {make_unversioned(*pos), pos + 1, property, true, property_size};
-        vr.write(version, INSERTION, properties);
+        if (vr.exists_in_version(version)) {
+          vr.write(version, UPDATE, properties);
+        } else {
+          vr.write(version, INSERTION, properties);
+        }
+
       }
       return true;
     };

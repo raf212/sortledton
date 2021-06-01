@@ -50,6 +50,13 @@ bool SnapshotTransaction::execute() {
 //         NOP
 //      }
     }
+
+    for (auto [e, properties, properties_size] : edges_to_update_or_insert) {
+      edge_t p_edge (ds->physical_id(e.src), ds->physical_id(e.dst));
+      ds->insert_edge_version(p_edge, version, properties, properties_size);
+    }
+
+
 //    cout << endl<< "done inserting" << endl;
     release_locks();
     return true;
@@ -308,4 +315,10 @@ void SnapshotTransaction::neighbourhood_with_properties_p(vertex_id_t src, Versi
 
 VersionedBlockedEdgeIterator SnapshotTransaction::neighbourhood_blocked_p(vertex_id_t src) {
   return ds->neighbourhood_version_blocked_p(src, version);
+}
+
+bool SnapshotTransaction::insert_or_update_edge(edge_t edge, char *properties, size_t property_size) {
+  locks_to_aquire.push_back(edge.src);
+  edges_to_update_or_insert.emplace_back(edge, properties, property_size);
+  return true;
 }
