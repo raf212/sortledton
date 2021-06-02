@@ -64,10 +64,16 @@ public:
     bool get_weight(dst_t e, version_t v, char* out) {
       // Using binary search would be faster if the block is not versioned.
       // This requires per block tracking of versioning.
+      dst_t* e_ptr = nullptr;
+      version_t* v_ptr = nullptr;
       auto property_offset = -1;
       auto version_count = 0;
       for (auto i = start; i < (dst_t*) end; i++) {
         if (make_unversioned(*i) == e) {
+          e_ptr = i;
+          if (is_versioned(*i)) {
+            v_ptr = (version_t*) (i + 1);
+          }
           property_offset = i - start - version_count;
           break;
         }
@@ -76,10 +82,13 @@ public:
           i++;
         }
       }
-      if (property_offset == -1) {
+      if (e_ptr == nullptr) {
         return false;
       }
-      memcpy(out, properties_start() + property_offset * property_size, property_size);
+      version_t dummy_version = FIRST_VERSION;
+      EdgeVersionRecord vr {make_unversioned(*e_ptr), v_ptr == nullptr ? &dummy_version : v_ptr, properties_start() + property_offset * property_size, true, property_size};
+      auto w = vr.get_weight(v);
+      memcpy(out, (char*) &w, property_size);
       return true;
     }
 
