@@ -85,6 +85,8 @@ public:
     void intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t>& out) override;
 
     bool has_edge_p(edge_t edge) override;
+    bool get_weight(edge_t edge, char* out) override;
+    bool get_weight_p(edge_t edge, char* out) override;
 
     void bulkload(const SortedCSRDataSource& src) override;
 

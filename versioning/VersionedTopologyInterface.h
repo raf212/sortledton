@@ -48,6 +48,9 @@ public:
     virtual bool has_edge_version(edge_t edge, version_t version);
     virtual bool has_edge_version_p(edge_t edge, version_t version) = 0;
 
+    virtual bool get_weight_version(edge_t edge, version_t version, char* out);
+    virtual bool get_weight_version_p(edge_t edge, version_t version, char* out) =0;
+
     virtual size_t neighbourhood_size_version(vertex_id_t src, version_t version);
     virtual size_t neighbourhood_size_version_p(vertex_id_t src, version_t version) = 0;
 

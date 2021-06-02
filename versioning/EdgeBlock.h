@@ -61,6 +61,28 @@ public:
       return edges_and_versions + 1 <= get_block_capacity();
     }
 
+    bool get_weight(dst_t e, version_t v, char* out) {
+      // Using binary search would be faster if the block is not versioned.
+      // This requires per block tracking of versioning.
+      auto property_offset = -1;
+      auto version_count = 0;
+      for (auto i = start; i < (dst_t*) end; i++) {
+        if (make_unversioned(*i) == e) {
+          property_offset = i - start - version_count;
+          break;
+        }
+        if (is_versioned(*i)) {
+          version_count += 1;
+          i++;
+        }
+      }
+      if (property_offset == -1) {
+        return false;
+      }
+      memcpy(out, properties_start() + property_offset * property_size, property_size);
+      return true;
+    }
+
     /**
      * Finds the correct place to add edge, version record and properties and inserts them by shifthing.
      *

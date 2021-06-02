@@ -26,7 +26,7 @@
 
 #define COLLECT_VERSIONS_ON_INSERT 1
 
-#define ASSERT_CONSISTENCY  1
+#define ASSERT_CONSISTENCY  0
 #define ASSERT_WEIGHTS 0
 
 #define likely(x)       __builtin_expect((x),1)
@@ -1532,4 +1532,27 @@ bool VersioningBlockedSkipListAdjacencyList::delete_skip_list(edge_t edge, versi
     return ret;
   }
 }
+
+bool VersioningBlockedSkipListAdjacencyList::get_weight_version_p(edge_t edge, version_t version, char* out) {
+  switch (get_set_type(edge.src, version)) {
+    case SKIP_LIST: {
+      VSkipListHeader *head = (VSkipListHeader *) raw_neighbourhood_version(edge.src, version);
+      if (head != nullptr) {
+        auto block = find_block1(head, edge.dst);
+        auto eb = EdgeBlock::from_vskip_list_header(block, block_size, property_size);
+        return eb.get_weight(edge.dst, version, out);
+      } else {
+        return false;
+      }
+      break;
+    }
+    case SINGLE_BLOCK: {
+      auto[block_capacity, size, property_count, is_versioned] = adjacency_index.get_block_size(edge.src);
+      auto eb = EdgeBlock::from_single_block((dst_t *) raw_neighbourhood_version(edge.src, version), block_capacity, size,
+                                   property_count, property_size);
+      return eb.get_weight(edge.dst, version, out);
+    }
+  }
+}
+
 

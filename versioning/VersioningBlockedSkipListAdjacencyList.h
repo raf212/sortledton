@@ -56,6 +56,7 @@ public:
     void intersect_neighbourhood_version_p(vertex_id_t a, vertex_id_t b, vector<dst_t>& out, version_t version) override;
 
     bool has_edge_version_p(edge_t edge, version_t version) override;
+    bool get_weight_version_p(edge_t edge, version_t version, char* out) override;
 
     bool insert_edge_version(edge_t edge, version_t version) override;
     bool insert_edge_version(edge_t edge, version_t version, char* properties, size_t properties_size) override;

@@ -322,3 +322,17 @@ bool SnapshotTransaction::insert_or_update_edge(edge_t edge, char *properties, s
   edges_to_update_or_insert.emplace_back(edge, properties, property_size);
   return true;
 }
+
+bool SnapshotTransaction::get_weight(edge_t edge, char *out) {
+  ds->aquire_vertex_lock(edge.src);
+  auto ret = ds->get_weight_version(edge, version, out);
+  ds->release_vertex_lock(edge.src);
+  return ret;
+}
+
+bool SnapshotTransaction::get_weight_p(edge_t edge, char* out) {
+  ds->aquire_vertex_lock_p(edge.src);
+  auto ret = ds->get_weight_version_p(edge, version, out);
+  ds->release_vertex_lock_p(edge.src);
+  return ret;
+}

@@ -1007,25 +1007,42 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
   }
 
   cout << "Checking if all edges exist." << endl;
-#pragma omp parallel for
+  #pragma omp parallel for
   for (auto i = 0u; i < el.edges.size(); i++) {
     auto e = el.edges[i];
+
+    if (config.weighted && typeid(ds) == typeid(SnapshotTransaction &)) {
+      auto& tx = dynamic_cast<SnapshotTransaction&>(ds);
+      weight_t w1;
+      auto e1 = tx.get_weight({e.src, e.dst}, (char*) &w1);
+      assert(e1);
+      assert(w1 == e.weight);
+
+      if (config.undirected) {
+        weight_t w2;
+        auto e2 = tx.get_weight({e.dst, e.src}, (char*) &w2);
+        assert(e2);
+        assert(w2 == e.weight);
+      }
+    } else {
+      assert(ds.has_edge({e.src, e.dst}));
+      if (config.undirected) {
+        edge_t opposite = {e.dst, e.src};
+        assert(ds.has_edge(opposite));
+      }
+    }
 //    if (i % 1000 == 0) {
 //      cout << ".";
 //    }
-    assert(ds.has_edge({e.src, e.dst}));
-    if (config.undirected) {
-      edge_t opposite = {e.dst, e.src};
-      assert(ds.has_edge(opposite));
-    }
+
   }
 
   // Check properties
   if (config.weighted && typeid(ds) == typeid(SnapshotTransaction &)) {
     if (typeid(weight_t) != typeid(dst_t)) {
-      cerr << "Weight type needs to be dst_t to check properties" << endl;
+      cerr << "Weight type needs to be dst_t to check property iterator" << endl;
     } else if (config.weighted_graph_source) {
-      cerr << "Weights are given externally, cannot check them." << endl;
+      cerr << "Weights are given externally, cannot check them via property iterator." << endl;
     } else {
       cout << "Checking properties" << endl;
 

@@ -23,6 +23,10 @@ public :
     virtual bool insert_or_update_edge(edge_t edge, char* properties, size_t property_size) = 0;
 
     // TODO lower to topology interface
+    virtual bool get_weight(edge_t edge, char* out) = 0;
+    virtual bool get_weight_p(edge_t edge, char* out) = 0;
+
+    // TODO lower to topology interface
     virtual void neighbourhood_with_properties(vertex_id_t src, VersionedPropertyEdgeIterator& iter) = 0;
     virtual void neighbourhood_with_properties_p(vertex_id_t src, VersionedPropertyEdgeIterator& iter) = 0;
 

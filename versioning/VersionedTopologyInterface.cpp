@@ -27,3 +27,7 @@ bool VersionedTopologyInterface::has_edge_version(edge_t edge, version_t version
 size_t VersionedTopologyInterface::neighbourhood_size_version(vertex_id_t src, version_t version) {
   return neighbourhood_size_version_p(physical_id(src), version);
 }
+
+bool VersionedTopologyInterface::get_weight_version(edge_t edge, version_t version, char* out) {
+  return get_weight_version_p(edge_t(physical_id(edge.src), physical_id(edge.dst)), version, out);
+}
