@@ -139,6 +139,7 @@ void EdgeVersionRecord::gc(version_t min_version) {
 }
 
 void EdgeVersionRecord::write(version_t version, EdgeOperation kind, char *weight) {
+  assert(has_weight);
   assert_can_write(version, kind);
 
   switch (state) {
@@ -170,6 +171,9 @@ void EdgeVersionRecord::write(version_t version, EdgeOperation kind, char *weigh
     case MULTIPLE_VERSIONS: {
       auto chain = (forward_list<VersionChainRecord> *) get_pointer(*v);
       weight_t temp = weight != nullptr ? copy_weight(weight) : 0;
+      if (kind != DELETION) {
+        *w = temp;
+      }
       chain->push_front(VersionChainRecord(version, temp, kind));
       break;
     }
