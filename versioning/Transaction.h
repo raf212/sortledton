@@ -31,6 +31,7 @@ public :
     virtual void neighbourhood_with_properties_p(vertex_id_t src, VersionedPropertyEdgeIterator& iter) = 0;
 
     virtual version_t get_version() const = 0;
+    virtual version_t get_commit_version() const = 0;
 };
 
 

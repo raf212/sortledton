@@ -44,9 +44,10 @@ public:
     void deregister_thread(size_t id);
 
     // TODO rename to fit naming convention.
-    SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, version_t v);
-    SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti);
-    void getSnapshotTransaction(VersionedTopologyInterface* ti, SnapshotTransaction& existing_transaction_object);
+    SnapshotTransaction getSnapshotTransaction(VersionedTopologyInterface* ti, bool write_only);
+    void getSnapshotTransaction(VersionedTopologyInterface* ti, bool write_only, SnapshotTransaction& existing_transaction_object);
+
+    version_t draw_timestamp(bool commit_timestamp);
 
     void transactionCompleted(const Transaction& transaction);
 

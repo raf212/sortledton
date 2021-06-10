@@ -101,7 +101,8 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
   TransactionManager tm(config.insert_threads + 1);
   tm.register_thread(0);
   VersionedTopologyInterface *versioned_data_structure = nullptr;
-  SnapshotTransaction transaction(0, nullptr);
+  SnapshotTransaction transaction(&tm, false, nullptr);
+  tm.transactionCompleted(transaction);
 
   switch (ds) {
     case CSR_DS: {
@@ -208,7 +209,7 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
   }
 
   if (versioned_data_structure != nullptr) {
-    transaction = tm.getSnapshotTransaction(versioned_data_structure);
+    transaction = tm.getSnapshotTransaction(versioned_data_structure, false);
     data_structure = &transaction;
   }
 
@@ -233,7 +234,7 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
   bool inserts_run = false;
   for (auto e : config.experiments) {
     if (versioned_data_structure != nullptr) {
-      transaction = tm.getSnapshotTransaction(versioned_data_structure);
+      transaction = tm.getSnapshotTransaction(versioned_data_structure, false);
       data_structure = &transaction;
     }
 
@@ -538,7 +539,7 @@ run_inserts_in_transactions(bool weighted, size_t thread_id, TransactionManager 
   const uint batch_size = 3000;
 
   const uint total_work = el.edges.size();
-  SnapshotTransaction tx = tm.getSnapshotTransaction(ds);
+  SnapshotTransaction tx = tm.getSnapshotTransaction(ds, true);
   while (insert_position.load() < total_work) {
     int work = insert_position.fetch_add(batch_size);
     int work_end = min(total_work, work + batch_size);
@@ -568,7 +569,7 @@ run_inserts_in_transactions(bool weighted, size_t thread_id, TransactionManager 
 
       tx.execute();
       tm.transactionCompleted(tx);
-      tm.getSnapshotTransaction(ds, tx);
+      tm.getSnapshotTransaction(ds, true, tx);
       work++;
     }
   }
@@ -642,8 +643,8 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   uint threads = config.insert_threads;
 
   auto start = chrono::steady_clock::now();
-  if (threads == 1) {
-    SnapshotTransaction tx = tm.getSnapshotTransaction(ds);
+  if (threads == 1) {  // TODO remove this if
+    SnapshotTransaction tx = tm.getSnapshotTransaction(ds, true);
 
     for (auto e : el.edges) {
       tx.use_vertex_does_not_exists_semantics();
@@ -668,7 +669,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
       }
       tx.execute();
       tm.transactionCompleted(tx);
-      tm.getSnapshotTransaction(ds, tx);
+      tm.getSnapshotTransaction(ds, true, tx);
     }
     tm.transactionCompleted(tx);
   } else {
@@ -694,7 +695,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   cout << "Inserting took: " << microseconds / 1000 << " milliseconds " << endl;
   cout << "This is " << ((float) el.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
 #if defined(DEBUG) && CHECKINSERT
-  auto tx = tm.getSnapshotTransaction(ds);
+  auto tx = tm.getSnapshotTransaction(ds, false);
   check_insert(tx, el, base_edge_count);
   tm.transactionCompleted(tx);
 #endif
@@ -711,7 +712,7 @@ run_deletes_in_transactions(size_t thread_id, TransactionManager &tm, EdgeList<w
   const uint batch_size = 3000;
 
   const uint total_work = el.edges.size();
-  SnapshotTransaction tx = tm.getSnapshotTransaction(ds);
+  SnapshotTransaction tx = tm.getSnapshotTransaction(ds, true);
   while (deletion_position.load() < total_work) {
     int work = deletion_position.fetch_add(batch_size);
     int work_end = min(total_work, work + batch_size);
@@ -727,7 +728,7 @@ run_deletes_in_transactions(size_t thread_id, TransactionManager &tm, EdgeList<w
       tx.delete_edge(edge);
       tx.execute();
       tm.transactionCompleted(tx);
-      tm.getSnapshotTransaction(ds, tx);
+      tm.getSnapshotTransaction(ds, true, tx);
       work++;
     }
   }
@@ -766,7 +767,7 @@ void Driver::run_delete_experiment(TransactionManager &tm, VersionedTopologyInte
   cout << "This is " << ((float) to_delete.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
 #if defined(DEBUG) && CHECKINSERT
   cout << "Checking deletions" << endl;
-  auto tx = tm.getSnapshotTransaction(ds);
+  auto tx = tm.getSnapshotTransaction(ds, false);
   check_deletions(tx, to_delete);
   tm.transactionCompleted(tx);
 #endif
@@ -1259,7 +1260,7 @@ Driver::run_gc_experiment(TransactionManager &tm, VersionedTopologyInterface &ds
 
 #if defined(DEBUG) && CHECKINSERT
   if (inserts_run) {
-    auto tx = tm.getSnapshotTransaction(&ds);
+    auto tx = tm.getSnapshotTransaction(&ds, false);
     check_insert(tx, inserts, 0);
     tm.transactionCompleted(tx);
   }

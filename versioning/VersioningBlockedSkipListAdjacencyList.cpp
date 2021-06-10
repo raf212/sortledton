@@ -1552,6 +1552,8 @@ bool VersioningBlockedSkipListAdjacencyList::get_weight_version_p(edge_t edge, v
                                    property_count, property_size);
       return eb.get_weight(edge.dst, version, out);
     }
+    default: throw NotImplemented();
+
   }
 }
 

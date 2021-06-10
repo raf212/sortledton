@@ -31,9 +31,11 @@ private:
     RollbackAction(ROLLBACK_ACTION type, vertex_id_t v, edge_t e) : type(type), vertex(v), edge(e) {};
 };
 
+class TransactionManager;
+
 class SnapshotTransaction : public Transaction {
 public:
-    SnapshotTransaction(version_t version, VersionedTopologyInterface* ds);
+    SnapshotTransaction(TransactionManager* tm, bool write_only, VersionedTopologyInterface* ds);
     ~SnapshotTransaction();
 
     void use_vertex_does_not_exists_semantics() override;
@@ -93,11 +95,13 @@ public:
     void report_storage_size() override;
 
     version_t get_version() const override;
-    void set_version(version_t v);
+    version_t  get_commit_version() const override;
+    void set_read_timestamp(version_t timestamp);
 
     void clear();
 protected:
-    version_t version;
+    version_t read_version = NO_TRANSACTION;
+    version_t commit_version = NO_TRANSACTION;
     VersionedTopologyInterface* ds;
 
 private:
@@ -109,6 +113,10 @@ private:
     void rollback();
     void assert_preconditions();
     void assert_std_preconditions();
+
+
+    TransactionManager* tm;
+    bool write_only = false;
 
     /**
      * Used for communication between aquire_ and release_locks. This is the last lock aquire_locks locked.
@@ -129,6 +137,8 @@ private:
     vector<tuple<edge_t, char*, size_t>> edges_to_insert {};
 
     vector<RollbackAction> rollbacks {};
+
+    void rewrite_inserted_vertex_timestamps();
 };
 
 

@@ -7,34 +7,22 @@
 
 thread_local size_t TransactionManager::thread_id = 0;
 
-SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface* ti) {
-  if (active_snapshots[thread_id] != NO_TRANSACTION) {
-    throw IllegalOperation("Cannot have more than one transaction open per thread.");
-  }
-  active_snapshots[thread_id] = version.fetch_add(1);
-
-  return SnapshotTransaction(active_snapshots[thread_id], ti);
+SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface* ti, bool write_only) {
+  return SnapshotTransaction(this, write_only, ti);
 }
 
-void TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, SnapshotTransaction &existing_transaction_object) {
-  if (active_snapshots[thread_id] != NO_TRANSACTION) {
-    throw IllegalOperation("Cannot have more than one transaction open per thread.");
-  }
-  active_snapshots[thread_id] = version.fetch_add(1);
+void TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, bool write_only, SnapshotTransaction &existing_transaction_object) {
   existing_transaction_object.clear();
-  existing_transaction_object.set_version(active_snapshots[thread_id]);
+  if (!write_only) {
+    existing_transaction_object.set_read_timestamp(draw_timestamp(false));
+  }
 }
 
 void TransactionManager::transactionCompleted(const Transaction &transaction) {
-  if (transaction.get_version() != active_snapshots[thread_id]) {
+  if (transaction.get_version() != active_snapshots[thread_id] && transaction.get_commit_version() != active_snapshots[thread_id]) {
     throw IllegalOperation("Thread tried to complete transaction, it did not open.");
   }
   active_snapshots[thread_id] = NO_TRANSACTION;
-}
-
-SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, version_t v) {
-//  cerr << "Warning: creating snapshot transaction with custom version, this is not save in connection with GC, use only if you know what you are doing." << endl;
-  return SnapshotTransaction(v, ti);
 }
 
 TransactionManager::TransactionManager(uint max_threads) : max_threads(max_threads) {
@@ -93,4 +81,20 @@ void TransactionManager::reset_max_threads(uint max_threads) {
   }
   active_snapshots = vector<version_t>(max_threads, NO_TRANSACTION);
   thread_id_in_use = vector<bool>(max_threads, false);
+}
+
+version_t TransactionManager::draw_timestamp(bool commit_timestamp) {
+  if (!commit_timestamp && active_snapshots[thread_id] != NO_TRANSACTION) {
+    throw IllegalOperation("Cannot have more than one transaction open per thread.");
+  }
+
+  if (commit_timestamp && active_snapshots[thread_id] == NO_TRANSACTION) {
+    active_snapshots[thread_id] = version.fetch_add(1);
+    return active_snapshots[thread_id];
+  } else if (commit_timestamp) {
+    return version.fetch_add(1);  // Return a new commit version for a SnapshotTransaction which has a read version already.
+  } else {
+    active_snapshots[thread_id] = version.fetch_add(1);
+    return active_snapshots[thread_id];
+  }
 }
