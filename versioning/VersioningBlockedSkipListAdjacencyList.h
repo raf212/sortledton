@@ -9,6 +9,7 @@
 #include <mutex>
 #include <random>
 #include <atomic>
+#include <forward_list>
 #include <utils/NotImplemented.h>
 #include <versioning/TransactionManager.h>
 #include <versioning/SizeVersionChainEntry.h>
@@ -149,17 +150,17 @@ private:
     bool size_is_versioned(vertex_id_t v);
 
     void update_adjacency_size(vertex_id_t v, bool deletion, version_t version);
-    SizeVersionChainEntry* construct_version_chain_from_block(vertex_id_t v, version_t version);
+    forward_list<SizeVersionChainEntry>* construct_version_chain_from_block(vertex_id_t v, version_t version);
 
+    forward_list<SizeVersionChainEntry>::iterator get_version_from_chain(forward_list<SizeVersionChainEntry> &chain, version_t version);
     /**
      * Garbage collects unnecessary versions from a adjacency size version chain. These are all version which are
      * smaller than collect_after.
      *
      * @param start the start of the version chain.
      * @param collect_after timestamp of the minimal version to keep
-     * @return nullptr or ptr to a garbage collected version which has not been freed.
      */
-    SizeVersionChainEntry* gc_adjacency_size(SizeVersionChainEntry* start, version_t collect_after);
+    void gc_adjacency_size(forward_list<SizeVersionChainEntry>& chain, version_t collect_after);
 
     /**
      * Removes block from the skip list by merging it into its predecessor or successor.

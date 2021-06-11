@@ -362,6 +362,22 @@ public:
       to.properties += properties_to_move;
     }
 
+    size_t count_edges(version_t version) {
+      auto count = 0;
+      for (auto i = start; i < start + edges_and_versions ; i++) {
+        if (!is_versioned(*i)) {
+          count++;
+        } else {
+          EdgeVersionRecord vr(make_unversioned(*i), i + 1, nullptr, false, property_size);
+          if (vr.exists_in_version(version)) {
+            count++;
+          }
+          i++; // Do not count the version record.
+        }
+      }
+      return count;
+    }
+
     dst_t* get_single_block_pointer() {
       return start;
     }

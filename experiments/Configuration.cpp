@@ -269,7 +269,7 @@ vertex_id_t Config::bfs_start_vertex() {
 string Config::gold_standard(Experiments e) {
   auto experiment_name = Config::EXPERIMENT_MAPPING.find(e)->second;
   if (graphalytics.is_empty()) {
-    return gold_standard_directory + "/" + experiment_name + "_" + base.get_name() + ".goldStandard";;
+    return gold_standard_directory + "/" + experiment_name + "_" + base.get_name() + (undirected ? "_undirected" : "") + ".goldStandard";;
   } else {
     return graphalytics.gold_standard(experiment_name);
   }

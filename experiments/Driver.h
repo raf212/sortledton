@@ -71,7 +71,7 @@ private:
     void check_insert(TopologyInterface& ds, EdgeList<weighted_edge_t>& el, size_t base_edge_count);
 
     void run_delete_experiment(TransactionManager &tm, VersionedTopologyInterface *ds,
-                               EdgeList<weighted_edge_t> &existing_edges);
+                               EdgeList<weighted_edge_t> &existing_edges, size_t expected_edge_count_after_reinsertion);
     void check_deletions(TopologyInterface& ds, EdgeList<weighted_edge_t>& el);
 
     void run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool aquire_locks, bool after_inserts,

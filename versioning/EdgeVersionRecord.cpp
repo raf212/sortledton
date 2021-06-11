@@ -275,3 +275,25 @@ void EdgeVersionRecord::assert_version_list(version_t min_version) {
   assert(last_timestamp == FIRST_VERSION);
 }
 
+vector<version_t> EdgeVersionRecord::get_versions() {
+  vector<version_t> versions;
+  switch (state) {
+    case MULTIPLE_VERSIONS: {
+      auto chain = get_chain(*v);
+      for (auto& v : *chain) {
+        versions.push_back(v.v);
+      }
+      break;
+    }
+    case SINGLE_VERSION: {
+      break;
+    }
+    case TWO_VERSIONS: {
+      versions.push_back(timestamp(*v));
+      break;
+    }
+    default: throw NotImplemented();
+  }
+  return versions;
+}
+

@@ -28,6 +28,8 @@ public:
 
     void gc(version_t min_version);
 
+    vector<version_t> get_versions();
+
     void assert_version_list(version_t min_version);
 
 private:

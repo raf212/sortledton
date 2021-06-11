@@ -232,6 +232,8 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
   }
 
   bool inserts_run = false;
+
+  auto expected_edge_count_after_inserts = config.undirected ? inserts.edges.size() * 2 : inserts.edges.size() + base.edge_count();
   for (auto e : config.experiments) {
     if (versioned_data_structure != nullptr) {
       transaction = tm.getSnapshotTransaction(versioned_data_structure, false);
@@ -315,7 +317,7 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
         break;
       }
       case (INSERT): {
-        run_insert_experiment(tm, *data_structure, inserts, base.edge_count());
+        run_insert_experiment(tm, *data_structure, inserts, expected_edge_count_after_inserts);
         inserts_run = true;
         break;
       }
@@ -328,7 +330,7 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
         if (versioned_data_structure != nullptr) {
           tm.transactionCompleted(transaction);
         }
-        run_insert_experiment_one_by_one(tm, versioned_data_structure, inserts, base.edge_count());
+        run_insert_experiment_one_by_one(tm, versioned_data_structure, inserts, expected_edge_count_after_inserts);
         inserts_run = true;
         break;
       }
@@ -343,7 +345,7 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
         if (versioned_data_structure != nullptr) {
           tm.transactionCompleted(transaction);
         }
-        run_delete_experiment(tm, versioned_data_structure, inserts);
+        run_delete_experiment(tm, versioned_data_structure, inserts, expected_edge_count_after_inserts);
         break;
       }
       case (GC): {
@@ -590,8 +592,7 @@ run_inserts_in_transactions(bool weighted, size_t thread_id, TransactionManager 
 }
 
 void
-Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList<weighted_edge_t> &el,
-                              size_t base_edge_count) {
+Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList<weighted_edge_t> &el, size_t expected_edge_count) {
   cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
   uint threads = config.insert_threads;
 
@@ -632,13 +633,13 @@ Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, Edg
   cout << "Inserting took: " << microseconds / 1000 << " milliseconds " << endl;
   cout << "This is " << ((float) el.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
 #if defined(DEBUG) && CHECKINSERT
-  check_insert(ds, el, base_edge_count);
+  check_insert(ds, el, expected_edge_count);
 #endif
 }
 
 void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedTopologyInterface *ds,
                                               EdgeList<weighted_edge_t> &el,
-                                              size_t base_edge_count) {
+                                              size_t expected_edge_count) {
   cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
   uint threads = config.insert_threads;
 
@@ -696,7 +697,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   cout << "This is " << ((float) el.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
 #if defined(DEBUG) && CHECKINSERT
   auto tx = tm.getSnapshotTransaction(ds, false);
-  check_insert(tx, el, base_edge_count);
+  check_insert(tx, el, expected_edge_count);
   tm.transactionCompleted(tx);
 #endif
   cout << "checked" << endl;
@@ -738,7 +739,7 @@ run_deletes_in_transactions(size_t thread_id, TransactionManager &tm, EdgeList<w
 
 
 void Driver::run_delete_experiment(TransactionManager &tm, VersionedTopologyInterface *ds,
-                                   EdgeList<weighted_edge_t> &existing_edges) {
+                                   EdgeList<weighted_edge_t> &existing_edges, size_t exptected_edge_count) {
   auto to_delete = generate_deletions(existing_edges, 0.1);
 
   cout << "Running delete experiment deleting " << to_delete.edges.size() << " edges." << endl;
@@ -772,8 +773,8 @@ void Driver::run_delete_experiment(TransactionManager &tm, VersionedTopologyInte
   tm.transactionCompleted(tx);
 #endif
 
-  // Reinsert the edges so we can run further elements and use the same gold standards.
-  run_insert_experiment_one_by_one(tm, ds, to_delete, 0);
+  // Reinsert the edges so we can run further experiments and use the same gold standards.
+  run_insert_experiment_one_by_one(tm, ds, to_delete, exptected_edge_count);
 }
 
 void Driver::run_triangle_counting_experiment(TopologyInterface &ds) {
@@ -994,18 +995,10 @@ unordered_set<dst_t> Driver::get_neighbours(TopologyInterface &ds, vertex_id_t v
   return neighbours;
 }
 
-void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, size_t base_edge_count) {
+void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, size_t expected_edge_count) {
   cout << "Validating insert experiment" << endl;
   auto edge_count = ds.edge_count();
-  auto expected_edge_count = el.edges.size() + base_edge_count;
-  if (config.undirected) {
-    // TODO support undirected mode in data structure?
-    edge_count /= 2;
-    expected_edge_count = el.edges.size();  // The undirected mode does not load the edges from the base set
-//    assert(edge_count == expected_edge_count);
-  } else {
-    assert(edge_count == expected_edge_count);
-  }
+  assert(edge_count == expected_edge_count);
 
   cout << "Checking if all edges exist." << endl;
   #pragma omp parallel for
@@ -1071,39 +1064,65 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
 
 
   const string gold_standard_file_sizes =
-          config.gold_standard_directory + "/insert_adjacency_set_sizes_" + config.base.get_name() + ".goldStandard";
+          config.gold_standard_directory + "/insert_adjacency_set_sizes_" + config.base.get_name() + (config.undirected ? "_undirected" : "") + ".goldStandard";
   if (!file_exists(gold_standard_file_sizes)) {
     cout << "Writing new gold standard for: " << gold_standard_file_sizes << endl;
-    ofstream f(gold_standard_file_sizes, ofstream::binary | ofstream::out);
+    size_t size = ds.vertex_count();
+    vector<pair<vertex_id_t , size_t>> sizes;
 
+
+    for (uint v = 0; v < ds.max_physical_vertex(); v++) {
+      if (ds.has_vertex_p(v)) {
+        vertex_id_t logical_vertex = ds.logical_id(v);
+        size_t neighbourhood_size = ds.neighbourhood_size_p(v);
+        sizes.emplace_back(logical_vertex, neighbourhood_size);
+      }
+    }
+
+    sort(sizes.begin(), sizes.end());
+
+    ofstream f(gold_standard_file_sizes, ofstream::binary | ofstream::out);
     if (!f.good()) {
       assert(false);
     }
 
-    size_t size = ds.vertex_count();
     f.write((char *) &size, sizeof(size));
 
-    // TODO reprhase once we have vertex iterators
-    for (uint v = 0; v < ds.vertex_count(); v++) {
-      size_t neighbourhood_size = ds.neighbourhood_size_p(v);
-      f.write((char *) &neighbourhood_size, sizeof(neighbourhood_size));
+    for (auto& t : sizes) {
+      f.write((char *) &(t.first), sizeof(t.first));
+      f.write((char *) &(t.second), sizeof(t.second));
     }
+
+
     f.close();
   } else {
+    vector<pair<vertex_id_t , size_t>> actual_sizes;
+
+    for (uint v = 0; v < ds.max_physical_vertex(); v++) {
+      if (ds.has_vertex_p(v)) {
+        vertex_id_t logical_vertex = ds.logical_id(v);
+        size_t neighbourhood_size = ds.neighbourhood_size_p(v);
+        actual_sizes.emplace_back(logical_vertex, neighbourhood_size);
+      }
+    }
+    sort(actual_sizes.begin(), actual_sizes.end());
+
     ifstream f(gold_standard_file_sizes, ifstream::in | ifstream::binary);
 
     size_t size;
     f.read((char *) &size, sizeof(size));
 
     // TODO reactivate
-//    assert(size == ds.vertex_count());
+    assert(size == actual_sizes.size());
 
-//    size_t neighbourhood_size;
+    vertex_id_t id;
+    size_t neighbourhood_size;
     for (uint i = 0; i < size; i++) {
-//       TODO found a heisenbug here
-//      f.read((char *) &neighbourhood_size, sizeof(neighbourhood_size));
-//      size_t neighourhood_size_actual = ds.neighbourhood_size_p(i);
-//      assert(neighourhood_size_actual == neighbourhood_size);
+      f.read((char *) &id, sizeof(id));
+      f.read((char *) &neighbourhood_size, sizeof(neighbourhood_size));
+      auto actual_size = actual_sizes[i];
+      assert(id == actual_size.first);
+      assert(neighbourhood_size == actual_size.second);
     }
 
     f.close();
@@ -1261,7 +1280,7 @@ Driver::run_gc_experiment(TransactionManager &tm, VersionedTopologyInterface &ds
 #if defined(DEBUG) && CHECKINSERT
   if (inserts_run) {
     auto tx = tm.getSnapshotTransaction(&ds, false);
-    check_insert(tx, inserts, 0);
+    check_insert(tx, inserts, config.undirected ? inserts.edges.size() * 2 : inserts.edges.size());
     tm.transactionCompleted(tx);
   }
   check_gc_experiment(ds);

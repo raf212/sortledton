@@ -15,12 +15,19 @@ VersionedBlockedEdgeIterator::VersionedBlockedEdgeIterator(VersioningBlockedSkip
 
 VersionedBlockedEdgeIterator::VersionedBlockedEdgeIterator(VersioningBlockedSkipListAdjacencyList* ds, vertex_id_t v, VSkipListHeader *block, bool versioned, version_t version)
     : ds(ds), src(v), version(version) {
-  n_block = block->next_levels[0];
-  this->block = block->data;
-  current_block_end = block->data + block->size;
-  current_block_is_versioned = versioned;  // TODO could be handled on a per block basis if Skiplistheaders had information on this.
-  data = block->data;
-
+  if (block == nullptr) {
+    n_block = nullptr;
+    this->block = nullptr;
+    current_block_end = nullptr;
+    current_block_is_versioned = false;
+    data = nullptr;
+  } else {
+    n_block = block->next_levels[0];
+    this->block = block->data;
+    current_block_end = block->data + block->size;
+    current_block_is_versioned = versioned;  // TODO could be handled on a per block basis if Skiplistheaders had information on this.
+    data = block->data;
+  }
   open();
 }
 

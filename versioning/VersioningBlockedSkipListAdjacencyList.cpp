@@ -27,6 +27,7 @@
 #define COLLECT_VERSIONS_ON_INSERT 1
 
 #define ASSERT_CONSISTENCY  0
+#define ASSERT_SIZE 0
 #define ASSERT_WEIGHTS 0
 
 #define likely(x)       __builtin_expect((x),1)
@@ -163,6 +164,10 @@ bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
   __builtin_prefetch((void *) ((uint64_t) adjacency_list & ~EDGE_SET_TYPE_MASK));
   __builtin_prefetch((void *) ((uint64_t) ((dst_t *) adjacency_list + 1) & ~SIZE_VERSION_MASK));
 
+#ifdef ASSERT_SIZE
+  size_t size = neighbourhood_size_version_p(edge.src, version);
+#endif
+
   // Insert to empty list
   if (unlikely(adjacency_list == nullptr)) {
     insert_empty(edge, version, properties);
@@ -182,6 +187,12 @@ bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
       }
     }
   }
+
+#ifdef ASSERT_SIZE
+  size_t size_after = neighbourhood_size_version_p(edge.src, version);
+  assert(size + 1 == size_after);
+#endif
+
 }
 
 bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, version_t version) {
@@ -411,40 +422,20 @@ size_t VersioningBlockedSkipListAdjacencyList::neighbourhood_size_version_p(vert
       if (!size_is_versioned(src)) {
         return adjacency_index[src].size;
       } else {
-        auto chain = (SizeVersionChainEntry *) ((uint64_t) adjacency_index[src].size & ~SIZE_VERSION_MASK);
-        return chain->traverse(version, 0)->current_size;
+        auto chain = (forward_list<SizeVersionChainEntry> *) ((uint64_t) adjacency_index[src].size & ~SIZE_VERSION_MASK);
+        return get_version_from_chain(*chain, version)->current_size;
       }
       break;
     }
     case VSINGLE_BLOCK: {
-      auto[_, size, _1, versioned] = adjacency_index.get_block_size(src);
+      auto [block_capacity, size, property_count, is_versioned] = adjacency_index.get_block_size(src);
       // If the size is not versioned, this means the correct size is stored in the index
-      if (!versioned) {
+      if (!is_versioned) {
         return size;
-      } else { // If the size is versioned the index stores the current count of destinations and versions in the block,
-        // we need to iterate over the block to filter out versions.
+      } else { // If the size is versioned the index stores the current count of destinations and versions in the block.
         auto block = (dst_t *) raw_neighbourhood_version(src, version);
-        auto end = block + size;
-        auto count = 0;
-        for (auto start = block; start < end; start++) {
-          if (!is_versioned(*start)) {
-            count++;
-          } else {
-            auto v = (version_t) *(start + 1);
-            auto t = timestamp(v);
-            if (t <= version) {
-              if (!is_deletion(v)) {
-                count++;
-              }
-            } else {
-              if (is_deletion(v)) {
-                count++;
-              }
-            }
-            start++; // Do not count the version record.
-          }
-        }
-        return count;
+        auto eb = EdgeBlock::from_single_block(block, block_capacity, size, property_count, property_size);
+        return eb.count_edges(version);
       }
       break;
     }
@@ -498,7 +489,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_empty(edge_t edge, version_t
   eb.insert_edge(edge.dst, version, properties);
   adjacency_index.store_single_block(edge.src, eb.get_single_block_pointer(), MIN_BLOCK_SIZE, 2, 1, true);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-  assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+  assert_adjacency_list_consistency(edge.src, version);
 #endif
 }
 
@@ -520,7 +511,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
                                    eb.get_property_count(), true);
 
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+    assert_adjacency_list_consistency(edge.src, version);
 #endif
   } else {  // else resize block or add skip list
     if (block_capacity == block_size) {
@@ -550,7 +541,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
       adjacency_index.store_single_block(edge.src, new_eb.get_single_block_pointer(), new_eb.get_block_capacity(),
                                          new_eb.get_edges_and_versions(), new_eb.get_property_count(), true);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-      assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+      assert_adjacency_list_consistency(edge.src, version);
 #endif
     }
   }
@@ -567,38 +558,15 @@ void VersioningBlockedSkipListAdjacencyList::update_adjacency_size(vertex_id_t v
   }
 
   if (size_is_versioned(v)) {
-    auto chain = (SizeVersionChainEntry *) (s & ~SIZE_VERSION_MASK);
+    auto chain = (forward_list<SizeVersionChainEntry> *) (s & ~SIZE_VERSION_MASK);
     auto min_version_to_keep = tm.getMinActiveVersion();
-
-    auto reuse = gc_adjacency_size(chain, min_version_to_keep);
-
-    // After this loop chain stores the element following our new version.
-    // After this loop chain_end stores the element previous to our new version - they can be the same in case of a singleton list.
-    auto chain_end = chain;
-    while (version < chain->version) {
-      chain_end = chain;
-      chain = chain->next;
-    }
-
-    if (chain->version == version) {
-      chain->current_size += update;
-    } else {  // We add a new entry between chain_end and chain.
-      if (reuse != nullptr) {
-        reuse->version = version;
-        reuse->current_size = chain->current_size + update;
-        reuse->next = chain;
-      } else {
-        reuse = new SizeVersionChainEntry(version, chain->current_size + update, chain);
-      }
-      if (chain_end != chain) {
-        chain_end->next = reuse;
-      } else {
-        adjacency_index[v].size = ((uint64_t) reuse | SIZE_VERSION_MASK);
-      }
-    }
+    gc_adjacency_size(*chain, min_version_to_keep);
+    auto current_size = get_version_from_chain(*chain, version)->current_size;
+    chain->push_front(SizeVersionChainEntry(version, current_size + update));
   } else {
-    auto chain = new SizeVersionChainEntry(version, s + update,
-                                           new SizeVersionChainEntry(FIRST_VERSION, s, nullptr));
+    auto chain = new forward_list<SizeVersionChainEntry>();
+    chain->push_front(SizeVersionChainEntry(FIRST_VERSION, s));
+    chain->push_front(SizeVersionChainEntry(version, s + update));
     adjacency_index[v].size = ((uint64_t) chain | SIZE_VERSION_MASK);
   }
 }
@@ -650,7 +618,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     }
 
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+    assert_adjacency_list_consistency(edge.src, version);
 #endif
     // Recursive call of max depth 1.
     insert_skip_list(edge, version, properties);
@@ -660,11 +628,11 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     eb.update_skip_list_header(block);
     update_adjacency_size(edge.src, false, version);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+    assert_adjacency_list_consistency(edge.src, version);
 #endif
     balance_block(block, adjacency_list, edge.src);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+    assert_adjacency_list_consistency(edge.src, version);
 #endif
   }
 }
@@ -723,32 +691,17 @@ void VersioningBlockedSkipListAdjacencyList::release_vertex_lock_p(vertex_id_t v
   adjacency_index.release_vertex_lock_p(v);
 }
 
-SizeVersionChainEntry *
-VersioningBlockedSkipListAdjacencyList::gc_adjacency_size(SizeVersionChainEntry *start, version_t collect_after) {
-  while (start->next != nullptr && collect_after < start->next->version) {
-    start = start->next;
-  }
-  // Now start points to the last version to keep. This could be the FIRST_VERSION.
-  if (start->version == FIRST_VERSION) { // If its the FIRST_VERSION we can free nothing.
-    return nullptr;
-  } else {  // This becomes the new FIRST_VERSION
-    start->version = FIRST_VERSION;
-    auto temp = start->next;
-    start->next = nullptr;  // Terminate list.
+void
+VersioningBlockedSkipListAdjacencyList::gc_adjacency_size(forward_list<SizeVersionChainEntry>& chain, version_t collect_after) {
+  auto last_element_to_keep = get_version_from_chain(chain, collect_after);
+  last_element_to_keep->version = FIRST_VERSION;
 
-    SizeVersionChainEntry *to_free = nullptr;
-    while (temp != nullptr) {
-      if (to_free != nullptr) {
-        free(to_free);
-      }
-      to_free = temp;
-      temp = temp->next;
-    }
-    return to_free;
-  }
+  // We move all other elements into a forward_list which will be deleted when we leave the scope.
+  forward_list<SizeVersionChainEntry> to_drop;
+  to_drop.splice_after(to_drop.before_begin(), chain, last_element_to_keep, chain.end());
 }
 
-SizeVersionChainEntry *
+forward_list<SizeVersionChainEntry>*
 VersioningBlockedSkipListAdjacencyList::construct_version_chain_from_block(vertex_id_t v, version_t version) {
   auto block = (dst_t *) raw_neighbourhood_version(v, version);
   auto[_, size, _1, _2] = adjacency_index.get_block_size(v);
@@ -757,21 +710,31 @@ VersioningBlockedSkipListAdjacencyList::construct_version_chain_from_block(verte
   vector<version_t> versions_to_construct;
   for (auto i = block; i < block + size; i++) {
     if (is_versioned(*i)) {
-      auto v = (version_t) *(i + 1);
-      auto t = timestamp(v);
-      if (min_version < t) {
-        versions_to_construct.push_back(t);
+      if (more_versions_existing(*(i + 1))) {
+        EdgeVersionRecord vr(make_unversioned(*i), i + 1, nullptr, false, property_size);
+        auto versions = vr.get_versions();
+        for (auto v : versions) {
+          if (min_version < v) {
+            versions_to_construct.push_back(v);
+          }
+        }
+      } else {
+        auto v = (version_t) *(i + 1);
+        auto t = timestamp(v);
+        if (min_version < t) {
+          versions_to_construct.push_back(t);
+        }
       }
     }
   }
 
   sort(versions_to_construct.begin(), versions_to_construct.end());
 
-  auto chain = new SizeVersionChainEntry(FIRST_VERSION, neighbourhood_size_version_p(v, min_version), nullptr);
+  auto chain = new forward_list<SizeVersionChainEntry>();
+  chain->push_front(SizeVersionChainEntry(FIRST_VERSION, neighbourhood_size_version_p(v, min_version)));
+
   for (uint i = 0; i < versions_to_construct.size(); i++) {
-    chain = new SizeVersionChainEntry(versions_to_construct[i],
-                                      neighbourhood_size_version_p(v, versions_to_construct[i]),
-                                      chain);
+    chain->push_front(SizeVersionChainEntry(versions_to_construct[i], neighbourhood_size_version_p(v, versions_to_construct[i])));
   }
   return chain;
 }
@@ -806,14 +769,11 @@ void VersioningBlockedSkipListAdjacencyList::gc_vertex(vertex_id_t v) {
   assert_adjacency_list_consistency(v, tm.getMinActiveVersion());
 #endif
   if (get_set_type(v, FIRST_VERSION) == VSKIP_LIST && size_is_versioned(v)) {
-    auto start = (SizeVersionChainEntry *) ((uint64_t) raw_neighbourhood_size_entry(v) & ~SIZE_VERSION_MASK);
-    SizeVersionChainEntry *to_free = gc_adjacency_size(start, tm.getMinActiveVersion());
-    if (to_free != nullptr) {
-      free(to_free);
-    }
-    if (start->version == FIRST_VERSION) {
-      adjacency_index[v].size = start->current_size;
-      free(start);
+    auto chain = (forward_list<SizeVersionChainEntry> *) ((uint64_t) raw_neighbourhood_size_entry(v) & ~SIZE_VERSION_MASK);
+    gc_adjacency_size(*chain, tm.getMinActiveVersion());
+    if (chain->begin()->version == FIRST_VERSION) {
+      adjacency_index[v].size = chain->begin()->current_size;
+      free(chain);
     }
   }
   release_vertex_lock_p(v);
@@ -1026,7 +986,8 @@ size_t VersioningBlockedSkipListAdjacencyList::assert_edge_block_consistency(Edg
         vr.assert_version_list(version);
       } else {
         auto timest = timestamp(*(i+1));
-        assert(version <= timest);
+//        assert(version <= timest);
+// TODO this should be min version
       }
       i += 1; // Jump over version
     } else {
@@ -1063,6 +1024,7 @@ size_t VersioningBlockedSkipListAdjacencyList::assert_edge_block_consistency(Edg
 
 
 void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(vertex_id_t v, version_t version) {
+  auto actual_size = 0u;
   switch (get_set_type(v, version)) {
     case VSKIP_LIST: {
       auto start = (VSkipListHeader *) raw_neighbourhood_version(v, version);
@@ -1088,6 +1050,7 @@ void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(v
 
         assert(i->max == eb.get_max_edge());
         assert(i->properties == i->size - versions);
+        actual_size += eb.count_edges(version);
 
         for (auto l = 0; l < SKIP_LIST_LEVELS; l++) {
           if (i->next_levels[l] != nullptr) {
@@ -1114,9 +1077,14 @@ void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(v
 
       assert((is_versioned && 0 < versions) || (!is_versioned && versions == 0));
       assert(pc == size - versions);
+      actual_size = eb.count_edges(version);
       break;
     }
   }
+#ifdef ASSERT_SIZE
+   auto retrieved_size = neighbourhood_size_version_p(v, version);
+   assert(retrieved_size == actual_size);
+#endif
 
 }
 
@@ -1401,10 +1369,6 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
                                          property_count, property_size);
 
   bool versions_remaining = is_versioned;
-//  eb.print_block([](dst_t i) {return i;});
-#if defined(DEBUG) && ASSERT_CONSISTENCY
-  assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
-#endif
 #if COLLECT_VERSIONS_ON_INSERT
   if (is_versioned) {
     versions_remaining = eb.gc(tm.getMinActiveVersion());
@@ -1413,14 +1377,14 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
   }
 #endif
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-  assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+  assert_adjacency_list_consistency(edge.src, version);
 #endif
   if (eb.has_space_to_delete_edge()) {
     bool ret = eb.delete_edge(edge.dst, version);
     adjacency_index.set_block_size(edge.src, eb.get_block_capacity(), eb.get_edges_and_versions(),
                                    eb.get_property_count(), true);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+    assert_adjacency_list_consistency(edge.src, version);
 #endif
     return ret;
   } else {  // else resize block or add skip list
@@ -1452,7 +1416,7 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
       adjacency_index.store_single_block(edge.src, new_eb.get_single_block_pointer(), new_eb.get_block_capacity(),
                                          new_eb.get_edges_and_versions(), new_eb.get_property_count(), true);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-      assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+      assert_adjacency_list_consistency(edge.src, version);
 #endif
       return ret;
     }
@@ -1472,7 +1436,7 @@ bool VersioningBlockedSkipListAdjacencyList::delete_skip_list(edge_t edge, versi
   eb.gc(tm.getMinActiveVersion());
   eb.update_skip_list_header(block);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-  assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+  assert_adjacency_list_consistency(edge.src, version);
 #endif
 #endif
 
@@ -1514,7 +1478,7 @@ bool VersioningBlockedSkipListAdjacencyList::delete_skip_list(edge_t edge, versi
     }
 
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+    assert_adjacency_list_consistency(edge.src, version);
 #endif
     // Recursive call of max depth 1.
     return delete_skip_list(edge, version);
@@ -1523,11 +1487,11 @@ bool VersioningBlockedSkipListAdjacencyList::delete_skip_list(edge_t edge, versi
     eb.update_skip_list_header(block);
     update_adjacency_size(edge.src, true, version);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+    assert_adjacency_list_consistency(edge.src, version);
 #endif
     balance_block(block, adjacency_list, edge.src);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, FIRST_VERSION);
+    assert_adjacency_list_consistency(edge.src, version);
 #endif
     return ret;
   }
@@ -1556,5 +1520,15 @@ bool VersioningBlockedSkipListAdjacencyList::get_weight_version_p(edge_t edge, v
 
   }
 }
+
+forward_list<SizeVersionChainEntry>::iterator VersioningBlockedSkipListAdjacencyList::get_version_from_chain(forward_list<SizeVersionChainEntry> &chain, version_t version) {
+  auto i = chain.begin();
+  while (i->version > version) {
+    i++;
+    assert(i != chain.end());  // This should not happen as the last entry in a chain has v == FIRST_VERSION.
+  }
+  return i;
+}
+
 
 
