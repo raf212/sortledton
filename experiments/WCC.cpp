@@ -67,7 +67,7 @@ vector<vertex_id_t> WCC::gapbs_wcc(TopologyInterface &ds) {
         });
       }
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic, 64)
       for (uint64_t v = 0; v < V; v++) {
         while (components[v] != components[components[v]]) {
           components[v] = components[components[v]];

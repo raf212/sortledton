@@ -24,7 +24,7 @@ vector<vertex_id_t> CDLP::teseo_cdlp(TopologyInterface &ds, uint64_t max_iterati
   while (current_iteration < max_iterations && change) {
     change = false; // reset the flag
 
-#pragma omp parallel for schedule(dynamic, 64)
+#pragma omp parallel for schedule(dynamic, 64) shared(change)
     for (uint64_t v = 0; v < num_vertices; v++) {
       unordered_map<uint64_t, uint64_t> histogram;
 
