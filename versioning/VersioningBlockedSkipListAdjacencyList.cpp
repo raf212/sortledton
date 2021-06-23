@@ -472,7 +472,12 @@ size_t VersioningBlockedSkipListAdjacencyList::memory_block_size() {
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::get_height() {
-  return binomial_distribution<int>(SKIP_LIST_LEVELS - 1, p)(level_generator) + 1;
+  uniform_real_distribution<double> d(0.0, 1.0);
+  auto level = 1;
+  while (d(level_generator) < p && level < SKIP_LIST_LEVELS) {
+    level += 1;
+  }
+  return level;
 }
 
 // TODO remove function

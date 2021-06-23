@@ -121,7 +121,7 @@ private:
     const float bulk_load_fill_rate = 1.0;
 
     // Skiplist constant, likelyhood for being x level high is p^x. 0.25 is a typical value from prior work.
-    const float p = 0.25;
+    const float p = 0.5;
     static thread_local mt19937 level_generator;
 
 //    BlockProvider pool;
