@@ -122,13 +122,14 @@ namespace { // anonymous
       queue.slide_window();
     }
 
-    static pvector<int64_t> InitDistances(SnapshotTransaction &tx) {
+    static pvector<int64_t> InitDistances(SnapshotTransaction &tx, int64_t& edge_count) {
       const int64_t N = tx.max_physical_vertex();
       pvector<int64_t> distances(N);
 
 #pragma omp parallel for
       for (int64_t n = 0; n < N; n++) {
         int64_t out_degree = tx.neighbourhood_size_p(n);
+        edge_count += out_degree;
         distances[n] = out_degree != 0 ? -out_degree : -1;
       }
       return distances;
@@ -137,7 +138,7 @@ namespace { // anonymous
 } // anon namespace
 
 
-vector<uint>
+pvector<int64_t>
 GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neighbourhood, int alpha, int beta) {
   if (typeid(ti) != typeid(SnapshotTransaction &)) {
     throw NotImplemented();
@@ -151,7 +152,10 @@ GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neig
   auto tx = dynamic_cast<SnapshotTransaction &>(ti);
   auto ds = dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(tx.raw_ds());
 
-  pvector<int64_t> distances = InitDistances(tx);
+  // We make this change because our current implementation of edge_count runs in O(V) which can slow down the computation.
+  // Instead we use the fact that InitDistances already retrieves all neighbourhood sizes.
+  int64_t edges_to_check;
+  pvector<int64_t> distances = InitDistances(tx, edges_to_check);
   distances[start_vertex] = 0;
 
   uint64_t vertex_count = tx.max_physical_vertex();
@@ -162,7 +166,6 @@ GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neig
   curr.reset();
   Bitmap front(vertex_count);
   front.reset();
-  int64_t edges_to_check = tx.edge_count();  // TODO this could be a slow down given my implementation, we could sum up the adjacency set sizes in a parallel for loop
   int64_t scout_count = tx.neighbourhood_size_p(start_vertex);
   int64_t distance = 1; // current distance
   while (!queue.empty()) {
@@ -188,19 +191,5 @@ GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neig
     }
   }
 
-  // TODO remove and do later and only once
-  // Translation for correct distnace return values.
-  int N = distances.size();
-  vector<uint> ret(N);
-#pragma omp parallel for
-  for (int i = 0; i < N; i++) {
-    if (distances[i] < 0) {
-      ret[i] = numeric_limits<uint>::max();
-    } else {
-      ret[i] = distances[i];
-    }
-  }
-
-
-  return ret;
+  return distances;
 }

@@ -5,10 +5,13 @@
 #ifndef LIVE_GRAPH_TWO_GAPBSALGORITHMS_H
 #define LIVE_GRAPH_TWO_GAPBSALGORITHMS_H
 
+#include <third-party/gapbs.h>
+
+using namespace gapbs;
 
 class GAPBSAlgorithms {
 public:
-  static vector<uint> bfs(TopologyInterface& ti, uint64_t start_vertex, bool raw_neighbourhood, int alpha = 15, int beta = 18);
+  static pvector<int64_t> bfs(TopologyInterface& ti, uint64_t start_vertex, bool raw_neighbourhood, int alpha = 15, int beta = 18);
 };
 
 

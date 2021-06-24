@@ -356,7 +356,17 @@ vector<pair<vertex_id_t, uint>> Algorithms::bfs(Driver &driver, TopologyInterfac
   vector<uint> physical_result;
   vector<pair<vertex_id_t, uint>> logical_result;
   if (gapbs) {
-    physical_result = GAPBSAlgorithms::bfs(ds, start_vertex, raw_neighbourhood);
+    auto distances = GAPBSAlgorithms::bfs(ds, start_vertex, raw_neighbourhood);
+    int N = distances.size();
+    physical_result.resize(N);
+#pragma omp parallel for
+    for (int i = 0; i < N; i++) {
+      if (distances[i] < 0) {
+        physical_result[i] = numeric_limits<uint>::max();
+      } else {
+        physical_result[i] = distances[i];
+      }
+    }
   } else if (raw_neighbourhood) {
     physical_result = bfs_raw_neighbourhood(driver, ds, start_vertex, aquire_locks);
   } else if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
