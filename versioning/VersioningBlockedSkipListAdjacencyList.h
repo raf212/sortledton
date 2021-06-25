@@ -162,8 +162,9 @@ private:
      *
      * @param start the start of the version chain.
      * @param collect_after timestamp of the minimal version to keep
+     * @return a list of now unused version chain entries which can be reused
      */
-    void gc_adjacency_size(forward_list<SizeVersionChainEntry>& chain, version_t collect_after);
+    forward_list<SizeVersionChainEntry> gc_adjacency_size(forward_list<SizeVersionChainEntry>& chain, version_t collect_after);
 
     /**
      * Removes block from the skip list by merging it into its predecessor or successor.
