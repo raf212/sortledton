@@ -697,6 +697,14 @@ void VersioningBlockedSkipListAdjacencyList::release_vertex_lock_p(vertex_id_t v
   adjacency_index.release_vertex_lock_p(v);
 }
 
+void VersioningBlockedSkipListAdjacencyList::aquire_vertex_lock_shared_p(vertex_id_t v) {
+  adjacency_index.aquire_vertex_lock_shared_p(v);
+}
+
+void VersioningBlockedSkipListAdjacencyList::release_vertex_lock_shared_p(vertex_id_t v) {
+  adjacency_index.release_vertex_lock_shared_p(v);
+}
+
 void
 VersioningBlockedSkipListAdjacencyList::gc_adjacency_size(forward_list<SizeVersionChainEntry>& chain, version_t collect_after) {
   auto last_element_to_keep = get_version_from_chain(chain, collect_after);

@@ -74,11 +74,20 @@ size_t VertexIndex::get_vertex_count(version_t version) {
 
 void VertexIndex::aquire_vertex_lock_p(vertex_id_t v) {
   // TODO with the c++20 flag implementation we could do this: https://rigtorp.se/spinlock/
-  while(index[v].lock.test_and_set((std::memory_order_acquire))) { ; }
+  index[v].lock.lock();
 }
 
+void VertexIndex::aquire_vertex_lock_shared_p(const vertex_id_t v) {
+  index[v].lock.lock_shared();
+}
+
+void VertexIndex::release_vertex_lock_shared_p(const vertex_id_t v) {
+  index[v].lock.unlock_shared();
+}
+
+
 void VertexIndex::release_vertex_lock_p(vertex_id_t v) {
-  index[v].lock.clear(std::memory_order_release);
+  index[v].lock.unlock();
 }
 
 bool VertexIndex::aquire_vertex_lock(const vertex_id_t v) {

@@ -56,11 +56,11 @@ VersionedBlockedEdgeIterator::~VersionedBlockedEdgeIterator() {
 
 void VersionedBlockedEdgeIterator::open() {
   opened = true;
-  ds->aquire_vertex_lock_p(src);
+  ds->aquire_vertex_lock_shared_p(src);
 }
 
 void VersionedBlockedEdgeIterator::close() {
-  ds->release_vertex_lock_p(src);
+  ds->release_vertex_lock_shared_p(src);
   opened = false;
 }
 

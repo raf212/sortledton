@@ -77,9 +77,11 @@ public:
      * @return true if the lock has been acquired, false if the logical vertex does not exists and no lock has been aquired.
      */
     virtual bool aquire_vertex_lock(vertex_id_t vertex_lock) = 0;
-    virtual void aquire_vertex_lock_p(vertex_id_t vertex_lock) = 0;
     virtual void release_vertex_lock(vertex_id_t v) = 0;
+    virtual void aquire_vertex_lock_p(vertex_id_t vertex_lock) = 0;
     virtual void release_vertex_lock_p(vertex_id_t v) = 0;
+    virtual void aquire_vertex_lock_shared_p(vertex_id_t vertex_lock) = 0;
+    virtual void release_vertex_lock_shared_p(vertex_id_t v) = 0;
 
     virtual void report_storage_size() = 0;
 

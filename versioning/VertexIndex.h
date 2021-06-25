@@ -22,6 +22,7 @@
 #include "SizeVersionChainEntry.h"
 #include "AdjacencySetTypes.h"
 #include <utils/pointerTagging.h>
+#include "../third-party/RWSpinLock.h"
 
 using namespace std;
 
@@ -67,7 +68,7 @@ struct VertexVersionChainEntry;
 struct VertexEntry {
     uint64_t adjacency_set;
     uint64_t size;
-    atomic_flag lock = ATOMIC_FLAG_INIT;
+    RWSpinLock lock {};
 
     VertexEntry() {
       adjacency_set = 0ul | VERTEX_NOT_USED_MASK;
@@ -107,6 +108,10 @@ public:
     bool aquire_vertex_lock(const vertex_id_t v);
 
     void release_vertex_lock(const vertex_id_t v);
+
+    void aquire_vertex_lock_shared_p(const vertex_id_t v);
+
+    void release_vertex_lock_shared_p(const vertex_id_t v);
 
     VertexEntry const &operator[](size_t index) const;
 

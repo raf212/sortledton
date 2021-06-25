@@ -70,6 +70,8 @@ public:
     void release_vertex_lock(vertex_id_t v) override;
     void aquire_vertex_lock_p(vertex_id_t vertex_lock) override;
     void release_vertex_lock_p(vertex_id_t v) override;
+    void aquire_vertex_lock_shared_p(vertex_id_t vertex_lock) override;
+    void release_vertex_lock_shared_p(vertex_id_t v) override;
 
     void report_storage_size() override;
 

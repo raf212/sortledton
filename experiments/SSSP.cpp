@@ -107,32 +107,6 @@ vector<weight_t> SSSP::gabbs_sssp(TopologyInterface &ds, uint64_t physical_sourc
             }
 
           });
-          tx.neighbourhood_with_properties_p(u, iterator);
-          while (iterator.has_next()) {
-            auto[v, w_p] = iterator.next_with_properties();
-            weight_t w = *((weight_t *) w_p);
-
-            weight_t old_dist = dist[v];
-            weight_t new_dist = dist[u] + w;
-
-            if (new_dist < old_dist) {
-              bool changed_dist = true;
-              while (!gapbs::compare_and_swap(dist[v], old_dist, new_dist)) {
-                old_dist = dist[v];
-                if (old_dist <= new_dist) {
-                  changed_dist = false;
-                  break;
-                }
-              }
-              if (changed_dist) {
-                size_t dest_bin = new_dist / delta;
-                if (dest_bin >= local_bins.size()) {
-                  local_bins.resize(dest_bin + 1);
-                }
-                local_bins[dest_bin].push_back(v);
-              }
-            }
-          }
         }
       }
 

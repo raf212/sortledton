@@ -161,9 +161,9 @@ size_t SnapshotTransaction::neighbourhood_size_p(vertex_id_t src) {
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
   }
-  ds->aquire_vertex_lock_p(src);
+  ds->aquire_vertex_lock_shared_p(src);
   auto ret = ds->neighbourhood_size_version_p(src, read_version);
-  ds->release_vertex_lock_p(src);
+  ds->release_vertex_lock_shared_p(src);
   return ret;
 }
 
@@ -171,20 +171,20 @@ void SnapshotTransaction::intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
   }
-  ds->aquire_vertex_lock_p(min(a, b));
-  ds->aquire_vertex_lock_p(max(a, b));
+  ds->aquire_vertex_lock_shared_p(min(a, b));
+  ds->aquire_vertex_lock_shared_p(max(a, b));
   ds->intersect_neighbourhood_version_p(a, b, out, read_version);
-  ds->release_vertex_lock_p(a);
-  ds->release_vertex_lock_p(b);
+  ds->release_vertex_lock_shared_p(a);
+  ds->release_vertex_lock_shared_p(b);
 }
 
 bool SnapshotTransaction::has_edge_p(edge_t edge) {
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
   }
-  ds->aquire_vertex_lock_p(edge.src);
+  ds->aquire_vertex_lock_shared_p(edge.src);
   auto ret = ds->has_edge_version_p(edge, read_version);
-  ds->release_vertex_lock_p(edge.src);
+  ds->release_vertex_lock_shared_p(edge.src);
   return ret;
 }
 
@@ -239,9 +239,9 @@ bool SnapshotTransaction::has_vertex_p(vertex_id_t v) {
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
   }
-  ds->aquire_vertex_lock_p(v);
+  ds->aquire_vertex_lock_shared_p(v);
   bool ret = ds->has_vertex_version_p(v, read_version);
-  ds->release_vertex_lock_p(v);
+  ds->release_vertex_lock_shared_p(v);
   return ret;
 }
 
@@ -379,9 +379,9 @@ bool SnapshotTransaction::get_weight_p(edge_t edge, char* out) {
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
   }
-  ds->aquire_vertex_lock_p(edge.src);
+  ds->aquire_vertex_lock_shared_p(edge.src);
   auto ret = ds->get_weight_version_p(edge, read_version, out);
-  ds->release_vertex_lock_p(edge.src);
+  ds->release_vertex_lock_shared_p(edge.src);
   return ret;
 }
 
