@@ -15,6 +15,7 @@
 #include "SizeVersionChainEntry.h"
 #include "VersionedEdgeIterator.h"
 #include "VersionedPropertyEdgeIterator.h"
+#include "VersionedBlockedPropertyEdgeIterator.h"
 #include "VersionedBlockedEdgeIterator.h"
 #include "EdgeBlock.h"
 #include "EdgeVersionRecord.h"
@@ -1285,6 +1286,30 @@ VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_p(vertex_i
   }
 }
 
+VersionedBlockedPropertyEdgeIterator
+VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_with_properties_p(vertex_id_t src,
+                                                                                        version_t version) {
+  void *set = raw_neighbourhood_version(src, version);
+
+  switch (get_set_type(src, version)) {
+    case VSINGLE_BLOCK: {
+      auto[capacity, s, pc, is_versioned] = adjacency_index.get_block_size(src);
+      auto eb = EdgeBlock::from_single_block((dst_t*) set, capacity, s, pc, property_size);
+      return VersionedBlockedPropertyEdgeIterator(this, src, eb.start, eb.get_edges_and_versions(), is_versioned, version, property_size,
+                                                  (weight_t*) eb.properties_start(), (weight_t*) eb.properties_end());
+    }
+    case VSKIP_LIST: {
+      return VersionedBlockedPropertyEdgeIterator(this, src, (VSkipListHeader *) set, block_size,
+                                                  adjacency_index.size_is_versioned(src), version, property_size);
+    }
+    default: {
+      throw NotImplemented();
+    }
+  }
+
+}
+
+
 void *VersioningBlockedSkipListAdjacencyList::get_block(size_t size) {
 //  return pool.get_block(size);
   if (size == memory_block_size()) {
@@ -1534,6 +1559,3 @@ forward_list<SizeVersionChainEntry>::iterator VersioningBlockedSkipListAdjacency
   }
   return i;
 }
-
-
-

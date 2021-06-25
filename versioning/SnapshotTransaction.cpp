@@ -7,6 +7,7 @@
 #include <iostream>
 #include "SnapshotTransaction.h"
 #include "VersionedBlockedEdgeIterator.h"
+#include "VersionedBlockedPropertyEdgeIterator.h"
 #include "TransactionManager.h"
 
 SnapshotTransaction::SnapshotTransaction(TransactionManager* tm, bool write_only, VersionedTopologyInterface *ds)
@@ -349,6 +350,14 @@ VersionedBlockedEdgeIterator SnapshotTransaction::neighbourhood_blocked_p(vertex
   }
   return ds->neighbourhood_version_blocked_p(src, read_version);
 }
+
+VersionedBlockedPropertyEdgeIterator SnapshotTransaction::neighbourhood_with_properties_blocked_p(vertex_id_t src) {
+  if (write_only) {
+    throw IllegalOperation("Cannot read with a WriteOnly Transaction");
+  }
+  return ds->neighbourhood_version_blocked_with_properties_p(src, read_version);
+}
+
 
 bool SnapshotTransaction::insert_or_update_edge(edge_t edge, char *properties, size_t property_size) {
   locks_to_aquire.push_back(edge.src);

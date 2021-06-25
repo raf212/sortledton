@@ -29,6 +29,7 @@
 #include <versioning/VersioningBlockedSkipListAdjacencyList.h>
 #include <versioning/VersionedPropertyEdgeIterator.h>
 #include "Driver.h"
+#include "versioning/VersionedBlockedPropertyEdgeIterator.h"
 
 #include "BFSSourceSelector.h"
 #include "Algorithms.h"
@@ -233,7 +234,8 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
 
   bool inserts_run = false;
 
-  auto expected_edge_count_after_inserts = config.undirected ? inserts.edges.size() * 2 : inserts.edges.size() + base.edge_count();
+  auto expected_edge_count_after_inserts = config.undirected ? inserts.edges.size() * 2 : inserts.edges.size() +
+                                                                                          base.edge_count();
   for (auto e : config.experiments) {
     if (versioned_data_structure != nullptr) {
       transaction = tm.getSnapshotTransaction(versioned_data_structure, false);
@@ -592,7 +594,8 @@ run_inserts_in_transactions(bool weighted, size_t thread_id, TransactionManager 
 }
 
 void
-Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList<weighted_edge_t> &el, size_t expected_edge_count) {
+Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList<weighted_edge_t> &el,
+                              size_t expected_edge_count) {
   cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
   uint threads = config.insert_threads;
 
@@ -765,7 +768,8 @@ void Driver::run_delete_experiment(TransactionManager &tm, VersionedTopologyInte
   reporter.add_repetition(DELETE, 0, microseconds);
 
   cout << "Deleting took: " << microseconds / 1000 << " milliseconds " << endl;
-  cout << "This is " << ((float) to_delete.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
+  cout << "This is " << ((float) to_delete.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second"
+       << endl;
 #if defined(DEBUG) && CHECKINSERT
   cout << "Checking deletions" << endl;
   auto tx = tm.getSnapshotTransaction(ds, false);
@@ -1001,20 +1005,20 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
   assert(edge_count == expected_edge_count);
 
   cout << "Checking if all edges exist." << endl;
-  #pragma omp parallel for
+#pragma omp parallel for
   for (auto i = 0u; i < el.edges.size(); i++) {
     auto e = el.edges[i];
 
     if (config.weighted && typeid(ds) == typeid(SnapshotTransaction &)) {
-      auto& tx = dynamic_cast<SnapshotTransaction&>(ds);
+      auto &tx = dynamic_cast<SnapshotTransaction &>(ds);
       weight_t w1;
-      auto e1 = tx.get_weight({e.src, e.dst}, (char*) &w1);
+      auto e1 = tx.get_weight({e.src, e.dst}, (char *) &w1);
       assert(e1);
       assert(w1 == e.weight);
 
       if (config.undirected) {
         weight_t w2;
-        auto e2 = tx.get_weight({e.dst, e.src}, (char*) &w2);
+        auto e2 = tx.get_weight({e.dst, e.src}, (char *) &w2);
         assert(e2);
         assert(w2 == e.weight);
       }
@@ -1041,34 +1045,31 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
       cout << "Checking properties" << endl;
 
       auto tx = dynamic_cast<SnapshotTransaction &>(ds);
-#pragma omp parallel
-      {
-        sortledton_property_iterator iter(*dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(tx.raw_ds()));
-#pragma omp for
-        for (vertex_id_t v = 0; v < ds.max_physical_vertex(); v++) {
+
+#pragma omp parallel for
+      for (vertex_id_t v = 0; v < ds.max_physical_vertex(); v++) {
+        if (ds.has_vertex_p(v)) {
           auto l_v = ds.logical_id(v);
-          tx.neighbourhood_with_properties_p(v, iter);
-          while (iter.has_next()) {
-            auto[d, pp] = iter.next_with_properties();
-            auto p = *((dst_t *) pp);
+
+          SORTLEDTON_WITH_PROPERTIES_ITERATE(tx, v, {
             if (p != l_v) {
-              auto l_d = ds.logical_id(d);
+              auto l_d = ds.logical_id(e);
               assert(l_d == p);
             }
-          }
+          });
         }
       }
     }
-
   }
 
 
   const string gold_standard_file_sizes =
-          config.gold_standard_directory + "/insert_adjacency_set_sizes_" + config.base.get_name() + (config.undirected ? "_undirected" : "") + ".goldStandard";
+          config.gold_standard_directory + "/insert_adjacency_set_sizes_" + config.base.get_name() +
+          (config.undirected ? "_undirected" : "") + ".goldStandard";
   if (!file_exists(gold_standard_file_sizes)) {
     cout << "Writing new gold standard for: " << gold_standard_file_sizes << endl;
     size_t size = ds.vertex_count();
-    vector<pair<vertex_id_t , size_t>> sizes;
+    vector<pair<vertex_id_t, size_t>> sizes;
 
 
     for (uint v = 0; v < ds.max_physical_vertex(); v++) {
@@ -1088,7 +1089,7 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
 
     f.write((char *) &size, sizeof(size));
 
-    for (auto& t : sizes) {
+    for (auto &t : sizes) {
       f.write((char *) &(t.first), sizeof(t.first));
       f.write((char *) &(t.second), sizeof(t.second));
     }
@@ -1096,7 +1097,7 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
 
     f.close();
   } else {
-    vector<pair<vertex_id_t , size_t>> actual_sizes;
+    vector<pair<vertex_id_t, size_t>> actual_sizes;
 
     for (uint v = 0; v < ds.max_physical_vertex(); v++) {
       if (ds.has_vertex_p(v)) {
@@ -1322,8 +1323,8 @@ Driver::generate_deletions(EdgeList<weighted_edge_t> &existing_edges, double del
 }
 
 void Driver::check_deletions(TopologyInterface &ds, EdgeList<weighted_edge_t> &el) {
-  for (const auto& e : el) {
-    assert(!ds.has_edge(edge_t {e.src, e.dst}));
+  for (const auto &e : el) {
+    assert(!ds.has_edge(edge_t{e.src, e.dst}));
     if (config.undirected) {
       edge_t opposite = {e.dst, e.src};
       assert(!ds.has_edge(opposite));

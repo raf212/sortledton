@@ -416,6 +416,10 @@ public:
       return end - properties * property_size;
     }
 
+    char *properties_end() {
+      return end;
+    }
+
     /**
    * Start of the memory region
    */

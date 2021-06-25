@@ -98,7 +98,8 @@ set(SRC
         experiments/Experiments.cpp experiments/Experiments.h
         versioning/VersionedBlockedEdgeIterator.cpp versioning/VersionedBlockedEdgeIterator.h
         versioning/memory_allocation/BlockProvider.cpp versioning/memory_allocation/BlockProvider.h
-        versioning/EdgeVersionRecord.cpp versioning/EdgeVersionRecord.h)
+        versioning/EdgeVersionRecord.cpp versioning/EdgeVersionRecord.h
+        versioning/VersionedBlockedPropertyEdgeIterator.cpp versioning/VersionedBlockedPropertyEdgeIterator.h)
 
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp
