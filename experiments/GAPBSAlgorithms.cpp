@@ -126,12 +126,14 @@ namespace { // anonymous
       const int64_t N = tx.max_physical_vertex();
       pvector<int64_t> distances(N);
 
-#pragma omp parallel for
+      auto edge_sum = 0;
+#pragma omp parallel for reduction(+: edge_sum)
       for (int64_t n = 0; n < N; n++) {
         int64_t out_degree = tx.neighbourhood_size_p(n);
-        edge_count += out_degree;
+        edge_sum += out_degree;
         distances[n] = out_degree != 0 ? -out_degree : -1;
       }
+      edge_count = edge_sum;
       return distances;
     }
 
