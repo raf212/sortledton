@@ -165,7 +165,7 @@ bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
   __builtin_prefetch((void *) ((uint64_t) adjacency_list & ~EDGE_SET_TYPE_MASK));
   __builtin_prefetch((void *) ((uint64_t) ((dst_t *) adjacency_list + 1) & ~SIZE_VERSION_MASK));
 
-#ifdef ASSERT_SIZE
+#if defined(DEBUG) && ASSERT_SIZE
   size_t size = neighbourhood_size_version_p(edge.src, version);
 #endif
 
@@ -189,7 +189,7 @@ bool VersioningBlockedSkipListAdjacencyList::insert_edge_version(edge_t edge, ve
     }
   }
 
-#ifdef ASSERT_SIZE
+#if defined(DEBUG) && ASSERT_SIZE
   size_t size_after = neighbourhood_size_version_p(edge.src, version);
   assert(size + 1 == size_after);
 #endif
@@ -456,6 +456,7 @@ VersioningBlockedSkipListAdjacencyList::VersioningBlockedSkipListAdjacencyList(s
         : tm(tm), block_size(block_size), property_size(property_size)
 //        , pool(memory_block_size())
 {
+  cout << "Sortledton.3" << endl;
   if (round_up_power_of_two(block_size) != block_size) {
     throw ConfigurationError("Block size needs to be a power of two.");
   }
@@ -1109,7 +1110,7 @@ void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(v
       break;
     }
   }
-#ifdef ASSERT_SIZE
+#if defined(DEBUG) && ASSERT_SIZE
   auto retrieved_size = neighbourhood_size_version_p(v, version);
   assert(retrieved_size == actual_size);
 #endif
