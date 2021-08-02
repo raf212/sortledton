@@ -1358,6 +1358,10 @@ VersioningBlockedSkipListAdjacencyList::balance_block(VSkipListHeader *block, VS
     auto before_block = block->before;
     auto next_block = block->next_levels[0];
 
+    if (before_block == nullptr && next_block == nullptr) {
+      return; // NOP we do not implement merging back into a single block
+    }
+
     // Pick bigger block for rebalance and handle first and last block.
     auto balance_against = before_block;
     if (before_block == nullptr) {
