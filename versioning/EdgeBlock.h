@@ -68,7 +68,7 @@ public:
       version_t* v_ptr = nullptr;
       auto property_offset = -1;
       auto version_count = 0;
-      for (auto i = start; i < (dst_t*) end; i++) {
+      for (auto i = start; i < start + edges_and_versions; i++) {
         if (make_unversioned(*i) == e) {
           e_ptr = i;
           if (is_versioned(*i)) {
