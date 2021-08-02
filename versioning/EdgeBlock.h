@@ -87,9 +87,13 @@ public:
       }
       version_t dummy_version = FIRST_VERSION;
       EdgeVersionRecord vr {make_unversioned(*e_ptr), v_ptr == nullptr ? &dummy_version : v_ptr, properties_start() + property_offset * property_size, true, property_size};
-      auto w = vr.get_weight(v);
-      memcpy(out, (char*) &w, property_size);
-      return true;
+      if (vr.exists_in_version(v)) {
+        auto w = vr.get_weight(v);
+        memcpy(out, (char*) &w, property_size);
+        return true;
+      } else {
+        return false;
+      }
     }
 
     /**
