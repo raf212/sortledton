@@ -3,7 +3,6 @@
 //
 
 #include "PageRank.h"
-#include <data-structures/ToplogyInterface.h>
 #include <third-party/gapbs.h>
 #include <versioning/VersionedBlockedEdgeIterator.h>
 #include "Algorithms.h"
