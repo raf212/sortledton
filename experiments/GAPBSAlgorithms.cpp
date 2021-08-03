@@ -44,25 +44,49 @@ namespace { // anonymous
     */
 
 
-    static auto average_steps = 0;
-    static auto average_jumps = 0;
-    static auto average_size = 0;
+    static double average_steps = 0.0;
+    static double m_count = 0.0;
+    static double average_jumps = 0.0;
+    static double last_value = 0.0;
+    static double average_size = 0.0;
+    static long skip_list_type = 0;
+    static long single_block_type = 0;
+    static long size_over = 0;
 
 #define PREFETCH_AHEAD 3
 
     static int64_t
     BUStep(VersioningBlockedSkipListAdjacencyList *ds, SnapshotTransaction &tx, pvector<int64_t> &distances,
            int64_t distance, Bitmap &front, Bitmap &next) {
+//      last_value = 0;
       const int64_t N = tx.max_physical_vertex();
       int64_t awake_count = 0;
       next.reset();
 #pragma omp parallel for reduction(+ : awake_count) schedule(dynamic, 1024)
       for (int64_t u = 0; u < N; u++) {
         if (distances[u] < 0) { // the node has not been visited yet
+//          m_count++;
+//          average_jumps += u - last_value;
+//          last_value = u;
+//          auto st = ds->get_set_type(u, tx.get_version());
+//          if (st == VSINGLE_BLOCK) {
+//            single_block_type++;
+//          } else {
+//           skip_list_type++;
+//          }
+//          auto s = tx.neighbourhood_size_p(u);
+//          average_size += s;
+//          if (s > 240) {
+//            size_over += 1;
+//          }
           __builtin_prefetch(ds->raw_neighbourhood_version(u+PREFETCH_AHEAD, FIRST_VERSION), 0, 3);
+          __builtin_prefetch((char*) ds->raw_neighbourhood_version(u+PREFETCH_AHEAD+1, FIRST_VERSION), 0, 3);
+          __builtin_prefetch((char*) ds->raw_neighbourhood_version(u+PREFETCH_AHEAD+2, FIRST_VERSION), 0, 3);
+          __builtin_prefetch((char*) ds->raw_neighbourhood_version(u+PREFETCH_AHEAD-1, FIRST_VERSION), 0, 3);
           SORTLEDTON_ITERATE(tx, u, {
+//                  average_steps++;
                   if (front.get_bit(e)) {
-              distances[u] = distance; // on each BUStep, all nodes will have the same distance
+                    distances[u] = distance; // on each BUStep, all nodes will have the same distance
                     awake_count++;
                     next.set_bit(u);
                     goto end_iteration;
@@ -192,6 +216,14 @@ GAPBSAlgorithms::bfs(TopologyInterface &ti, uint64_t start_vertex, bool raw_neig
       distance++;
     }
   }
+
+//  cout << "Size " << average_size / m_count << endl;
+//  cout << "Jumps " << average_jumps / m_count << endl;
+//  cout << "Steps " << average_steps / m_count << endl;
+//  cout << "Skip list " << skip_list_type << endl;
+//  cout << "Single block " << single_block_type << endl;
+//  cout << "SizeOver " << size_over << endl;
+
 
   return distances;
 }

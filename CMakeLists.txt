@@ -125,10 +125,6 @@ target_link_libraries (live_graph_two Threads::Threads)
 target_link_libraries(live_graph_two ${TBB_LIBRARIES})
 target_link_libraries(live_graph_two OpenMP::OpenMP_CXX)
 
-add_executable(vector_vs_blockek_linked_list  vector_vs_blockek_linked_list.h vector_vs_blockek_linked_list.cpp)
-target_link_libraries(live_graph_two ${TBB_LIBRARIES})
-
-
 add_library(sortledton STATIC ${SRC})
 target_link_libraries(sortledton OpenMP::OpenMP_CXX)
 target_link_libraries (sortledton Threads::Threads)
