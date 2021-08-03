@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
-project(live_graph_two VERSION 0.1 DESCRIPTION "Data structure supporting transactional, ananlytical and pattern matching workloads on sorted data with a simple design.")
+project(sortledton VERSION 1.0 DESCRIPTION "A Universal, Transactional Graph Data Structure")
 
 list(APPEND CMAKE_MODULE_PATH "~/cmake_modules/FindTBB")
-
 set(CMAKE_CXX_STANDARD 17)
 
 add_compile_options(-Wall -Wextra -Wno-unused-parameter -finline-functions)
 
+# Compile with 32 bit identifiers. Not used.
 #set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -DBITS32)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -DBITS64)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
@@ -91,8 +91,24 @@ set(SRC
         versioning/VersionedBlockedEdgeIterator.cpp versioning/VersionedBlockedEdgeIterator.h
         versioning/memory_allocation/BlockProvider.cpp versioning/memory_allocation/BlockProvider.h
         versioning/EdgeVersionRecord.cpp versioning/EdgeVersionRecord.h
-        versioning/VersionedBlockedPropertyEdgeIterator.cpp versioning/VersionedBlockedPropertyEdgeIterator.h third-party/RWSpinLock.cpp third-party/RWSpinLock.h)
+        versioning/VersionedBlockedPropertyEdgeIterator.cpp versioning/VersionedBlockedPropertyEdgeIterator.h
+        third-party/RWSpinLock.cpp third-party/RWSpinLock.h)
 
+# Library to use with the GFE Driver
+add_library(sortledton STATIC ${SRC})
+target_link_libraries(sortledton OpenMP::OpenMP_CXX)
+target_link_libraries (sortledton Threads::Threads)
+target_link_libraries(sortledton ${TBB_LIBRARIES})
+set_target_properties(sortledton PROPERTIES VERSION ${PROJECT_VERSION})
+set_target_properties(sortledton PROPERTIES SOVERSION 1)
+
+# Binary used for internal driver
+add_executable(sortledton_bin main.cpp ${SRC})
+target_link_libraries (sortledton_bin Threads::Threads)
+target_link_libraries(sortledton_bin ${TBB_LIBRARIES})
+target_link_libraries(sortledton_bin OpenMP::OpenMP_CXX)
+
+# Dataset converter for internally binary input format.
 set(DATASET_CONVERTER_SRC
         data-src/dataset-converter/DatasetConverter.cpp
         data-src/dataset-converter/Options.cpp
@@ -101,16 +117,4 @@ set(DATASET_CONVERTER_SRC
         utils/utils.cpp)
 add_executable(dataset_converter data-src/dataset-converter/main.cpp ${DATASET_CONVERTER_SRC})
 
-add_executable(live_graph_two main.cpp ${SRC})
-target_link_libraries (live_graph_two Threads::Threads)
-target_link_libraries(live_graph_two ${TBB_LIBRARIES})
-target_link_libraries(live_graph_two OpenMP::OpenMP_CXX)
 
-add_library(sortledton STATIC ${SRC})
-target_link_libraries(sortledton OpenMP::OpenMP_CXX)
-target_link_libraries (sortledton Threads::Threads)
-target_link_libraries(sortledton ${TBB_LIBRARIES})
-set_target_properties(sortledton PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(sortledton PROPERTIES SOVERSION 0)
-#set_target_properties(mylib PROPERTIES PUBLIC_HEADER include/mylib.h)  // TODO I should decide for a public API
-# TODO support installation of library? https://stackoverflow.com/questions/17511496/how-to-create-a-shared-library-with-cmake
