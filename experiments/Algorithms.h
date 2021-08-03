@@ -56,12 +56,6 @@ public:
       cout << "Translating took: " << milliseconds << " milliseconds" << endl;
       return logical_result;
     }
-
-private:
-    static vector<uint> bfs_batched_interface(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex);
-    static vector<uint> bfs_single_edge_interface(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex);
-    static vector<uint> bfs_raw_neighbourhood(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex,
-                                              bool aquire_locks);
 };
 
 
