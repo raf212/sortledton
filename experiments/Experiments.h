@@ -14,7 +14,6 @@ enum Experiments {
     TRIANGLE_COUNTING,
     BFS,
     PR,
-    NEIGHBOUR_2,
     STORAGE,
     GC,
     GAPBS_BFS,

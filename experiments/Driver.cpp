@@ -33,23 +33,9 @@
 
 #include "BFSSourceSelector.h"
 #include "Algorithms.h"
-#include "TwoNeighbourSourceSelector.h"
-#include "TwoNeighbour.h"
 
 
 #define CHECKINSERT 1
-
-vector<vector<vertex_id_t>> Driver::select_2_neighbourhood_src(const SortedCSRDataSource &src, int count) {
-  vector<vector<vertex_id_t>> out;
-
-  TwoNeighbourSourceSelector s(src);
-  for (uint r = 0; r < config.repetitions; r++) {
-    out.push_back(s.get_sources(count));
-  }
-
-  return out;
-}
-
 
 void Driver::run() {
   if (config.omp_threads != 0) {
@@ -78,9 +64,6 @@ void Driver::run() {
   }
 
   vector<vector<vertex_id_t>> neighbour_2_sources;
-  if (config.experiment_set.find(NEIGHBOUR_2) != config.experiment_set.end()) {
-    neighbour_2_sources = select_2_neighbourhood_src(base, 1000);
-  }
 
   reporter.set_dataset(config.base);
 
@@ -244,13 +227,6 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
 
     bool gapbs = false;
     switch (e.first) {
-      case (NEIGHBOUR_2): {
-        run_neighbourhood_2_experiment(*data_structure, neighbourhood_2_sources, run_on_raw_neighbourhood);
-        if (versioned_data_structure != nullptr) {
-          tm.transactionCompleted(transaction);
-        }
-        break;
-      }
       case (GAPBS_BFS):
         gapbs = true;  // Fallthrough
       case (BFS): {
@@ -856,45 +832,6 @@ void Driver::run_triangle_counting_experiment(TopologyInterface &ds) {
   cout << "Counted " << triangles << " triangles." << endl;
 }
 
-void Driver::run_neighbourhood_2_experiment(TopologyInterface &ds,
-                                            const vector<vector<vertex_id_t>> &sources,
-                                            bool run_raw_neighbourhood) {
-  cout << "Running 2 neighbourhood experiment ";
-  cout.flush();
-
-  vector<size_t> run_times;
-
-  for (uint rep = 0; rep < config.repetitions; rep++) {
-    auto start = chrono::steady_clock::now();
-    unordered_map<vertex_id_t, size_t> neighbour_counts = Algorithms::neighbourhood_2(*this, ds, sources[rep],
-                                                                                      run_raw_neighbourhood);
-    auto end = chrono::steady_clock::now();
-
-    size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
-    run_times.push_back(microseconds);
-    reporter.add_repetition(NEIGHBOUR_2, rep, microseconds);
-
-    cout << ".";
-    cout.flush();
-
-    uint all_neighbours = 0;
-    for (auto nc : neighbour_counts) {
-      all_neighbours += nc.second;
-    }
-
-    cout << "Counted " << all_neighbours << endl;
-
-#ifdef DEBUG
-    if (rep == 0) { // Gold standard only saves the result from rep==0 runs, they differ in the set of sources.
-      check_neighbourhood_2(neighbour_counts);
-    }
-#endif
-  }
-
-  double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
-  cout << endl << "2 neighbourhood counting run in average in " << average << " milliseconds " << endl;
-}
-
 EdgeList<weighted_edge_t> Driver::read_insert_dataset() {
   EdgeList<weighted_edge_t> edge_list;
   if (config.weighted_graph_source) {
@@ -1142,49 +1079,6 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
     distances = Algorithms::bfs(*this, ds, start_vertex);
   }
   check_analytics(BFS, distances);
-}
-
-void Driver::check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts) {
-  cout << "Validating 2-neighbourhood experiment" << endl;
-  const string gold_standard_file =
-          config.gold_standard_directory + "/neighbour2_" + config.base.get_name() + ".goldStandard";
-  if (!file_exists(gold_standard_file)) {
-    cout << "Writing new gold standard for: " << gold_standard_file << endl;
-    ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
-
-    if (!f.good()) {
-      assert(false);
-    }
-
-    size_t size = neighbour_counts.size();
-    f.write((char *) &size, sizeof(size));
-
-    for (auto nc : neighbour_counts) {
-      f.write((char *) &(nc.first), sizeof(vertex_id_t));
-      f.write((char *) &(nc.second), sizeof(size_t));
-    }
-    f.close();
-  } else {
-    ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
-
-    size_t size;
-    f.read((char *) &size, sizeof(size));
-
-    assert(size == neighbour_counts.size());
-
-    vertex_id_t v;
-    size_t c;
-    for (uint i = 0; i < size; i++) {
-      f.read((char *) &v, sizeof(v));
-      f.read((char *) &c, sizeof(c));
-
-      auto a = neighbour_counts.find(v);
-      assert(a != neighbour_counts.end() && a->second == c);
-    }
-
-
-    f.close();
-  }
 }
 
 void Driver::check_triangle_counting(size_t count) {

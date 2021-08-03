@@ -82,10 +82,6 @@ private:
     void run_triangle_counting_experiment(TopologyInterface& ds);
     void check_triangle_counting(size_t count);
 
-    vector<vector<vertex_id_t>> select_2_neighbourhood_src(const SortedCSRDataSource &src, int count);
-    void run_neighbourhood_2_experiment(TopologyInterface& ds, const vector<vector<vertex_id_t>>& sources, bool run_on_raw_neighbourhood);
-    void check_neighbourhood_2(unordered_map<vertex_id_t, size_t> neighbour_counts);
-
     void validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts);
 
     void print_graph(TopologyInterface& ds);

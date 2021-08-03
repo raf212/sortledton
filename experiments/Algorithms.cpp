@@ -3,13 +3,10 @@
 //
 
 #include "Algorithms.h"
-#include "TwoNeighbour.h"
 #include "PageRank.h"
 
 #include <algorithm>
 #include <queue>
-
-#include <HashSetSimulatorAdjacencyList.h>
 
 #include <data_types.h>
 #include "GAPBSAlgorithms.h"
@@ -57,19 +54,6 @@ vector<pair<vertex_id_t, uint>> Algorithms::bfs(Driver &driver, TopologyInterfac
   cout << "BFS took: " << milliseconds << " milliseconds" << endl;
 
   return Algorithms::translate(ds, physical_result);
-}
-
-unordered_map<vertex_id_t, size_t> Algorithms::neighbourhood_2(Driver &driver,
-                                                               TopologyInterface &ds,
-                                                               const vector<vertex_id_t> &sources,
-                                                               bool raw_neighbourhood) {
-  if (raw_neighbourhood) {
-    return TwoNeighbour::neighbourhood_2_raw_neighbourhood(driver, ds, sources);
-  } else if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
-    throw NotImplemented();
-  } else {
-    return TwoNeighbour::neighbourhood_2_batched_interface(driver, ds, sources);
-  }
 }
 
 vector<pair<vertex_id_t, double>> Algorithms::page_rank(Driver &driver, TopologyInterface &ds, bool run_on_raw_neighbourhood, bool use_gapbs) {

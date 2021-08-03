@@ -203,7 +203,6 @@ const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING{
         {BFS,    "bfs"},
         {PR, "pr"},
         {TRIANGLE_COUNTING, "triangle"},
-        {NEIGHBOUR_2, "2-neighbour"},
         {STORAGE, "storage"},
         {GC, "gc"},
         {GAPBS_BFS, "bsbfs"},

@@ -17,9 +17,6 @@ class Driver;
 using namespace std;
 class Algorithms {
 public:
-
-    static unordered_map<vertex_id_t, size_t> neighbourhood_2(Driver& driver, TopologyInterface &ds, const vector<vertex_id_t> &sources, bool raw_neighbourhood);
-
     static vector<pair<vertex_id_t, uint>> bfs(Driver &driver, TopologyInterface &ds, vertex_id_t start_vertex, bool raw_neighbourhood,
                             bool aquire_locks, bool gapbs);
     static vector<pair<vertex_id_t, uint>> bfs(Driver& driver, TopologyInterface& ds, vertex_id_t start_vertex) { return bfs(driver, ds,
