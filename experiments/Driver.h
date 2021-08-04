@@ -44,10 +44,6 @@ public:
 
     void run();
 
-    ContigiousBlockIterator& getIter(TopologyInterface& ds);
-    EdgeIterator& getSingleEdgeIter(TopologyInterface& ds);
-    unordered_set<dst_t> get_neighbours(TopologyInterface& ds, vertex_id_t v);
-
     Config config;
 
     // TODO organize as in BFS start vertex

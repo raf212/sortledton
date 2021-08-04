@@ -665,20 +665,6 @@ SortedCSRDataSource Driver::read_base_dataset() {
   return out;
 }
 
-// TODO remove
-ContigiousBlockIterator &Driver::getIter(TopologyInterface &ds) {
-    throw NotImplemented();
-}
-
-// TODO remove
-EdgeIterator &Driver::getSingleEdgeIter(TopologyInterface &ds) {
-    throw NotImplemented();
-}
-
-unordered_set<dst_t> Driver::get_neighbours(TopologyInterface &ds, vertex_id_t v) {
-  throw NotImplemented();
-}
-
 void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, size_t expected_edge_count) {
   cout << "Validating insert experiment" << endl;
   auto edge_count = ds.edge_count();
