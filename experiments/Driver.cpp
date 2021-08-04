@@ -12,7 +12,6 @@
 #include <queue>
 #include <functional>
 #include <cassert>
-#include <map>
 #include <thread>
 #include <atomic>
 #include <exception>
@@ -240,10 +239,6 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
         throw ConfigurationError("Unknown experiment type");
     }
     cout << endl;
-  }
-
-  if (config.validate_datastructures) {
-    validate_graph_structure(*data_structure, base, inserts);
   }
 
   if (data_structure != nullptr && typeid(*data_structure) != typeid(SnapshotTransaction)) {
@@ -679,42 +674,6 @@ ContigiousBlockIterator &Driver::getIter(TopologyInterface &ds) {
 EdgeIterator &Driver::getSingleEdgeIter(TopologyInterface &ds) {
     throw NotImplemented();
 }
-
-// TODO remove
-void
-Driver::validate_graph_structure(TopologyInterface &ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts) {
-  cout << "Validating data structure." << endl;
-  auto vertices = base.vertex_count();
-
-  unordered_multimap<vertex_id_t, dst_t> insert_map;
-  unordered_multimap<vertex_id_t, dst_t> delete_map;
-  if (config.experiment_set.find(INSERT) != config.experiment_set.end()) {
-    insert_map = inserts.to_map();
-  }
-
-  for (vertex_id_t v = 0; v < vertices; v++) {
-//    cout << "Vertex " << v << endl;
-    unordered_set<dst_t> e_neighbours = base.get_neighbour_set(v);
-
-    unordered_set<dst_t> e_inserted = get_values_from_multimap(insert_map, v);
-
-    unordered_set<dst_t> a_neighbours = get_neighbours(ds, v);
-
-    for (auto n : a_neighbours) {
-      if (e_neighbours.find(n) == e_neighbours.end()) {
-        assert(e_inserted.find(n) != e_inserted.end());
-      }
-    }
-
-    for (auto n : e_neighbours) {
-      assert(a_neighbours.find(n) != a_neighbours.end());
-    }
-    for (auto n: e_inserted) {
-      assert(a_neighbours.find(n) != a_neighbours.end());
-    }
-  }
-}
-
 
 unordered_set<dst_t> Driver::get_neighbours(TopologyInterface &ds, vertex_id_t v) {
   throw NotImplemented();

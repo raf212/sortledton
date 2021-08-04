@@ -82,8 +82,6 @@ private:
     void run_triangle_counting_experiment(TopologyInterface& ds);
     void check_triangle_counting(size_t count);
 
-    void validate_graph_structure(TopologyInterface& ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts);
-
     void print_graph(TopologyInterface& ds);
 
     // TODO rename to _ naming convention

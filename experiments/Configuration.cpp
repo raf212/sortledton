@@ -20,7 +20,6 @@ void Config::initialize(int argc, char **argv) {
             {"dataset_base", required_argument, 0, 'b'},
             {"dataset_insert", required_argument, 0, 'i'},
             {"dataset_delete", required_argument, 0, 'd'},
-            {"validate", no_argument, 0, 'v'},
             {"repetitions", required_argument, 0, 'r'},
             {"release_run", no_argument, 0, 'l'},
             {"prefetch_blocks", required_argument, 0, 'p'},
@@ -81,9 +80,6 @@ void Config::initialize(int argc, char **argv) {
         break;
       case 'u':
         undirected = true;
-        break;
-      case 'v':
-        validate_datastructures = true;
         break;
       case '?':
         printf("No help provided read src.\n");
