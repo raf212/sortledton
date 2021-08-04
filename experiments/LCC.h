@@ -15,7 +15,6 @@ public:
     static vector<pair<vertex_id_t, double>> lcc(Driver& driver, TopologyInterface& ds);
 
     static vector<double> lcc_merge_sort(TopologyInterface& ds);
-    static vector<double> lcc_naive(TopologyInterface& ds);
 };
 
 
