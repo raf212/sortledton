@@ -11,7 +11,7 @@
 #include <cstring>
 #include <cassert>
 #include <functional>
-#include "BlockedSkipListAdjacencyLists.h"
+#include <experiments/Configuration.h>
 #include "SizeVersionChainEntry.h"
 #include "VersionedBlockedPropertyEdgeIterator.h"
 #include "VersionedBlockedEdgeIterator.h"

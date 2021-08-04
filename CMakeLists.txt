@@ -32,15 +32,7 @@ set(SRC
         utils/utils.cpp utils/utils.h
         data-src/IOException.cpp data-src/IOException.h
         experiments/Reporter.cpp experiments/Reporter.h
-        data-structures/BlockedLinkedListAdjacencyLists.cpp
-        data-structures/BlockedLinkedListAdjacencyLists.h
-        data-structures/memory_pools/BlockMemoryPool.cpp
-        data-structures/memory_pools/BlockMemoryPool.h
-        data-structures/memory_pools/OutOfMemoryError.cpp
-        data-structures/memory_pools/OutOfMemoryError.h
         utils/robin_hood.h
-        data-structures/BlockedSkipListAdjacencyLists.cpp
-        data-structures/BlockedSkipListAdjacencyLists.h
         experiments/BFSSourceSelector.cpp experiments/BFSSourceSelector.h
         experiments/Algorithms.cpp experiments/Algorithms.h
         experiments/PageRank.cpp experiments/PageRank.h

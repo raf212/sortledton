@@ -19,6 +19,11 @@
 #include "VertexIndex.h"
 #include "EdgeBlock.h"
 
+enum AdjacencySetType {
+    SKIP_LIST,
+    SINGLE_BLOCK
+};
+
 class VersionedBlockedEdgeIterator;
 
 class VersioningBlockedSkipListAdjacencyList : public VersionedTopologyInterface {
