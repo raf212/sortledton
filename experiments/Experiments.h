@@ -11,7 +11,6 @@ enum Experiments {
     INSERT,   // Inserts edges one-by-one but uses only one transaction in the versioned case.
     INSERT_TRANSACTIONS,  // Inserts edges one-by-one using one transaction per edge.
     DELETE,
-    TRIANGLE_COUNTING,
     BFS,
     PR,
     STORAGE,

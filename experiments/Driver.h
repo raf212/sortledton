@@ -75,16 +75,6 @@ private:
 
     void run_page_rank_experiment(TopologyInterface& ds, bool run_on_raw_neighbourhood, bool gapbs);
 
-    void run_triangle_counting_experiment(TopologyInterface& ds);
-    void check_triangle_counting(size_t count);
-
-    // TODO rename to _ naming convention
-    vector<VectorBatchedEdgeIterator> vectorIterators;
-
-    vector<BlockedBatchedEdgeIterator> blockIterators;
-    vector<FilteredVectorIterator> filteredBlockIterators;
-    vector<VersionedEdgeIterator> versionedIterators;
-
     void show_storage_sizes(string ds_name, TopologyInterface& ds);
 
     void run_gc_experiment(TransactionManager& tm, VersionedTopologyInterface& ds, bool inserts_run, EdgeList<weighted_edge_t> &inserts);

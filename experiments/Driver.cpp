@@ -810,32 +810,6 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
   check_analytics(BFS, distances);
 }
 
-void Driver::check_triangle_counting(size_t count) {
-  cout << "Validating triangle experiment" << endl;
-  const string gold_standard_file =
-          config.gold_standard_directory + "/triangle_" + config.base.get_name() + ".goldStandard";
-  if (!file_exists(gold_standard_file)) {
-    cout << "Writing new gold standard for: " << gold_standard_file << endl;
-    ofstream f(gold_standard_file, ofstream::binary | ofstream::out);
-
-    if (!f.good()) {
-      assert(false);
-    }
-
-    f.write((char *) &count, sizeof(count));
-    f.close();
-  } else {
-    ifstream f(gold_standard_file, ifstream::in | ifstream::binary);
-
-    size_t e_count;
-    f.read((char *) &e_count, sizeof(e_count));
-
-    assert(e_count == count);
-
-    f.close();
-  }
-}
-
 void Driver::run_page_rank_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool gapbs) {
   cout << "Running PR experiment ";
   cout.flush();
