@@ -22,30 +22,19 @@ include_directories(data-structures)
 set(SRC
         data-structures/ToplogyInterface.cpp
         data-structures/ToplogyInterface.h
-        data-structures/CSR.cpp
         data-structures/adjacency-lists/EdgeBatch.cpp
         data-structures/adjacency-lists/BatchedEdgeIterator.cpp
-        data-structures/adjacency-lists/AdjacencyList.cpp
         data-structures/adjacency-lists/ContiguousEdgeBatch.cpp
         data-src/EdgeList.cpp data-src/EdgeList.h
         data-src/SortedCSRDataSource.cpp
         data-src/SortedCSRDataSource.h
         data-src/DataSource.cpp data-src/DataSource.h
-        data-structures/AdjacencyLists.cpp
-        data-structures/AdjacencyLists.h
-        data-structures/VectorAdjacencyLists.cpp
-        data-structures/VectorAdjacencyLists.h
-        data-structures/adjacency-lists/VectorAdjacencyList.cpp
-        data-structures/adjacency-lists/VectorAdjacencyList.h
         utils/NotImplemented.cpp utils/NotImplemented.h
-        data-structures/adjacency-lists/VectorBatchedEdgeIterator.cpp
-        data-structures/adjacency-lists/VectorBatchedEdgeIterator.h
-        experiments/Driver.cpp experiments/Driver.h experiments/Configuration.cpp experiments/Configuration.h utils/utils.cpp utils/utils.h data-src/IOException.cpp data-src/IOException.h
+        experiments/Driver.cpp experiments/Driver.h
+        experiments/Configuration.cpp experiments/Configuration.h
+        utils/utils.cpp utils/utils.h
+        data-src/IOException.cpp data-src/IOException.h
         experiments/Reporter.cpp experiments/Reporter.h
-        data-structures/MallocAdjacencyLists.cpp
-        data-structures/MallocAdjacencyLists.h
-        data-structures/CSRMallocAdjacencyLists.cpp
-        data-structures/CSRMallocAdjacencyLists.h
         data-structures/BlockedLinkedListAdjacencyLists.cpp
         data-structures/BlockedLinkedListAdjacencyLists.h
         data-structures/memory_pools/BlockMemoryPool.cpp
@@ -56,13 +45,14 @@ set(SRC
         data-structures/adjacency-lists/BlockedBatchedEdgeIterator.h
         data-structures/adjacency-lists/ContigiousBlockIterator.cpp
         utils/robin_hood.h
-        data-structures/adjacency-lists/ContigiousBlockIterator.h data-structures/BlockedSkipListAdjacencyLists.cpp
-        data-structures/BlockedSkipListAdjacencyLists.h data-structures/memory_pools/NonContigiousMemoryPool.cpp
-        data-structures/memory_pools/NonContigiousMemoryPool.h experiments/BFSSourceSelector.cpp experiments/BFSSourceSelector.h
+        data-structures/adjacency-lists/ContigiousBlockIterator.h
+        data-structures/BlockedSkipListAdjacencyLists.cpp
+        data-structures/BlockedSkipListAdjacencyLists.h
+        experiments/BFSSourceSelector.cpp experiments/BFSSourceSelector.h
         experiments/Algorithms.cpp experiments/Algorithms.h
-        data-structures/HashSetSimulatorAdjacencyList.cpp data-structures/HashSetSimulatorAdjacencyList.h data-structures/adjacency-lists/FilteredVectorIterator.cpp
-        data-structures/adjacency-lists/FilteredVectorIterator.h data-structures/adjacency-lists/EdgeIterator.cpp
-        data-structures/adjacency-lists/EdgeIterator.h data-structures/HashSetAdjacencyLists.cpp data-structures/HashSetAdjacencyLists.h experiments/PageRank.cpp experiments/PageRank.h
+        data-structures/adjacency-lists/EdgeIterator.cpp
+        data-structures/adjacency-lists/EdgeIterator.h
+        experiments/PageRank.cpp experiments/PageRank.h
         data_types.cpp
         versioning/SizeVersionChainEntry.cpp versioning/SizeVersionChainEntry.h
         versioning/VersionedTopologyInterface.cpp versioning/VersionedTopologyInterface.h

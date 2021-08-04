@@ -4,7 +4,6 @@
 
 #include <cstring>
 #include <cassert>
-#include <data-structures/adjacency-lists/VectorBatchedEdgeIterator.h>
 #include <iomanip>
 #include "BlockedSkipListAdjacencyLists.h"
 #include "adjacency-lists/BlockedBatchedEdgeIterator.h"
