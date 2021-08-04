@@ -850,20 +850,6 @@ void Driver::check_triangle_counting(size_t count) {
   }
 }
 
-void Driver::print_graph(TopologyInterface &ds) {
-  ContigiousBlockIterator &ns = getIter(ds);
-  for (vertex_id_t v = 0; v < ds.max_physical_vertex(); v++) {
-    ds.neighbourhood(v, ns);
-    while (ns.has_next()) {
-      auto &block = ns.next();
-
-      for (dst_t &n : block) {
-        cout << v << " " << n << endl;
-      }
-    }
-  }
-}
-
 void Driver::run_page_rank_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool gapbs) {
   cout << "Running PR experiment ";
   cout.flush();

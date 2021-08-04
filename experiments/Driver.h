@@ -82,8 +82,6 @@ private:
     void run_triangle_counting_experiment(TopologyInterface& ds);
     void check_triangle_counting(size_t count);
 
-    void print_graph(TopologyInterface& ds);
-
     // TODO rename to _ naming convention
     vector<VectorBatchedEdgeIterator> vectorIterators;
 
