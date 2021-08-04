@@ -9,21 +9,13 @@
 #include <iomanip>
 #include <omp.h>
 
-#include <data-structures/CSR.h>
-#include <data-structures/VectorAdjacencyLists.h>
-#include <data-structures/MallocAdjacencyLists.h>
-#include <data-structures/CSRMallocAdjacencyLists.h>
 #include <queue>
 #include <functional>
-#include <data-structures/BlockedLinkedListAdjacencyLists.h>
-#include <data-structures/BlockedSkipListAdjacencyLists.h>
-#include <data-structures/HashSetSimulatorAdjacencyList.h>
 #include <cassert>
 #include <map>
 #include <thread>
 #include <atomic>
 #include <exception>
-#include <data-structures/HashSetAdjacencyLists.h>
 #include <versioning/SnapshotTransaction.h>
 #include <versioning/TransactionManager.h>
 #include <versioning/VersioningBlockedSkipListAdjacencyList.h>
@@ -89,80 +81,6 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
   tm.transactionCompleted(transaction);
 
   switch (ds) {
-    case CSR_DS: {
-      data_structure = new CSR();
-      ds_name = "CSR";
-      break;
-    }
-    case VECTOR_ADJACENCY_LIST: {
-      bool unordered = true;
-      if (!ds_parameters.empty()) {
-        unordered = stoi(ds_parameters[0]);
-      }
-      data_structure = new VectorAdjacencyLists(unordered);
-      ds_name = "vectorAL";
-      break;
-    }
-    case MALLOC_ADJACENCY_LIST: {
-      bool unordered = true;
-      bool use_hash_index = false;
-      if (!ds_parameters.empty()) {
-        unordered = stoi(ds_parameters[0]);
-        use_hash_index = stoi(ds_parameters[1]);
-      }
-      data_structure = new MallocAdjacencyLists(unordered, use_hash_index);
-      ds_name = "mallocAL";
-      break;
-    }
-    case CSR_MALLOC_ADJACENCY_LIST: {
-      bool unordered = true;
-      size_t malloc_limit = 0;
-      if (!ds_parameters.empty()) {
-        malloc_limit = stoi(ds_parameters[0]);
-        unordered = stoi(ds_parameters[1]);
-      }
-      data_structure = new CSRMallocAdjacencyLists(malloc_limit, unordered);
-      ds_name = "csrMallocAL";
-      break;
-    }
-    case BLOCKED_LINKED_LIST_AL: {
-      bool unordered = false;
-      size_t block_size = 128;
-      bool adjust_pool_sizes = false;
-      bool size_in_index = false;
-      if (!ds_parameters.empty()) {
-        block_size = stoi(ds_parameters[0]);
-        unordered = stoi(ds_parameters[1]);
-        if (ds_parameters[2] == "adjust") {
-          cout << "Adjusting pool sizes activated" << endl;
-          adjust_pool_sizes = true;
-        }
-        if (ds_parameters[3] == "si") {
-          cout << "Size stored in index" << endl;
-          size_in_index = true;
-        }
-      }
-      data_structure = new BlockedLinkedListAdjacencyLists(block_size, unordered,
-                                                           base.adjacency_lists.size() + inserts.edges.size() + 100,
-                                                           base.vertex_count(),
-                                                           adjust_pool_sizes,
-                                                           size_in_index);
-      ds_name = "bllAL";
-      break;
-    }
-    case BLOCKED_SKIP_LIST_AL: {
-      bool unordered = false;
-      size_t block_size = 128;
-      if (!ds_parameters.empty()) {  // TODO better parameter sanitization
-        block_size = stoi(ds_parameters[0]);
-        unordered = stoi(ds_parameters[1]);
-      }
-      data_structure = new BlockedSkipListAdjacencyLists(block_size, 6, unordered,
-                                                         base.adjacency_lists.size() + inserts.edges.size() + 100,
-                                                         base.vertex_count());
-      ds_name = "blsAL";
-      break;
-    }
     case VERSIONED: {
       size_t block_size = 128;
       if (!ds_parameters.empty()) {  // TODO better parameter sanitization
@@ -173,22 +91,8 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
       ds_name = "versioned";
       break;
     }
-    case HASH_SET_SIMULATOR_AL: {
-      float fill_factor = 0.9;
-      if (!ds_parameters.empty()) {
-        fill_factor = stof(ds_parameters[0]);
-      }
-      data_structure = new HashSetSimulatorAdjacencyList(fill_factor);
-      ds_name = "hssAL";
-      break;
-    }
-    case HASH_SET_AL: {
-      data_structure = new HashSetAdjacencyLists();
-      ds_name = "hsAL";
-      break;
-    }
     default: {
-      throw ConfigurationError("Forgot to implement data structure: " + ds);
+      throw ConfigurationError("Unknown data structure: " + ds);
     }
   }
 
@@ -204,7 +108,6 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
       cerr << "Warning: Loading possible directed base data set even though we work in an undirected setting" << endl;
     }
   }
-
 
   if (versioned_data_structure != nullptr) {
     tm.transactionCompleted(transaction);
@@ -235,16 +138,6 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
           aquire_locks = stoi(e.second[0]);
         }
         run_bfs_experiment(*data_structure, run_on_raw_neighbourhood, aquire_locks, inserts_run, gapbs);
-        if (versioned_data_structure != nullptr) {
-          tm.transactionCompleted(transaction);
-        }
-        break;
-      }
-      case (TRIANGLE_COUNTING): {
-        if (run_on_raw_neighbourhood) {
-          throw NotImplemented();
-        }
-        run_triangle_counting_experiment(*data_structure);
         if (versioned_data_structure != nullptr) {
           tm.transactionCompleted(transaction);
         }
@@ -757,81 +650,6 @@ void Driver::run_delete_experiment(TransactionManager &tm, VersionedTopologyInte
   run_insert_experiment_one_by_one(tm, ds, to_delete, exptected_edge_count);
 }
 
-void Driver::run_triangle_counting_experiment(TopologyInterface &ds) {
-  cout << "Running triangle experiment ";
-  cout.flush();
-
-  vector<size_t> run_times;
-  size_t triangles;
-  vector<dst_t> out;
-  for (uint rep = 0; rep < config.repetitions; rep++) {
-    auto start = chrono::steady_clock::now();
-
-    triangles = 0;
-
-    if (typeid(ds) == typeid(HashSetAdjacencyLists)) {
-      for (uint a = 0; a < ds.max_physical_vertex(); a++) {
-        auto a_neighbours = (robin_hood::unordered_flat_set<dst_t> *) ds.raw_neighbourhood(a);
-
-        for (dst_t b : *a_neighbours) {
-          if (a < b) {
-            ds.intersect_neighbourhood(a, b, out);
-            for (auto c : out) {
-              if (b < c) {
-                triangles += 1;
-              }
-            }
-          }
-        }
-      }
-    } else {
-//#pragma omp parallel
-//    {
-
-
-      ContigiousBlockIterator &a_neighbours = getIter(ds);
-
-//#pragma omp for reduction(+ : triangles) schedule(dynamic, 64)
-      for (uint a = 0; a < ds.max_physical_vertex(); a++) {
-        ds.neighbourhood(a, a_neighbours);
-
-        while (a_neighbours.has_next()) {
-          auto &a_n_batch = a_neighbours.next();
-
-          for (auto b : a_n_batch) {
-            if (a < b) {
-              ds.intersect_neighbourhood(a, b, out);
-              for (auto c : out) {
-                if (b < c) {
-                  triangles += 1;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-//    }
-    auto end = chrono::steady_clock::now();
-
-    size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
-    run_times.push_back(microseconds);
-    reporter.add_repetition(TRIANGLE_COUNTING, rep, microseconds);
-
-    cout << ".";
-    cout.flush();
-
-#ifdef DEBUG
-    check_triangle_counting(triangles);
-#endif
-  }
-
-
-  double average = ((double) sum(run_times)) / (double) run_times.size() * 1000;
-  cout << endl << "Triangle counting run in average in " << average << " milliseconds " << endl;
-  cout << "Counted " << triangles << " triangles." << endl;
-}
-
 EdgeList<weighted_edge_t> Driver::read_insert_dataset() {
   EdgeList<weighted_edge_t> edge_list;
   if (config.weighted_graph_source) {
@@ -852,32 +670,17 @@ SortedCSRDataSource Driver::read_base_dataset() {
   return out;
 }
 
+// TODO remove
 ContigiousBlockIterator &Driver::getIter(TopologyInterface &ds) {
-  if (typeid(ds) == typeid(BlockedLinkedListAdjacencyLists) || typeid(ds) == typeid(BlockedSkipListAdjacencyLists)) {
-    blockIterators.push_back(BlockedBatchedEdgeIterator());
-    return blockIterators[blockIterators.size() - 1];
-  } else if (typeid(ds) == typeid(MallocAdjacencyLists) || typeid(ds) == typeid(VectorAdjacencyLists)
-             || typeid(ds) == typeid(CSRMallocAdjacencyLists) || typeid(ds) == typeid(CSR)) {
-    vectorIterators.push_back(VectorBatchedEdgeIterator());
-    return vectorIterators[vectorIterators.size() - 1];
-  } else {
     throw NotImplemented();
-  }
 }
 
+// TODO remove
 EdgeIterator &Driver::getSingleEdgeIter(TopologyInterface &ds) {
-  if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
-    filteredBlockIterators.push_back(FilteredVectorIterator());
-    return filteredBlockIterators[filteredBlockIterators.size() - 1];
-  } else if (typeid(ds) == typeid(SnapshotTransaction)) {
-    versionedIterators.push_back(VersionedEdgeIterator(
-            dynamic_cast<VersioningBlockedSkipListAdjacencyList &>(*dynamic_cast<SnapshotTransaction &>(ds).raw_ds())));
-    return versionedIterators[versionedIterators.size() - 1];
-  } else {
     throw NotImplemented();
-  }
 }
 
+// TODO remove
 void
 Driver::validate_graph_structure(TopologyInterface &ds, SortedCSRDataSource &base, EdgeList<weighted_edge_t> &inserts) {
   cout << "Validating data structure." << endl;
@@ -914,26 +717,7 @@ Driver::validate_graph_structure(TopologyInterface &ds, SortedCSRDataSource &bas
 
 
 unordered_set<dst_t> Driver::get_neighbours(TopologyInterface &ds, vertex_id_t v) {
-  unordered_set<dst_t> neighbours;
-
-  if (typeid(ds) == typeid(HashSetSimulatorAdjacencyList)) {
-    auto &ns = getSingleEdgeIter(ds);
-    ds.neighbourhood(v, ns);
-    while (ns.has_next()) {
-      neighbours.insert(ns.next());
-    }
-  } else {
-    auto &ns = getIter(ds);
-    ds.neighbourhood(v, ns);
-    while (ns.has_next()) {
-      auto block = ns.next();
-
-      for (auto e : block) {
-        neighbours.insert(e);
-      }
-    }
-  }
-  return neighbours;
+  throw NotImplemented();
 }
 
 void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, size_t expected_edge_count) {

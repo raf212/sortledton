@@ -185,15 +185,7 @@ vector<pair<Experiments, vector<string>>> Config::parse_experiments(string arg) 
 }
 
 const unordered_map<DataStructures, string> Config::DATA_STRUCTURE_MAPPING {
-        {CSR_DS, "csr"},
-        {VECTOR_ADJACENCY_LIST, "vectorAL"},
-        {MALLOC_ADJACENCY_LIST, "mallocAL"},
-        {CSR_MALLOC_ADJACENCY_LIST, "csrMallocAL"},
-        {BLOCKED_LINKED_LIST_AL, "bllAL"},
-        {BLOCKED_SKIP_LIST_AL, "bslAL"},
-        {HASH_SET_SIMULATOR_AL, "hsAL"},
-        {HASH_SET_AL, "rhAL"},
-        {VERSIONED, "v"}
+  {VERSIONED, "v"}
 };
 
 const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING{
@@ -202,7 +194,6 @@ const unordered_map<Experiments, string> Config::EXPERIMENT_MAPPING{
         {DELETE, "delete"},
         {BFS,    "bfs"},
         {PR, "pr"},
-        {TRIANGLE_COUNTING, "triangle"},
         {STORAGE, "storage"},
         {GC, "gc"},
         {GAPBS_BFS, "bsbfs"},
