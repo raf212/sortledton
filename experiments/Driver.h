@@ -12,12 +12,8 @@
 #include <versioning/TransactionManager.h>
 #include <versioning/VersionedTopologyInterface.h>
 #include <versioning/VersionedEdgeIterator.h>
-#include "data-structures/adjacency-lists/BlockedBatchedEdgeIterator.h"
-#include "data-structures/adjacency-lists/VectorBatchedEdgeIterator.h"
 #include "Reporter.h"
 #include "Configuration.h"
-
-#include "data-structures/adjacency-lists/FilteredVectorIterator.h"
 
 namespace specialize {
     template <typename T>

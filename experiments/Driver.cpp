@@ -2,26 +2,24 @@
 // Created by per on 31.08.20.
 //
 
+#include "Driver.h"
+
 #include <memory>
 #include <iostream>
 #include <chrono>
 #include <random>
 #include <iomanip>
 #include <omp.h>
-
-#include <queue>
-#include <functional>
 #include <cassert>
 #include <thread>
 #include <atomic>
 #include <exception>
+
 #include <versioning/SnapshotTransaction.h>
 #include <versioning/TransactionManager.h>
 #include <versioning/VersioningBlockedSkipListAdjacencyList.h>
 #include <versioning/VersionedPropertyEdgeIterator.h>
-#include "Driver.h"
-#include "versioning/VersionedBlockedPropertyEdgeIterator.h"
-
+#include <versioning/VersionedBlockedPropertyEdgeIterator.h>
 #include "BFSSourceSelector.h"
 #include "Algorithms.h"
 
@@ -221,7 +219,6 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
         run_gc_experiment(tm, *versioned_data_structure, inserts_run, inserts);
         break;
       }
-
       case (STORAGE): {
         show_storage_sizes(ds_name, *data_structure);
         if (versioned_data_structure != nullptr) {
@@ -322,7 +319,6 @@ void Driver::run_analytics(Experiments ex, TopologyInterface &ds, bool run_on_ra
 void
 Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood, bool aquire_locks, bool after_inserts,
                            bool gapbs) {
-  // TODO make option
   auto start_vertex = config.bfs_start_vertex();
   if (start_vertex == numeric_limits<vertex_id_t>::max()) {
     BFSSourceSelector ss(*this, config.base, ds);
@@ -368,28 +364,6 @@ Driver::run_bfs_experiment(TopologyInterface &ds, bool run_on_raw_neighbourhood,
 
 void Driver::load_base_dataset(TopologyInterface &ds, SortedCSRDataSource &base) {
   ds.bulkload(base);
-}
-
-void run_inserts(EdgeList<weighted_edge_t> &el, atomic_uint &insert_position, TopologyInterface &ds, bool undirected) {
-  // Effects the batch size on performance have never been tested. I tested it only for the versioned data structure.
-  // But it is likely that it applies for this case as well, in particular, since jobs here are smaller/take less time.
-  const uint batch_size = 3000;
-
-  const uint total_work = el.edges.size();
-  while (insert_position.load() < total_work) {
-    int work = insert_position.fetch_add(batch_size);
-    int work_end = min(total_work, work + batch_size);
-
-    while (work < work_end) {
-      auto e = el.edges[work];
-      if (undirected) {
-        edge_t opposite = {e.dst, e.src};
-        ds.insert_safe(opposite);
-      }
-      ds.insert_safe({e.src, e.dst});
-      work++;
-    }
-  }
 }
 
 void
@@ -859,7 +833,6 @@ void Driver::check_deletions(TopologyInterface &ds, EdgeList<weighted_edge_t> &e
       assert(!ds.has_edge(opposite));
     }
   }
-
-  // TODO check sizes after deletions
+   // TODO check sizes after deletions
 }
 
