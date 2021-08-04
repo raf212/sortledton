@@ -46,7 +46,6 @@ public:
 
     Config config;
 
-    // TODO organize as in BFS start vertex
     vertex_id_t sssp_start_vertex(TopologyInterface& ds);
 
 private:
@@ -61,7 +60,6 @@ private:
 
     void load_base_dataset(TopologyInterface& ds, SortedCSRDataSource& base);
 
-    void run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList<weighted_edge_t> &el, size_t base_edge_count);
     void run_insert_experiment_one_by_one(TransactionManager &tm, VersionedTopologyInterface *ds, EdgeList<weighted_edge_t> &el,
                                           size_t base_edge_count);
     void check_insert(TopologyInterface& ds, EdgeList<weighted_edge_t>& el, size_t base_edge_count);

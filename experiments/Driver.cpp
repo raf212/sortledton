@@ -48,8 +48,7 @@ void Driver::run() {
   cout << "Vertices" << base.vertex_count() << endl;
 
   EdgeList<weighted_edge_t> inserts;
-  if (config.experiment_set.find(INSERT) != config.experiment_set.end() ||
-      config.experiment_set.find(INSERT_TRANSACTIONS) != config.experiment_set.end()) {
+  if (config.experiment_set.find(INSERT_TRANSACTIONS) != config.experiment_set.end()) {
     cout << "Reading insert dataset " << config.insertions.path << endl;
     inserts = read_insert_dataset();
   }
@@ -184,11 +183,6 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
         if (versioned_data_structure != nullptr) {
           tm.transactionCompleted(transaction);
         }
-        break;
-      }
-      case (INSERT): {
-        run_insert_experiment(tm, *data_structure, inserts, expected_edge_count_after_inserts);
-        inserts_run = true;
         break;
       }
       case (INSERT_TRANSACTIONS): {
@@ -457,53 +451,6 @@ run_inserts_in_transactions(bool weighted, size_t thread_id, TransactionManager 
   tm.deregister_thread(thread_id);
 }
 
-void
-Driver::run_insert_experiment(TransactionManager &tm, TopologyInterface &ds, EdgeList<weighted_edge_t> &el,
-                              size_t expected_edge_count) {
-  cout << "Running insert experiment inserting " << el.edges.size() << " edges." << endl;
-  uint threads = config.insert_threads;
-
-  auto start = chrono::steady_clock::now();
-  if (threads == 1) {
-    for (auto e : el.edges) {
-      if (config.undirected) {
-        edge_t opposite = {e.dst, e.src};
-        ds.insert_edge(opposite);
-      }
-      ds.insert_edge({e.src, e.dst});
-    }
-  } else {
-    atomic<uint> insert_index(0);
-    vector<thread> ts;
-
-    if (typeid(ds) == typeid(SnapshotTransaction)) {
-      throw ConfigurationError("Cannot run batch insertions with transactions as off yet.");
-    }
-
-    for (uint i = 0; i < threads; i++) {
-      ts.emplace_back(run_inserts, ref(el), ref(insert_index), ref(ds), config.undirected);
-    }
-
-    for (auto &t : ts) {
-      t.join();
-    }
-  }
-  if (typeid(ds) == typeid(SnapshotTransaction)) {
-    dynamic_cast<SnapshotTransaction &>(ds).execute();
-    tm.transactionCompleted(dynamic_cast<SnapshotTransaction &>(ds));
-  }
-  auto end = chrono::steady_clock::now();
-
-  size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
-  reporter.add_repetition(INSERT, 0, microseconds);
-
-  cout << "Inserting took: " << microseconds / 1000 << " milliseconds " << endl;
-  cout << "This is " << ((float) el.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
-#if defined(DEBUG) && CHECKINSERT
-  check_insert(ds, el, expected_edge_count);
-#endif
-}
-
 void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedTopologyInterface *ds,
                                               EdgeList<weighted_edge_t> &el,
                                               size_t expected_edge_count) {
@@ -558,7 +505,7 @@ void Driver::run_insert_experiment_one_by_one(TransactionManager &tm, VersionedT
   auto end = chrono::steady_clock::now();
 
   size_t microseconds = chrono::duration_cast<chrono::microseconds>(end - start).count();
-  reporter.add_repetition(INSERT, 0, microseconds);
+  reporter.add_repetition(INSERT_TRANSACTIONS, 0, microseconds);
 
   cout << "Inserting took: " << microseconds / 1000 << " milliseconds " << endl;
   cout << "This is " << ((float) el.edges.size() / ((float) microseconds / 1000000.0)) << " edges per second" << endl;
@@ -779,7 +726,6 @@ void Driver::check_insert(TopologyInterface &ds, EdgeList<weighted_edge_t> &el, 
     size_t size;
     f.read((char *) &size, sizeof(size));
 
-    // TODO reactivate
     assert(size == actual_sizes.size());
 
     vertex_id_t id;
