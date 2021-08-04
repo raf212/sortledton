@@ -6,7 +6,6 @@
 #include <cassert>
 #include <iomanip>
 #include "BlockedSkipListAdjacencyLists.h"
-#include "adjacency-lists/BlockedBatchedEdgeIterator.h"
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
@@ -23,17 +22,6 @@
   } else {\
     start_b++;\
   }\
-}
-
-
-void BlockedSkipListAdjacencyLists::neighbourhood_p(vertex_id_t src, BatchedEdgeIterator &iter) {
-  switch (get_set_type(src)) {
-    case SKIP_LIST:
-      return static_cast<BlockedBatchedEdgeIterator &>(iter).initialize((SkipListHeader *) adjacency_index[2 * src]);
-    case SINGLE_BLOCK:
-      return static_cast<BlockedBatchedEdgeIterator &>(iter).initialize((dst_t *) adjacency_index[2 * src],
-                                                                        (size_t) adjacency_index[2 * src + 1]);
-  }
 }
 
 void BlockedSkipListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {

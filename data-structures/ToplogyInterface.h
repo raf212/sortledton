@@ -5,8 +5,6 @@
 #include <data-src/SortedCSRDataSource.h>
 #include <data_types.h>
 #include <utils/NotImplemented.h>
-#include "adjacency-lists/BatchedEdgeIterator.h"
-#include "adjacency-lists/EdgeIterator.h"
 
 class VersionedBlockedEdgeIterator;
 
@@ -62,10 +60,6 @@ public:
     virtual size_t neighbourhood_size(vertex_id_t src);
     virtual size_t neighbourhood_size_p(vertex_id_t src) = 0;
 
-    virtual void neighbourhood(vertex_id_t src, BatchedEdgeIterator& iter);
-    virtual void neighbourhood_p(vertex_id_t src, BatchedEdgeIterator& iter) = 0;
-    virtual void neighbourhood(vertex_id_t src, EdgeIterator& iter);
-    virtual void neighbourhood_p(vertex_id_t src, EdgeIterator& iter) = 0;
     virtual VersionedBlockedEdgeIterator neighbourhood_blocked_p(vertex_id_t src);
     virtual void* raw_neighbourhood(vertex_id_t src) = 0;
     virtual void intersect_neighbourhood(vertex_id_t a, vertex_id_t b, vector<dst_t>& out);

@@ -16,8 +16,6 @@ vector<double> LCC::lcc_merge_sort(TopologyInterface &ds) {
     throw ConfigurationError("Cannot run sort merge lcc on any unsorted data structure");
   }
 
-  auto raw_ds = dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(dynamic_cast<SnapshotTransaction &>(ds).raw_ds());
-
   auto N = ds.max_physical_vertex();
 
   unique_ptr<atomic<uint32_t>[]> p(new atomic<uint32_t>[N]());

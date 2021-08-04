@@ -228,13 +228,6 @@ void SnapshotTransaction::clear() {
   edges_to_delete.clear();
 }
 
-void SnapshotTransaction::neighbourhood_p(vertex_id_t src, EdgeIterator &iter) {
-  if (write_only) {
-    throw IllegalOperation("Cannot read with a WriteOnly Transaction");
-  }
-  ds->neighbourhood_version_p(src, iter, read_version);
-}
-
 bool SnapshotTransaction::has_vertex_p(vertex_id_t v) {
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
@@ -328,20 +321,6 @@ bool SnapshotTransaction::insert_edge(edge_t edge, char *properties, size_t prop
   locks_to_aquire.push_back(edge.src);
   edges_to_insert.emplace_back(edge, properties, property_size);
   return false;
-}
-
-void SnapshotTransaction::neighbourhood_with_properties(vertex_id_t src, VersionedPropertyEdgeIterator &iter) {
-  if (write_only) {
-    throw IllegalOperation("Cannot read with a WriteOnly Transaction");
-  }
-  ds->neighbourhood_version_with_properties(src, iter, read_version);
-}
-
-void SnapshotTransaction::neighbourhood_with_properties_p(vertex_id_t src, VersionedPropertyEdgeIterator &iter) {
-  if (read_version == NO_TRANSACTION) {
-    read_version = tm->draw_timestamp(false);
-  }
-  ds->neighbourhood_version_with_properties_p(src, iter, read_version);
 }
 
 VersionedBlockedEdgeIterator SnapshotTransaction::neighbourhood_blocked_p(vertex_id_t src) {

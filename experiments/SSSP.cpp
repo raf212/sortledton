@@ -4,7 +4,6 @@
 
 #include "SSSP.h"
 #include <third-party/gapbs.h>
-#include <versioning/VersionedPropertyEdgeIterator.h>
 #include "../versioning/VersionedBlockedPropertyEdgeIterator.h"
 #include "Algorithms.h"
 
@@ -69,9 +68,6 @@ vector<weight_t> SSSP::gabbs_sssp(TopologyInterface &ds, uint64_t physical_sourc
   {
     vector<vector<vertex_id_t> > local_bins(0);
     size_t iter = 0;
-
-    sortledton_property_iterator iterator(
-            *dynamic_cast<VersioningBlockedSkipListAdjacencyList *>(dynamic_cast<SnapshotTransaction &>(ds).raw_ds()));
 
     while (shared_indexes[iter & 1] != kMaxBin) {
       size_t &curr_bin_index = shared_indexes[iter & 1];

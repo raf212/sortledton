@@ -11,7 +11,6 @@
 #include <data-src/EdgeList.h>
 #include <versioning/TransactionManager.h>
 #include <versioning/VersionedTopologyInterface.h>
-#include <versioning/VersionedEdgeIterator.h>
 #include "Reporter.h"
 #include "Configuration.h"
 

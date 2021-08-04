@@ -75,8 +75,6 @@ public:
 
     size_t neighbourhood_size_p(vertex_id_t src) override;
 
-    void neighbourhood_p(vertex_id_t src, BatchedEdgeIterator &iter) override;
-    void neighbourhood_p(vertex_id_t src, EdgeIterator &iter) override { throw NotImplemented(); };
     void* raw_neighbourhood(vertex_id_t src) override;
 
     void intersect_neighbourhood_p(vertex_id_t a, vertex_id_t b, vector<dst_t> &out) override {

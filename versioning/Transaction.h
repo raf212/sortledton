@@ -28,8 +28,6 @@ public :
     virtual bool get_weight_p(edge_t edge, char* out) = 0;
 
     // TODO lower to topology interface
-    virtual void neighbourhood_with_properties(vertex_id_t src, VersionedPropertyEdgeIterator& iter) = 0;
-    virtual void neighbourhood_with_properties_p(vertex_id_t src, VersionedPropertyEdgeIterator& iter) = 0;
     virtual VersionedBlockedPropertyEdgeIterator neighbourhood_with_properties_blocked_p(vertex_id_t src) = 0;
 
     virtual version_t get_version() const = 0;

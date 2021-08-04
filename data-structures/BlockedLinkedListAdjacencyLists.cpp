@@ -6,7 +6,6 @@
 #include <cstring>
 
 #include "BlockedLinkedListAdjacencyLists.h"
-#include <data-structures/adjacency-lists/BlockedBatchedEdgeIterator.h>
 #include <cassert>
 
 void BlockedLinkedListAdjacencyLists::bulkload(const SortedCSRDataSource &src) {
@@ -132,10 +131,6 @@ BlockHeader *BlockedLinkedListAdjacencyLists::write_to_blocks(const dst_t *start
 
     return first_block;
   }
-}
-
-void BlockedLinkedListAdjacencyLists::neighbourhood_p(vertex_id_t src, BatchedEdgeIterator &iter) {
-  throw NotImplemented();
 }
 
 bool BlockedLinkedListAdjacencyLists::insert_edge(edge_t edge) {

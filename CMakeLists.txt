@@ -22,9 +22,6 @@ include_directories(data-structures)
 set(SRC
         data-structures/ToplogyInterface.cpp
         data-structures/ToplogyInterface.h
-        data-structures/adjacency-lists/EdgeBatch.cpp
-        data-structures/adjacency-lists/BatchedEdgeIterator.cpp
-        data-structures/adjacency-lists/ContiguousEdgeBatch.cpp
         data-src/EdgeList.cpp data-src/EdgeList.h
         data-src/SortedCSRDataSource.cpp
         data-src/SortedCSRDataSource.h
@@ -41,17 +38,11 @@ set(SRC
         data-structures/memory_pools/BlockMemoryPool.h
         data-structures/memory_pools/OutOfMemoryError.cpp
         data-structures/memory_pools/OutOfMemoryError.h
-        data-structures/adjacency-lists/BlockedBatchedEdgeIterator.cpp
-        data-structures/adjacency-lists/BlockedBatchedEdgeIterator.h
-        data-structures/adjacency-lists/ContigiousBlockIterator.cpp
         utils/robin_hood.h
-        data-structures/adjacency-lists/ContigiousBlockIterator.h
         data-structures/BlockedSkipListAdjacencyLists.cpp
         data-structures/BlockedSkipListAdjacencyLists.h
         experiments/BFSSourceSelector.cpp experiments/BFSSourceSelector.h
         experiments/Algorithms.cpp experiments/Algorithms.h
-        data-structures/adjacency-lists/EdgeIterator.cpp
-        data-structures/adjacency-lists/EdgeIterator.h
         experiments/PageRank.cpp experiments/PageRank.h
         data_types.cpp
         versioning/SizeVersionChainEntry.cpp versioning/SizeVersionChainEntry.h
@@ -64,12 +55,11 @@ set(SRC
         versioning/TransactionManager.cpp versioning/TransactionManager.h
         versioning/VertexExistsPrecondition.cpp versioning/VertexExistsPrecondition.h
         versioning/EdgeDoesNotExistsPrecondition.cpp versioning/EdgeDoesNotExistsPrecondition.h
-        versioning/VersionedEdgeIterator.cpp versioning/VersionedEdgeIterator.h experiments/GAPBSAlgorithms.cpp experiments/GAPBSAlgorithms.h
+        experiments/GAPBSAlgorithms.cpp experiments/GAPBSAlgorithms.h
         third-party/gapbs.h
         versioning/VertexIndex.cpp
         versioning/VertexIndex.h utils/pointerTagging.h
-        versioning/EdgeBlock.cpp versioning/EdgeBlock.h versioning/VersionedPropertyEdgeIterator.cpp
-        versioning/VersionedPropertyEdgeIterator.cpp versioning/VersionedPropertyEdgeIterator.h
+        versioning/EdgeBlock.cpp versioning/EdgeBlock.h
         versioning/AdjacencySetTypes.h
         experiments/WCC.cpp experiments/WCC.h
         experiments/CDLP.cpp experiments/CDLP.h

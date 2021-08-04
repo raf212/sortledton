@@ -18,7 +18,6 @@
 #include <versioning/SnapshotTransaction.h>
 #include <versioning/TransactionManager.h>
 #include <versioning/VersioningBlockedSkipListAdjacencyList.h>
-#include <versioning/VersionedPropertyEdgeIterator.h>
 #include <versioning/VersionedBlockedPropertyEdgeIterator.h>
 #include "BFSSourceSelector.h"
 #include "Algorithms.h"

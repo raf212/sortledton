@@ -13,8 +13,6 @@
 #include <functional>
 #include "BlockedSkipListAdjacencyLists.h"
 #include "SizeVersionChainEntry.h"
-#include "VersionedEdgeIterator.h"
-#include "VersionedPropertyEdgeIterator.h"
 #include "VersionedBlockedPropertyEdgeIterator.h"
 #include "VersionedBlockedEdgeIterator.h"
 #include "EdgeBlock.h"
@@ -1121,17 +1119,6 @@ dst_t VersioningBlockedSkipListAdjacencyList::get_min_from_skip_list_header(VSki
   return make_unversioned(get_data_pointer(header)[0]);
 }
 
-void VersioningBlockedSkipListAdjacencyList::neighbourhood_version_p(vertex_id_t src, EdgeIterator &iter,
-                                                                     version_t version) {
-  bool is_versioned = size_is_versioned(src);
-  auto set_type = get_set_type(src, version);
-  dynamic_cast<VersionedEdgeIterator &>(iter).initialize(src, set_type,
-                                                         raw_neighbourhood_version(src, version),
-                                                         set_type == VSINGLE_BLOCK ? get<1>(
-                                                                 adjacency_index.get_block_size(src)) : 0, version,
-                                                         is_versioned);
-}
-
 VersioningBlockedSkipListAdjacencyList::~VersioningBlockedSkipListAdjacencyList() {
   gc_all();  // Make the data structure completely unversioned.
 
@@ -1264,26 +1251,6 @@ VSkipListHeader *VersioningBlockedSkipListAdjacencyList::new_skip_list_block() {
   h->properties = 0;
   h->max = 0;
   return h;
-}
-
-void VersioningBlockedSkipListAdjacencyList::neighbourhood_version_with_properties_p(vertex_id_t src,
-                                                                                     VersionedPropertyEdgeIterator &iter,
-                                                                                     version_t version) {
-  assert(property_size != 0 && "Cannot get neighbourhood with properties from a adjacency set with no properties.");
-  bool is_versioned = size_is_versioned(src);
-  auto set_type = get_set_type(src, version);
-  void *set = raw_neighbourhood_version(src, version);
-
-  auto size = 0;
-  char *properties = nullptr;
-  if (set_type == VSINGLE_BLOCK) {
-    auto[capacity, s, pc, _] = adjacency_index.get_block_size(src);
-    size = s;
-    auto eb = EdgeBlock::from_single_block((dst_t *) set, capacity, s, pc, property_size);
-    properties = eb.properties_start();
-  }
-
-  iter.initialize(src, set_type, set, properties, block_size, size, version, is_versioned);
 }
 
 size_t VersioningBlockedSkipListAdjacencyList::get_property_size() {
