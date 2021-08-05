@@ -22,7 +22,7 @@
 #include <vector>
 
 #include <data-structures/ToplogyInterface.h>
-#include "Driver.h"
+#include "internal-driver/Driver.h"
 
 using namespace std;
 

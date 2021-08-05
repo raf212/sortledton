@@ -5,7 +5,7 @@
 #ifndef LIVE_GRAPH_TWO_WCC_H
 #define LIVE_GRAPH_TWO_WCC_H
 
-#include "Driver.h"
+#include "internal-driver/Driver.h"
 
 class WCC {
 public:

@@ -7,7 +7,7 @@
 
 
 #include <data-structures/ToplogyInterface.h>
-#include "Driver.h"
+#include "internal-driver/Driver.h"
 #include "Configuration.h"
 
 class BFSSourceSelector {

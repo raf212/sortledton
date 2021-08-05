@@ -8,7 +8,7 @@
 
 #include <data_types.h>
 #include <ToplogyInterface.h>
-#include "Driver.h"
+#include "internal-driver/Driver.h"
 
 class LCC {
 public:

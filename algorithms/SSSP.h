@@ -5,7 +5,7 @@
 #ifndef LIVE_GRAPH_TWO_SSSP_H
 #define LIVE_GRAPH_TWO_SSSP_H
 
-#include "Driver.h"
+#include "internal-driver/Driver.h"
 #include <optional>
 
 class SSSP {

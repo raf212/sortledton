@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#include "Driver.h"
+#include "internal-driver/Driver.h"
 #include <data-structures/ToplogyInterface.h>
 
 class PageRank {

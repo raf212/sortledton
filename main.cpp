@@ -1,6 +1,6 @@
 #include <iostream>
-#include <experiments/Driver.h>
-#include "experiments/Configuration.h"
+#include "internal-driver/Driver.h"
+#include "internal-driver/Configuration.h"
 #include "tbb/scalable_allocator.h"
 
 int main(int argc, char** argv) {

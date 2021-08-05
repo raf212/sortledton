@@ -4,7 +4,7 @@
 
 #include "BFSSourceSelector.h"
 
-#include "Algorithms.h"
+#include "algorithms/Algorithms.h"
 
 
 const string BFSSourceSelector::SOURCE_FOLDER =  "/home/fuchs/graph-two-bfs-sources/";

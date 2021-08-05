@@ -10,7 +10,7 @@
 
 #include <data_types.h>
 #include "GAPBSAlgorithms.h"
-#include "Driver.h"
+#include "internal-driver/Driver.h"
 #include "WCC.h"
 #include "CDLP.h"
 #include "SSSP.h"

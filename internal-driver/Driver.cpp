@@ -2,7 +2,7 @@
 // Created by per on 31.08.20.
 //
 
-#include "Driver.h"
+#include "internal-driver/Driver.h"
 
 #include <memory>
 #include <iostream>
@@ -20,7 +20,7 @@
 #include <versioning/VersioningBlockedSkipListAdjacencyList.h>
 #include <versioning/VersionedBlockedPropertyEdgeIterator.h>
 #include "BFSSourceSelector.h"
-#include "Algorithms.h"
+#include "algorithms/Algorithms.h"
 
 
 #define CHECKINSERT 1

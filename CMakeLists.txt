@@ -27,14 +27,14 @@ set(SRC
         data-src/SortedCSRDataSource.h
         data-src/DataSource.cpp data-src/DataSource.h
         utils/NotImplemented.cpp utils/NotImplemented.h
-        experiments/Driver.cpp experiments/Driver.h
-        experiments/Configuration.cpp experiments/Configuration.h
+        internal-driver/Driver.cpp internal-driver/Driver.h
+        internal-driver/Configuration.cpp internal-driver/Configuration.h
         utils/utils.cpp utils/utils.h
         data-src/IOException.cpp data-src/IOException.h
-        experiments/Reporter.cpp experiments/Reporter.h
-        experiments/BFSSourceSelector.cpp experiments/BFSSourceSelector.h
-        experiments/Algorithms.cpp experiments/Algorithms.h
-        experiments/PageRank.cpp experiments/PageRank.h
+        internal-driver/Reporter.cpp internal-driver/Reporter.h
+        internal-driver/BFSSourceSelector.cpp internal-driver/BFSSourceSelector.h
+        algorithms/Algorithms.cpp algorithms/Algorithms.h
+        algorithms/PageRank.cpp algorithms/PageRank.h
         data_types.cpp
         versioning/SizeVersionChainEntry.cpp versioning/SizeVersionChainEntry.h
         versioning/VersionedTopologyInterface.cpp versioning/VersionedTopologyInterface.h
@@ -46,17 +46,18 @@ set(SRC
         versioning/TransactionManager.cpp versioning/TransactionManager.h
         versioning/VertexExistsPrecondition.cpp versioning/VertexExistsPrecondition.h
         versioning/EdgeDoesNotExistsPrecondition.cpp versioning/EdgeDoesNotExistsPrecondition.h
-        experiments/GAPBSAlgorithms.cpp experiments/GAPBSAlgorithms.h
+        algorithms/GAPBSAlgorithms.cpp algorithms/GAPBSAlgorithms.h
         third-party/gapbs.h
         versioning/VertexIndex.cpp
         versioning/VertexIndex.h utils/pointerTagging.h
         versioning/EdgeBlock.cpp versioning/EdgeBlock.h
         versioning/AdjacencySetTypes.h
-        experiments/WCC.cpp experiments/WCC.h
-        experiments/CDLP.cpp experiments/CDLP.h
-        experiments/SSSP.cpp experiments/SSSP.h experiments/LCC.cpp experiments/LCC.h
-        experiments/GraphalyticsProperties.cpp experiments/GraphalyticsProperties.h
-        experiments/Experiments.cpp experiments/Experiments.h
+        algorithms/WCC.cpp algorithms/WCC.h
+        algorithms/CDLP.cpp algorithms/CDLP.h
+        algorithms/SSSP.cpp algorithms/SSSP.h
+        algorithms/LCC.cpp algorithms/LCC.h
+        internal-driver/GraphalyticsProperties.cpp internal-driver/GraphalyticsProperties.h
+        internal-driver/Experiments.cpp internal-driver/Experiments.h
         versioning/VersionedBlockedEdgeIterator.cpp versioning/VersionedBlockedEdgeIterator.h
         versioning/memory_allocation/BlockProvider.cpp versioning/memory_allocation/BlockProvider.h
         versioning/EdgeVersionRecord.cpp versioning/EdgeVersionRecord.h
