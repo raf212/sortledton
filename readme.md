@@ -20,18 +20,25 @@ make sortledton
 
 ## Repository Structure
 
-* `data-structure/` the sortledton data structure
+* `data-structure/` the Sortledton data structure
 * `algorithms/`     the GAPBS algorithms
 * `internal-driver/` driver used for internal test runs - not used for the paper
 * `internal-driver/data-source` program used to generate binary graph data for the internal driver
 
 ## Usage in your own work
 
-TODO see Sortledton Driver
+```c++
+#include "data-structure/TransactionManager.h"
+#include "data-structure/VersioningBlockedSkipListAdjacencyLists.h"
 
-TODO move data_types to utils
-TODO move main to internal driver
-TODO delete lib
-TODO move LCC and CDLP to gfe driver?
+TransactionManager tm(/* maximal number of threads used*/);
+VersioningBlockedSkipListAdjacencyLists sortledton(/* Block size in edges*/ 512, /* Property size in bytes */ 8, tm);
 
-TODO check if analysis, build, bin, ... in Git
+SnapshotTransaction tx = tm.getSnapshotTransaction(sortledton, /* allow writing */ false);
+cout << "Vertices " << tx.vertex_count() << "Edges " << tx.edge_count() << endl;
+tm.transactionCompleted(tx);
+
+/* Find the interface of Sortledton within data-structure/Transaction.h  and more usage examples
+ * in the GFE Driver at `libraries/sortledton/sortledton_driver.cpp` */
+
+```
