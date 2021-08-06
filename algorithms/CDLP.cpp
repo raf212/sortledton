@@ -5,7 +5,7 @@
 #include "CDLP.h"
 #include "Algorithms.h"
 
-#include <versioning/VersionedBlockedEdgeIterator.h>
+#include <data-structure/VersionedBlockedEdgeIterator.h>
 
 
 vector<vertex_id_t> CDLP::teseo_cdlp(TopologyInterface &ds, uint64_t max_iterations) {

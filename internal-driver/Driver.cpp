@@ -15,10 +15,10 @@
 #include <atomic>
 #include <exception>
 
-#include <versioning/SnapshotTransaction.h>
-#include <versioning/TransactionManager.h>
-#include <versioning/VersioningBlockedSkipListAdjacencyList.h>
-#include <versioning/VersionedBlockedPropertyEdgeIterator.h>
+#include <data-structure/SnapshotTransaction.h>
+#include <data-structure/TransactionManager.h>
+#include <data-structure/VersioningBlockedSkipListAdjacencyList.h>
+#include <data-structure/VersionedBlockedPropertyEdgeIterator.h>
 #include "BFSSourceSelector.h"
 #include "algorithms/Algorithms.h"
 

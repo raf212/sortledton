@@ -6,7 +6,7 @@
 #define LIVE_GRAPH_TWO_EDGEVERSIONRECORD_H
 
 
-#include <data_types.h>
+#include <data-structure/data_types.h>
 
 enum EdgeOperation{
     INSERTION,

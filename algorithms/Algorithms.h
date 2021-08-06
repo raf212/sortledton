@@ -10,7 +10,7 @@
 #include <chrono>
 #include <iostream>
 
-#include "data-structures/ToplogyInterface.h"
+#include "data-structure/ToplogyInterface.h"
 
 class Driver;
 

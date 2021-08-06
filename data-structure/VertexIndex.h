@@ -7,7 +7,6 @@
 
 #include <cassert>
 #include <cstdint>
-#include <data_types.h>
 #include <atomic>
 #include <optional>
 #include <vector>
@@ -19,10 +18,11 @@
 #include <tbb/concurrent_queue.h>
 #include <mutex>
 
+#include "data-structure/data_types.h"
 #include "SizeVersionChainEntry.h"
 #include "AdjacencySetTypes.h"
-#include <utils/pointerTagging.h>
-#include "../third-party/RWSpinLock.h"
+#include "utils/pointerTagging.h"
+#include "third-party/RWSpinLock.h"
 
 using namespace std;
 

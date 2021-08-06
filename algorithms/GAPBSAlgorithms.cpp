@@ -4,13 +4,13 @@
 
 #include <omp.h>
 
-#include <versioning/SnapshotTransaction.h>
-#include <versioning/VersioningBlockedSkipListAdjacencyList.h>
-#include "data-structures/ToplogyInterface.h"
+#include <data-structure/SnapshotTransaction.h>
+#include <data-structure/VersioningBlockedSkipListAdjacencyList.h>
+#include "data-structure/ToplogyInterface.h"
 #include "third-party/gapbs.h"
 #include "GAPBSAlgorithms.h"
 #include "Algorithms.h"
-#include <versioning/VersionedBlockedEdgeIterator.h>
+#include <data-structure/VersionedBlockedEdgeIterator.h>
 
 using namespace gapbs;
 

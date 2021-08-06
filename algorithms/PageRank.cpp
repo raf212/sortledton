@@ -4,7 +4,7 @@
 
 #include "PageRank.h"
 #include <third-party/gapbs.h>
-#include <versioning/VersionedBlockedEdgeIterator.h>
+#include <data-structure/VersionedBlockedEdgeIterator.h>
 #include "Algorithms.h"
 
 vector<pair<vertex_id_t, double>>

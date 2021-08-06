@@ -21,7 +21,7 @@
 #include <cstdint>
 #include <vector>
 
-#include <data-structures/ToplogyInterface.h>
+#include "data-structure/ToplogyInterface.h"
 #include "internal-driver/Driver.h"
 
 using namespace std;

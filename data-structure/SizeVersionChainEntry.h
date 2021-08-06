@@ -5,7 +5,7 @@
 #ifndef LIVE_GRAPH_TWO_SIZEVERSIONCHAINENTRY_H
 #define LIVE_GRAPH_TWO_SIZEVERSIONCHAINENTRY_H
 
-#include <data_types.h>
+#include <data-structure/data_types.h>
 
 class SizeVersionChainEntry {
 public:

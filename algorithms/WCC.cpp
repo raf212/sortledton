@@ -4,7 +4,7 @@
 
 #include "WCC.h"
 #include "Algorithms.h"
-#include <versioning/VersionedBlockedEdgeIterator.h>
+#include <data-structure/VersionedBlockedEdgeIterator.h>
 
 /*
 GAP Benchmark Suite

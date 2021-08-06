@@ -6,8 +6,8 @@
 #define LIVE_GRAPH_TWO_VERSIONEDTOPOLOGYINTERFACE_H
 
 #include <vector>
-#include <data_types.h>
-#include <data-src/SortedCSRDataSource.h>
+#include "data_types.h"
+#include "internal-driver/data-src/SortedCSRDataSource.h"
 
 // TODO move to Topology interface.
 // TODO move property interface to the topology interface

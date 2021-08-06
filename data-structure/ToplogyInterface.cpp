@@ -5,7 +5,7 @@
 #include "ToplogyInterface.h"
 #include <iostream>
 
-#include <versioning/VersionedBlockedEdgeIterator.h>
+#include <data-structure/VersionedBlockedEdgeIterator.h>
 
 TopologyInterface::~TopologyInterface() {
 }

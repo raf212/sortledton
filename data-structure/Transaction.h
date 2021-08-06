@@ -5,9 +5,9 @@
 #ifndef LIVE_GRAPH_TWO_TRANSACTION_H
 #define LIVE_GRAPH_TWO_TRANSACTION_H
 
-#include <data_types.h>
-#include <utils/NotImplemented.h>
-#include <data-structures/ToplogyInterface.h>
+#include "data_types.h"
+#include "utils/NotImplemented.h"
+#include "ToplogyInterface.h"
 #include "Precondition.h"
 
 class VersionedPropertyEdgeIterator;

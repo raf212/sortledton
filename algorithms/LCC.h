@@ -6,8 +6,8 @@
 #define LIVE_GRAPH_TWO_LCC_H
 
 
-#include <data_types.h>
-#include <ToplogyInterface.h>
+#include "data-structure/data_types.h"
+#include "data-structure/ToplogyInterface.h"
 #include "internal-driver/Driver.h"
 
 class LCC {

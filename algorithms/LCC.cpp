@@ -4,7 +4,7 @@
 
 #include "LCC.h"
 #include "Algorithms.h"
-#include <versioning/VersionedBlockedEdgeIterator.h>
+#include <data-structure/VersionedBlockedEdgeIterator.h>
 
 vector<pair<vertex_id_t, double>> LCC::lcc(Driver &driver, TopologyInterface &ds) {
   auto lcc_values = lcc_merge_sort(ds);

@@ -11,8 +11,8 @@
 #include <atomic>
 #include <forward_list>
 #include <utils/NotImplemented.h>
-#include <versioning/TransactionManager.h>
-#include <versioning/SizeVersionChainEntry.h>
+#include <data-structure/TransactionManager.h>
+#include <data-structure/SizeVersionChainEntry.h>
 #include "VersionedTopologyInterface.h"
 #include "memory_allocation/BlockProvider.h"
 

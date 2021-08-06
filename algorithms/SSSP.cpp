@@ -3,8 +3,8 @@
 //
 
 #include "SSSP.h"
-#include <third-party/gapbs.h>
-#include "../versioning/VersionedBlockedPropertyEdgeIterator.h"
+#include "third-party/gapbs.h"
+#include "data-structure/VersionedBlockedPropertyEdgeIterator.h"
 #include "Algorithms.h"
 
 

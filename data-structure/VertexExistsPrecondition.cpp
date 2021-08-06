@@ -3,7 +3,7 @@
 //
 
 #include "VertexExistsPrecondition.h"
-#include "data-structures/ToplogyInterface.h"
+#include "data-structure/ToplogyInterface.h"
 
 vector<vertex_id_t> VertexExistsPrecondition::requires_vertex_locks() {
   return vector<vertex_id_t>(1, v);

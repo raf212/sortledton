@@ -2,7 +2,7 @@
 // Created by per on 23.12.20.
 //
 
-#include <versioning/VersioningBlockedSkipListAdjacencyList.h>
+#include <data-structure/VersioningBlockedSkipListAdjacencyList.h>
 
 #include <iostream>
 #include "SnapshotTransaction.h"

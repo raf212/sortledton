@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#include "data-structures/ToplogyInterface.h"
+#include "data-structure/ToplogyInterface.h"
 
 EdgeDoesNotExistsPrecondition::EdgeDoesNotExistsPrecondition(edge_t e) : e(e) {
 

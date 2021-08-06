@@ -7,10 +7,10 @@
 
 #include <memory>
 
-#include <data-structures/ToplogyInterface.h>
-#include <data-src/EdgeList.h>
-#include <versioning/TransactionManager.h>
-#include <versioning/VersionedTopologyInterface.h>
+#include "data-structure/ToplogyInterface.h"
+#include "data-src/EdgeList.h"
+#include <data-structure/TransactionManager.h>
+#include <data-structure/VersionedTopologyInterface.h>
 #include "Reporter.h"
 #include "Configuration.h"
 
