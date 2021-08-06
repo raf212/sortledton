@@ -20,7 +20,7 @@ include_directories(.)
 include_directories(data-structures)
 
 set(SRC
-        data-structure/ToplogyInterface.cpp data-structure/ToplogyInterface.h
+        data-structure/TopologyInterface.cpp data-structure/TopologyInterface.h
         internal-driver/data-src/EdgeList.cpp internal-driver/data-src/EdgeList.h
         internal-driver/data-src/SortedCSRDataSource.cpp internal-driver/data-src/SortedCSRDataSource.h
         internal-driver/data-src/DataSource.cpp internal-driver/data-src/DataSource.h

@@ -7,7 +7,7 @@
 #include <iostream>
 
 #include "VertexIndex.h"
-#include "ToplogyInterface.h"
+#include "TopologyInterface.h"
 
 vertex_id_t VertexIndex::logical_id(vertex_id_t v) {
   assert(v < high_water_mark);

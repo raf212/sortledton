@@ -2,7 +2,7 @@
 // Created by per on 31.08.20.
 //
 
-#include "ToplogyInterface.h"
+#include "TopologyInterface.h"
 #include <iostream>
 
 #include <data-structure/VersionedBlockedEdgeIterator.h>

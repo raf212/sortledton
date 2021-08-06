@@ -6,7 +6,7 @@
 #define LIVE_GRAPH_TWO_BFSSOURCESELECTOR_H
 
 
-#include "data-structure/ToplogyInterface.h"
+#include "data-structure/TopologyInterface.h"
 #include "internal-driver/Driver.h"
 #include "Configuration.h"
 

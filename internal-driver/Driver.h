@@ -7,7 +7,7 @@
 
 #include <memory>
 
-#include "data-structure/ToplogyInterface.h"
+#include "data-structure/TopologyInterface.h"
 #include "data-src/EdgeList.h"
 #include <data-structure/TransactionManager.h>
 #include <data-structure/VersionedTopologyInterface.h>

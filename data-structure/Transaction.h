@@ -7,7 +7,7 @@
 
 #include "data_types.h"
 #include "utils/NotImplemented.h"
-#include "ToplogyInterface.h"
+#include "TopologyInterface.h"
 #include "Precondition.h"
 
 class VersionedPropertyEdgeIterator;

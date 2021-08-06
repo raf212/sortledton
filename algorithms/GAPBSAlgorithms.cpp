@@ -6,7 +6,7 @@
 
 #include <data-structure/SnapshotTransaction.h>
 #include <data-structure/VersioningBlockedSkipListAdjacencyList.h>
-#include "data-structure/ToplogyInterface.h"
+#include "data-structure/TopologyInterface.h"
 #include "third-party/gapbs.h"
 #include "GAPBSAlgorithms.h"
 #include "Algorithms.h"

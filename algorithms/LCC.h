@@ -7,7 +7,7 @@
 
 
 #include "data-structure/data_types.h"
-#include "data-structure/ToplogyInterface.h"
+#include "data-structure/TopologyInterface.h"
 #include "internal-driver/Driver.h"
 
 class LCC {
