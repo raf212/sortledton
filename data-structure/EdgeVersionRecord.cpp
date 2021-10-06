@@ -268,7 +268,6 @@ void EdgeVersionRecord::assert_version_list(version_t min_version) {
   version_t last_timestamp = NO_TRANSACTION;
   while (i != chain->end()) {
     assert(i->v < last_timestamp);
-    assert(i->v >= min_version);
     last_timestamp = i->v;
     i++;
   }
