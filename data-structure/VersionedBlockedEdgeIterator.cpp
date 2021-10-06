@@ -56,7 +56,7 @@ VersionedBlockedEdgeIterator::~VersionedBlockedEdgeIterator() {
 
 void VersionedBlockedEdgeIterator::open() {
   opened = true;
-  ds->aquire_vertex_lock_shared_p(src);
+//  ds->aquire_vertex_lock_shared_p(src);
 }
 
 void VersionedBlockedEdgeIterator::close() {

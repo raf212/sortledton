@@ -495,7 +495,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_empty(edge_t edge, version_t
   eb.insert_edge(edge.dst, version, properties);
   adjacency_index.store_single_block(edge.src, eb.get_single_block_pointer(), MIN_BLOCK_SIZE, 2, 1, true);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-  assert_adjacency_list_consistency(edge.src, version);
+  assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
 #endif
 }
 
@@ -517,7 +517,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
                                    eb.get_property_count(), true);
 
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, version);
+    assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
 #endif
   } else {  // else resize block or add skip list
     if (block_capacity == block_size) {
@@ -547,7 +547,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
       adjacency_index.store_single_block(edge.src, new_eb.get_single_block_pointer(), new_eb.get_block_capacity(),
                                          new_eb.get_edges_and_versions(), new_eb.get_property_count(), true);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-      assert_adjacency_list_consistency(edge.src, version);
+      assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
 #endif
     }
   }
@@ -633,7 +633,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     }
 
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, version);
+    assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
 #endif
     // Recursive call of max depth 1.
     insert_skip_list(edge, version, properties);
@@ -643,11 +643,11 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
     eb.update_skip_list_header(block);
     update_adjacency_size(edge.src, false, version);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, version);
+    assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
 #endif
     balance_block(block, adjacency_list, edge.src);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, version);
+    assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
 #endif
   }
 }
@@ -1259,6 +1259,7 @@ size_t VersioningBlockedSkipListAdjacencyList::get_property_size() {
 
 VersionedBlockedEdgeIterator
 VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_p(vertex_id_t src, version_t version) {
+  aquire_vertex_lock_shared_p(src);  // Only released once the iterator is closed. Dirty!
   void *set = raw_neighbourhood_version(src, version);
 
   switch (get_set_type(src, version)) {
@@ -1279,6 +1280,7 @@ VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_p(vertex_i
 VersionedBlockedPropertyEdgeIterator
 VersioningBlockedSkipListAdjacencyList::neighbourhood_version_blocked_with_properties_p(vertex_id_t src,
                                                                                         version_t version) {
+  aquire_vertex_lock_shared_p(src);  // Only released once the iterator is closed. Dirty!
   void *set = raw_neighbourhood_version(src, version);
 
   switch (get_set_type(src, version)) {
@@ -1403,14 +1405,14 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
   }
 #endif
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-  assert_adjacency_list_consistency(edge.src, version);
+  assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
 #endif
   if (eb.has_space_to_delete_edge()) {
     bool ret = eb.delete_edge(edge.dst, version);
     adjacency_index.set_block_size(edge.src, eb.get_block_capacity(), eb.get_edges_and_versions(),
                                    eb.get_property_count(), true);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, version);
+    assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
 #endif
     return ret;
   } else {  // else resize block or add skip list
@@ -1442,7 +1444,7 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
       adjacency_index.store_single_block(edge.src, new_eb.get_single_block_pointer(), new_eb.get_block_capacity(),
                                          new_eb.get_edges_and_versions(), new_eb.get_property_count(), true);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-      assert_adjacency_list_consistency(edge.src, version);
+      assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
 #endif
       return ret;
     }
@@ -1462,7 +1464,7 @@ bool VersioningBlockedSkipListAdjacencyList::delete_skip_list(edge_t edge, versi
   eb.gc(tm.getMinActiveVersion());
   eb.update_skip_list_header(block);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-  assert_adjacency_list_consistency(edge.src, version);
+  assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
 #endif
 #endif
 
@@ -1504,7 +1506,7 @@ bool VersioningBlockedSkipListAdjacencyList::delete_skip_list(edge_t edge, versi
     }
 
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, version);
+    assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
 #endif
     // Recursive call of max depth 1.
     return delete_skip_list(edge, version);
@@ -1513,11 +1515,11 @@ bool VersioningBlockedSkipListAdjacencyList::delete_skip_list(edge_t edge, versi
     eb.update_skip_list_header(block);
     update_adjacency_size(edge.src, true, version);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, version);
+    assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
 #endif
     balance_block(block, adjacency_list, edge.src);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
-    assert_adjacency_list_consistency(edge.src, version);
+    assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion());
 #endif
     return ret;
   }
