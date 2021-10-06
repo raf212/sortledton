@@ -14,6 +14,9 @@ SnapshotTransaction::SnapshotTransaction(TransactionManager* tm, bool write_only
         : tm(tm), write_only(write_only), ds(ds) {
   if (!write_only) {
     read_version = tm->draw_timestamp(false);
+
+    max_physical_vertex_id = ds->max_physical_vertex();
+    number_of_vertices = ds->vertex_count_version(read_version);
   }
 }
 
@@ -132,7 +135,7 @@ size_t SnapshotTransaction::vertex_count() {
   if (write_only) {
     throw IllegalOperation("Cannot read with a WriteOnly Transaction");
   }
-  return ds->vertex_count_version(read_version);
+  return number_of_vertices;
 }
 
 bool SnapshotTransaction::insert_vertex(vertex_id_t v) {
@@ -314,7 +317,7 @@ void SnapshotTransaction::rollback() {
 }
 
 size_t SnapshotTransaction::max_physical_vertex() {
-  return ds->max_physical_vertex();
+  return max_physical_vertex_id;
 }
 
 bool SnapshotTransaction::insert_edge(edge_t edge, char *properties, size_t property_size) {
@@ -374,4 +377,7 @@ version_t SnapshotTransaction::get_commit_version() const {
 
 void SnapshotTransaction::set_read_timestamp(version_t version) {
   read_version = version;
+
+  max_physical_vertex_id = ds->max_physical_vertex();
+  number_of_vertices = ds->vertex_count_version(read_version);
 }

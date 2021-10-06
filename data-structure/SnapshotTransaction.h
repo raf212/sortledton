@@ -123,6 +123,14 @@ private:
     bool vertex_does_not_exists_semantic_activated = false;
     bool edge_does_not_exists_semantic_activated = false;
 
+    /**
+     * Used to store information on the number of vertices in the data structure at the time of transaction start.
+     *
+     * This is a unclean workaround as I did not implement vertex versioning.
+     */
+    size_t max_physical_vertex_id = 0;
+    size_t number_of_vertices = 0;
+
     vector<Precondition*> preconditions {};
     vector<vertex_id_t> locks_to_aquire {};
     vector<vertex_id_t> vertices_to_delete {};
