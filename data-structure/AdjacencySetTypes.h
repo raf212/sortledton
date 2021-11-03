@@ -21,6 +21,7 @@ struct VSkipListHeader {
     uint16_t size;  // Number of destinations stored in this block.
     uint16_t properties;
     dst_t max;
+    version_t min_version;  // The lowest version stored in the block or LAST_VERSION if the block is unversioned
     VSkipListHeader *next_levels[SKIP_LIST_LEVELS];  // a fixed number of pointers for all levels.
 
     char* property_start(size_t block_size, size_t property_size) {

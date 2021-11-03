@@ -5,6 +5,9 @@
 #include <iostream>
 #include "TransactionManager.h"
 
+#include "EdgeBlock.h"
+#include "VersioningBlockedSkipListAdjacencyList.h"
+
 thread_local size_t TransactionManager::thread_id = 0;
 
 SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopologyInterface* ti, bool write_only) {
@@ -62,6 +65,10 @@ TransactionManager::~TransactionManager() {
 }
 
 void TransactionManager::deregister_thread(size_t id) {
+  cout << "Thread " << id << " made " << calls_to_gc << " calls to gc." << endl;
+  cout << "Thread " << id << " wrote " << multiple_versions_counter << " version chains." << endl;
+  cout << "Thread " << id << " cleaned up " << pruned_multiple_versions << " version chains." << endl;
+  VersioningBlockedSkipListAdjacencyList::print_statistics(id);
   lock_guard<mutex> l(thread_registry_lock);
   if (!thread_id_in_use[id]) {
     throw IllegalOperation("Trying to deregister a thread that has not been registered");

@@ -39,6 +39,8 @@ public:
     size_t max_physical_vertex() override;
     size_t edge_count_version(version_t version) override;
 
+    static void print_statistics(int thread_id);
+
     // TODO vertex versioning not yet supported
     bool has_vertex_version(vertex_id_t v, version_t version) override;
     bool has_vertex_version_p(vertex_id_t v, version_t version) override;

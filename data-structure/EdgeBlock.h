@@ -13,6 +13,11 @@
 #include "AdjacencySetTypes.h"
 #include "EdgeVersionRecord.h"
 
+extern thread_local ulong calls_to_gc;
+extern thread_local ulong multiple_versions_counter;
+extern thread_local ulong pruned_multiple_versions;
+
+
 inline version_t inline_version(bool deletion, bool more_versions, version_t version) {
   if (more_versions) {
     version |= MORE_VERSION_MASK;
@@ -119,6 +124,7 @@ public:
         edges_and_versions += 2;
         this->properties += 1;
       } else { // Earlier version of this edge exists and pos points to it.
+         multiple_versions_counter += 1;
         int offset = pos - start;
         int property_offset = offset - count_versions_before(offset);
         char* property = properties_start() + property_offset * property_size;
@@ -141,6 +147,7 @@ public:
       if (ptr == start + edges_and_versions || make_unversioned(*ptr) != e) {  // Edge does not exist
         return false;
       } else if (is_versioned(*ptr)) {
+        multiple_versions_counter += 1;
         int offset = ptr - start;
         int property_offset = offset - count_versions_before(offset);
         char* property = properties_start() + property_offset * property_size;
@@ -159,11 +166,13 @@ public:
     /**
      * Removes all version records < min_version.
      * @param min_version
+     * @return the minimal remaining version.
      */
-    bool gc(version_t min_version) {
+    version_t gc(version_t min_version) {
+      calls_to_gc++;
       // Removes unncessary versions and shifts remaining destinations and versions forward.
       auto shift = 0; // The forward shift to use, increases when versions are removed.
-      bool version_remaining = false;
+      version_t min_remaining_version = LAST_VERSION;
       size_t new_size = edges_and_versions;
 
       // Tracks how many edges we encountered and left so far, with out counting versions and deleted edges
@@ -198,7 +207,8 @@ public:
           }
         } else {  // Version cannot be removed or is not versioned.
           if (is_versioned(e)) {
-            version_remaining = true;
+            // TODO incorrect for version chains.
+            min_remaining_version = min(timestamp(v), min_remaining_version);
             *(i - shift) = e;
             *(i - shift + 1) = v;
             edges_so_far += 1;
@@ -210,7 +220,7 @@ public:
         }
       }
       edges_and_versions = new_size;
-      return version_remaining;
+      return min_remaining_version;
 
     };
 
