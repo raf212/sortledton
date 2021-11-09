@@ -421,9 +421,10 @@ size_t VersioningBlockedSkipListAdjacencyList::neighbourhood_size_version_p(vert
       if (!size_is_versioned(src)) {
         return adjacency_index[src].size;
       } else {
-        auto chain = (forward_list<SizeVersionChainEntry> *) ((uint64_t) adjacency_index[src].size &
-                                                              ~SIZE_VERSION_MASK);
-        return get_version_from_chain(*chain, version)->current_size;
+        return adjacency_index[src].size & ~SIZE_VERSION_MASK;
+//        auto chain = (forward_list<SizeVersionChainEntry> *) ((uint64_t) adjacency_index[src].size &
+//                                                              ~SIZE_VERSION_MASK);
+//        return get_version_from_chain(*chain, version)->current_size;
       }
       break;
     }
@@ -433,9 +434,10 @@ size_t VersioningBlockedSkipListAdjacencyList::neighbourhood_size_version_p(vert
       if (!is_versioned) {
         return size;
       } else { // If the size is versioned the index stores the current count of destinations and versions in the block.
-        auto block = (dst_t *) raw_neighbourhood_version(src, version);
-        auto eb = EdgeBlock::from_single_block(block, block_capacity, size, property_count, property_size);
-        return eb.count_edges(version);
+        return size & ~SIZE_VERSION_MASK;
+//        auto block = (dst_t *) raw_neighbourhood_version(src, version);
+//        auto eb = EdgeBlock::from_single_block(block, block_capacity, size, property_count, property_size);
+//        return eb.count_edges(version);
       }
       break;
     }
@@ -529,8 +531,8 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
 
       adjacency_index.set_block_size(edge.src, eb.get_block_capacity(), eb.get_edges_and_versions(),
                                      eb.get_property_count(), versions_remaining);
-      adjacency_index[edge.src].size = ((uint64_t) construct_version_chain_from_block(edge.src, version) |
-                                        SIZE_VERSION_MASK);
+      adjacency_index[edge.src].size = size | SIZE_VERSION_MASK;//((uint64_t) construct_version_chain_from_block(edge.src, version) |
+//                                        SIZE_VERSION_MASK);
 
       adjacency_index[edge.src].adjacency_set = (uint64_t) new_block;
 
@@ -556,34 +558,39 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
 void VersioningBlockedSkipListAdjacencyList::update_adjacency_size(vertex_id_t v, bool deletion, version_t version) {
   assert(get_set_type(v, FIRST_VERSION) == VSKIP_LIST);
   // TODO needs unit testing.
-  auto s = adjacency_index[v].size;
+  auto s = (uint64_t) adjacency_index[v].size;
+  s = s & ~(SIZE_VERSION_MASK);
 
   auto update = 1;
   if (deletion) {
     update = -1;
   }
 
-  if (size_is_versioned(v)) {
-    auto chain = (forward_list<SizeVersionChainEntry> *) (s & ~SIZE_VERSION_MASK);
+  s += update;
+  s |= SIZE_VERSION_MASK;
+  adjacency_index[v].size = s;
 
-    auto min_version_to_keep = tm.getMinActiveVersion();
-    auto reuse = gc_adjacency_size(*chain, min_version_to_keep);
-
-    auto current_size = get_version_from_chain(*chain, version)->current_size;
-    if (reuse.empty()) {
-      chain->push_front(SizeVersionChainEntry(version, current_size + update));
-    } else {  // We reuse an old version chain entry, instead of creating a new one.
-      reuse.front().current_size = current_size + update;
-      reuse.front().version = version;
-
-      chain->splice_after(chain->before_begin(), reuse, reuse.before_begin());
-    }
-  } else {
-    auto chain = new forward_list<SizeVersionChainEntry>();
-    chain->push_front(SizeVersionChainEntry(FIRST_VERSION, s));
-    chain->push_front(SizeVersionChainEntry(version, s + update));
-    adjacency_index[v].size = ((uint64_t) chain | SIZE_VERSION_MASK);
-  }
+//  if (size_is_versioned(v)) {
+//    auto chain = (forward_list<SizeVersionChainEntry> *) (s & ~SIZE_VERSION_MASK);
+//
+//    auto min_version_to_keep = tm.getMinActiveVersion();
+//    auto reuse = gc_adjacency_size(*chain, min_version_to_keep);
+//
+//    auto current_size = get_version_from_chain(*chain, version)->current_size;
+//    if (reuse.empty()) {
+//      chain->push_front(SizeVersionChainEntry(version, current_size + update));
+//    } else {  // We reuse an old version chain entry, instead of creating a new one.
+//      reuse.front().current_size = current_size + update;
+//      reuse.front().version = version;
+//
+//      chain->splice_after(chain->before_begin(), reuse, reuse.before_begin());
+//    }
+//  } else {
+//    auto chain = new forward_list<SizeVersionChainEntry>();
+//    chain->push_front(SizeVersionChainEntry(FIRST_VERSION, s));
+//    chain->push_front(SizeVersionChainEntry(version, s + update));
+//    adjacency_index[v].size = ((uint64_t) chain | SIZE_VERSION_MASK);
+//  }
 }
 
 void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, version_t version, char *properties) {
@@ -795,13 +802,13 @@ void VersioningBlockedSkipListAdjacencyList::gc_vertex(vertex_id_t v) {
   assert_adjacency_list_consistency(v, tm.getMinActiveVersion());
 #endif
   if (get_set_type(v, FIRST_VERSION) == VSKIP_LIST && size_is_versioned(v)) {
-    auto chain = (forward_list<SizeVersionChainEntry> *) ((uint64_t) raw_neighbourhood_size_entry(v) &
-                                                          ~SIZE_VERSION_MASK);
-    gc_adjacency_size(*chain, tm.getMinActiveVersion());
-    if (chain->begin()->version == FIRST_VERSION) {
-      adjacency_index[v].size = chain->begin()->current_size;
-      free(chain);
-    }
+//    auto chain = (forward_list<SizeVersionChainEntry> *) ((uint64_t) raw_neighbourhood_size_entry(v) &
+//                                                          ~SIZE_VERSION_MASK);
+//    gc_adjacency_size(*chain, tm.getMinActiveVersion());
+//    if (chain->begin()->version == FIRST_VERSION) {
+//      adjacency_index[v].size = chain->begin()->current_size;
+//      free(chain);
+//    }
   }
   release_vertex_lock_p(v);
 }
@@ -1426,8 +1433,9 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
 
       adjacency_index.set_block_size(edge.src, eb.get_block_capacity(), eb.get_edges_and_versions(),
                                      eb.get_property_count(), versions_remaining);
-      adjacency_index[edge.src].size = ((uint64_t) construct_version_chain_from_block(edge.src, version) |
-                                        SIZE_VERSION_MASK);
+      adjacency_index[edge.src].size = size | SIZE_VERSION_MASK;
+//              ((uint64_t) construct_version_chain_from_block(edge.src, version) |
+//                                        SIZE_VERSION_MASK);
 
       adjacency_index[edge.src].adjacency_set = (uint64_t) new_block;
 
