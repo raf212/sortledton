@@ -94,7 +94,7 @@ public:
     version_t  get_commit_version() const override;
     void set_read_timestamp(version_t timestamp);
 
-    void clear();
+    void clear(bool write_only);
 protected:
     version_t read_version = NO_TRANSACTION;
     version_t commit_version = NO_TRANSACTION;

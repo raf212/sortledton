@@ -221,7 +221,8 @@ VersionedTopologyInterface *SnapshotTransaction::raw_ds() {
   return ds;
 }
 
-void SnapshotTransaction::clear() {
+void SnapshotTransaction::clear(bool write_only) {
+  this->write_only = write_only;
   read_version = NO_TRANSACTION;
   commit_version = NO_TRANSACTION;
   last_lock_aquired = 0;

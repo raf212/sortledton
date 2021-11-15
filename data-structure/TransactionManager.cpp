@@ -12,7 +12,7 @@ SnapshotTransaction TransactionManager::getSnapshotTransaction(VersionedTopology
 }
 
 void TransactionManager::getSnapshotTransaction(VersionedTopologyInterface *ti, bool write_only, SnapshotTransaction &existing_transaction_object) {
-  existing_transaction_object.clear();
+  existing_transaction_object.clear(write_only);
   if (!write_only) {
     existing_transaction_object.set_read_timestamp(draw_timestamp(false));
   }
