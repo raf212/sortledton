@@ -27,7 +27,11 @@ void TopologyInterface::intersect_neighbourhood(vertex_id_t a, vertex_id_t b, ve
 }
 
 bool TopologyInterface::has_edge(edge_t edge) {
-  return has_edge_p(edge_t(physical_id(edge.src), physical_id(edge.dst)));
+  if (has_vertex(edge.src) && has_vertex(edge.dst)) {
+    return has_edge_p(edge_t(physical_id(edge.src), physical_id(edge.dst)));
+  } else {
+    return false;
+  }
 }
 
 bool TopologyInterface::has_vertex(vertex_id_t v) {
