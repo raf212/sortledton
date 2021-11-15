@@ -53,6 +53,12 @@ public:
 
     version_t getMinActiveVersion();
     void update_min_version();
+
+    /**
+     * @return a list of all active transaction in descending order. Can contain a sequence of NO_TRANSACTION markers first.
+     */
+    const vector<version_t>& get_sorted_versions();
+
 private:
     uint max_threads;
     static thread_local size_t thread_id;
@@ -62,11 +68,14 @@ private:
     vector<version_t> active_snapshots;
     atomic<version_t> version {1};
     version_t min_version { numeric_limits<version_t>::min() };
+    vector<version_t> sorted_versions;
 
     thread min_version_updater;
     atomic<bool> stopped;
 
     void run_min_version_updater(uint interval);
+
+    void update_sorted_versions();
 };
 
 

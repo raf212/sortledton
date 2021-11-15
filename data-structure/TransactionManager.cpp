@@ -52,6 +52,7 @@ void TransactionManager::update_min_version() {
 void TransactionManager::run_min_version_updater(uint interval) {
   while (!stopped.load()) {
     update_min_version();
+    update_sorted_versions();
     this_thread::sleep_for(chrono::microseconds(interval));
   }
 }
@@ -76,11 +77,13 @@ void TransactionManager::reset_max_threads(uint max_threads) {
   lock_guard<mutex> l(thread_registry_lock);
   for (bool in_use : thread_id_in_use) {
     if (in_use) {
+      // Thrown currently before update validation.
       throw IllegalOperation("Cannot change max_threads while any threads are registered");
     }
   }
   active_snapshots = vector<version_t>(max_threads, NO_TRANSACTION);
   thread_id_in_use = vector<bool>(max_threads, false);
+  sorted_versions = vector<version_t>(max_threads, NO_TRANSACTION);
 }
 
 version_t TransactionManager::draw_timestamp(bool commit_timestamp) {
@@ -97,4 +100,13 @@ version_t TransactionManager::draw_timestamp(bool commit_timestamp) {
     active_snapshots[thread_id] = version.fetch_add(1);
     return active_snapshots[thread_id];
   }
+}
+
+void TransactionManager::update_sorted_versions() {
+  sorted_versions = active_snapshots;
+  sort(sorted_versions.begin(), sorted_versions.end(), greater<version_t>());
+}
+
+const vector<version_t> &TransactionManager::get_sorted_versions() {
+  return sorted_versions;
 }
