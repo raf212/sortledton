@@ -384,3 +384,7 @@ void SnapshotTransaction::set_read_timestamp(version_t version) {
   max_physical_vertex_id = ds->max_physical_vertex();
   number_of_vertices = ds->vertex_count_version(read_version);
 }
+
+bool SnapshotTransaction::has_vertex(vertex_id_t v) {
+  return ds->has_vertex_version(v, read_version);
+}
