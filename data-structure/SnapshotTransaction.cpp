@@ -15,8 +15,10 @@ SnapshotTransaction::SnapshotTransaction(TransactionManager* tm, bool write_only
   if (!write_only) {
     read_version = tm->draw_timestamp(false);
 
-    max_physical_vertex_id = ds->max_physical_vertex();
-    number_of_vertices = ds->vertex_count_version(read_version);
+    if (ds != nullptr) {
+      max_physical_vertex_id = ds->max_physical_vertex();
+      number_of_vertices = ds->vertex_count_version(read_version);
+    }
   }
 }
 
