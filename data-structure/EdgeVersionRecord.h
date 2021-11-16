@@ -26,7 +26,7 @@ public:
 
     void write(version_t version, EdgeOperation kind, char* weight);
 
-    void gc(version_t min_version);
+    void gc(version_t min_version, const vector<version_t> &sorted_active_versions);
 
     vector<version_t> get_versions();
 

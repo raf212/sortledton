@@ -507,7 +507,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_single_block(edge_t edge, ve
   bool versions_remaining = is_versioned;
 #if COLLECT_VERSIONS_ON_INSERT
   if (is_versioned) {
-    versions_remaining = eb.gc(tm.getMinActiveVersion());
+    versions_remaining = eb.gc(tm.getMinActiveVersion(), tm.get_sorted_versions());
   }
 #endif
 
@@ -595,7 +595,7 @@ void VersioningBlockedSkipListAdjacencyList::insert_skip_list(edge_t edge, versi
   auto eb = EdgeBlock::from_vskip_list_header(block, block_size, property_size);
 
 #if COLLECT_VERSIONS_ON_INSERT
-  eb.gc(tm.getMinActiveVersion());
+  eb.gc(tm.getMinActiveVersion(), tm.get_sorted_versions());
 #endif
 
   // Handle a full block
@@ -876,7 +876,7 @@ bool VersioningBlockedSkipListAdjacencyList::gc_block(vertex_id_t v) {
     EdgeBlock eb = EdgeBlock::from_single_block((dst_t *) raw_neighbourhood_version(v, FIRST_VERSION), capacity, size,
                                                 property_count, property_size);
     auto min_version = tm.getMinActiveVersion();
-    version_remaining = eb.gc(min_version);
+    version_remaining = eb.gc(min_version, tm.get_sorted_versions());
     adjacency_index.set_block_size(v, eb.get_block_capacity(), eb.get_edges_and_versions(), eb.get_property_count(),
                                    version_remaining);
   }
@@ -921,7 +921,7 @@ bool VersioningBlockedSkipListAdjacencyList::gc_skip_list_block(VSkipListHeader 
                                                                 VSkipListHeader *blocks[SKIP_LIST_LEVELS],
                                                                 int leave_space) {
   auto eb = EdgeBlock::from_vskip_list_header(*to_clean, block_size, property_size);
-  bool versions_remaining = eb.gc(min_version);
+  bool versions_remaining = eb.gc(min_version, tm.get_sorted_versions());
   eb.update_skip_list_header(*to_clean);
 
   // TODO reimplement list merging
@@ -1469,7 +1469,7 @@ bool VersioningBlockedSkipListAdjacencyList::delete_from_single_block(edge_t edg
   bool versions_remaining = is_versioned;
 #if COLLECT_VERSIONS_ON_INSERT
   if (is_versioned) {
-    versions_remaining = eb.gc(tm.getMinActiveVersion());
+    versions_remaining = eb.gc(tm.getMinActiveVersion(), tm.get_sorted_versions());
     adjacency_index.set_block_size(edge.src, eb.get_block_capacity(), eb.get_edges_and_versions(),
                                    eb.get_property_count(), versions_remaining);
   }
@@ -1531,7 +1531,7 @@ bool VersioningBlockedSkipListAdjacencyList::delete_skip_list(edge_t edge, versi
   auto eb = EdgeBlock::from_vskip_list_header(block, block_size, property_size);
 
 #if COLLECT_VERSIONS_ON_INSERT
-  eb.gc(tm.getMinActiveVersion());
+  eb.gc(tm.getMinActiveVersion(), tm.get_sorted_versions());
   eb.update_skip_list_header(block);
 #if defined(DEBUG) && ASSERT_CONSISTENCY
   assert_adjacency_list_consistency(edge.src, tm.getMinActiveVersion(), version);

@@ -160,7 +160,7 @@ public:
      * Removes all version records < min_version.
      * @param min_version
      */
-    bool gc(version_t min_version) {
+    bool gc(version_t min_version, const vector<version_t>& sorted_active_versions) {
       // Removes unncessary versions and shifts remaining destinations and versions forward.
       auto shift = 0; // The forward shift to use, increases when versions are removed.
       bool version_remaining = false;
@@ -175,7 +175,7 @@ public:
         // Prune version chain and inline it if possible.
         if (is_versioned(e)) {
           EdgeVersionRecord vr {make_unversioned(e), (version_t*) i+1, nullptr, false, property_size};
-          vr.gc(min_version);
+          vr.gc(min_version, sorted_active_versions);
           v = *(i+1);
         }
 
