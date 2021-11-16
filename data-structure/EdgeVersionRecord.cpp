@@ -82,22 +82,57 @@ bool EdgeVersionRecord::exists_in_version(version_t version) const {
   }
 }
 
-void EdgeVersionRecord::gc(version_t min_version) {
+void EdgeVersionRecord::gc(version_t min_version, const vector<version_t>& sorted_active_versions) {
   if (state == MULTIPLE_VERSIONS) {
     // Get the chain and the element read by min_version.
-    auto chain = get_chain(*v);
-    forward_list<VersionChainRecord>::iterator last_element_to_keep = get_version_from_chain(*chain, min_version);
-    last_element_to_keep->v = FIRST_VERSION;
+    auto  chain = get_chain(*v);
 
-    // We move all other elements into a forward_list which will be deleted when we leave the scope.
+    // List used to store removed versions.
     forward_list<VersionChainRecord> to_drop;
-    to_drop.splice_after(to_drop.before_begin(), *chain, last_element_to_keep, chain->end());
+
+    auto i = 0u; // Offset of the current active version.
+    auto current = chain->begin(); // Will point to the version read by the current active version
+    auto before = chain->begin(); // Will point to the version read by the active version before current.
+
+    // Find the youngest version read by an active transaction.
+    for (; i < sorted_active_versions.size(); i++) {
+      auto version = sorted_active_versions[i];
+      if (version == NO_TRANSACTION) {
+        continue;
+      }
+      while (current->v > version) {
+        current++;
+        before++;
+      }
+      break;
+    }
+    // Current and before now points to the youngest read version in this chain.
+    // We do not collect before to not complicate the process of building the list of sorted active transactions.
+
+    i++; // We are not interested to the version older than the last v.
+    for (; i < sorted_active_versions.size(); i++) {
+      while (current->v > sorted_active_versions[i]) {
+        current++;
+      }
+
+      // Remove versions between
+      if (current != before) {
+        to_drop.splice_after(to_drop.before_begin(), *chain, before, current);
+      }
+      before = current;
+    }
+
+    // Current is now the oldest version read by any transaction. Mark it as FIRST_VERSION.
+    current->v = FIRST_VERSION;
+
+    // Collect all versions older than read by the oldest transaction
+    to_drop.splice_after(to_drop.before_begin(), *chain, current, chain->end());
 
     auto size = 0;
-    auto i = chain->begin();
-    while (i != chain->end() && size < 3) {
+    auto iter = chain->begin();
+    while (iter != chain->end() && size < 3) {
       size += 1;
-      i++;
+      iter++;
     }
 
     // We try to inline short lists.
