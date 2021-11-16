@@ -55,6 +55,13 @@ public:
     void update_min_version();
 
     /**
+     * Precondition the calling thread should be registered.
+     * @return the current version used by a transaction of the thread. NO_TRANSACTION if the thread
+     * did not open a transaction yet.
+     */
+    version_t get_current_version() const;
+
+    /**
      * @return a list of all active transaction in descending order. Can contain a sequence of NO_TRANSACTION markers first.
      */
     const vector<version_t>& get_sorted_versions();

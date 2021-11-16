@@ -110,3 +110,7 @@ void TransactionManager::update_sorted_versions() {
 const vector<version_t> &TransactionManager::get_sorted_versions() {
   return sorted_versions;
 }
+
+version_t TransactionManager::get_current_version() const {
+  return active_snapshots[thread_id];
+}

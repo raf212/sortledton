@@ -366,13 +366,17 @@ public:
       to.properties += properties_to_move;
     }
 
-    size_t count_edges(version_t version) {
+    size_t count_edges(version_t version, bool print_versions=false) {
       auto count = 0;
       for (auto i = start; i < start + edges_and_versions ; i++) {
         if (!is_versioned(*i)) {
           count++;
         } else {
           EdgeVersionRecord vr(make_unversioned(*i), i + 1, nullptr, false, property_size);
+          if (print_versions) {
+            vr.print_versions();
+            cout << "Exists " << vr.exists_in_version(version) << endl;
+          }
           if (vr.exists_in_version(version)) {
             count++;
           }

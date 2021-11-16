@@ -5,6 +5,7 @@
 #ifndef LIVE_GRAPH_TWO_EDGEVERSIONRECORD_H
 #define LIVE_GRAPH_TWO_EDGEVERSIONRECORD_H
 
+#include <iostream>
 
 #include <data-structure/data_types.h>
 
@@ -50,6 +51,8 @@ private:
     weight_t copy_weight(char *weight);
 
     void assert_can_write(version_t version, EdgeOperation operation);
+public:
+    void print_versions();
 };
 
 

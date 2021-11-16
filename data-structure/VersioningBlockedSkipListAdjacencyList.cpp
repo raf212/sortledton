@@ -758,7 +758,9 @@ VersioningBlockedSkipListAdjacencyList::gc_adjacency_size(forward_list<SizeVersi
   // We do not collect before to not complicate the process of building the list of sorted active transactions.
 
   i++; // We are not interested to the version older than the last v.
+#if defined(DEBUG) && ASSERT_CONSISTENCY
   assert_size_version_chain(&chain);
+#endif
   for (; i < sorted_active_versions.size(); i++) {
     while (current->version > sorted_active_versions[i]) {
       current++;
@@ -841,7 +843,7 @@ void VersioningBlockedSkipListAdjacencyList::gc_all() {
   }
 }
 
-void VersioningBlockedSkipListAdjacencyList::gc_vertex(vertex_id_t v) {
+void VersioningBlockedSkipListAdjacencyList:: gc_vertex(vertex_id_t v) {
   aquire_vertex_lock_p(v);
   switch (get_set_type(v, FIRST_VERSION)) {
     case VSINGLE_BLOCK: {
@@ -853,9 +855,6 @@ void VersioningBlockedSkipListAdjacencyList::gc_vertex(vertex_id_t v) {
       break;
     }
   }
-#if defined(DEBUG) && ASSERT_CONSISTENCY
-  assert_adjacency_list_consistency(v, tm.getMinActiveVersion(), tm.getMinActiveVersion());
-#endif
   if (get_set_type(v, FIRST_VERSION) == VSKIP_LIST && size_is_versioned(v)) {
     auto chain = (forward_list<SizeVersionChainEntry> *) ((uint64_t) raw_neighbourhood_size_entry(v) &
                                                           ~SIZE_VERSION_MASK);
@@ -865,6 +864,9 @@ void VersioningBlockedSkipListAdjacencyList::gc_vertex(vertex_id_t v) {
       free(chain);
     }
   }
+#if defined(DEBUG) && ASSERT_CONSISTENCY
+  assert_adjacency_list_consistency(v, tm.getMinActiveVersion(), tm.get_current_version());
+#endif
   release_vertex_lock_p(v);
 }
 
@@ -1176,6 +1178,22 @@ void VersioningBlockedSkipListAdjacencyList::assert_adjacency_list_consistency(v
       if (size_is_versioned(v)) {
         chain = (forward_list<SizeVersionChainEntry> *) ((uint64_t) adjacency_index[v].size & ~SIZE_VERSION_MASK);
         assert_size_version_chain(chain);
+
+        auto retrieved_size = neighbourhood_size_version_p(v, current_version);
+        if (retrieved_size != actual_size) {
+          auto i = chain->begin();
+          cout << "Size version chain: " << endl;
+          while (i != chain->end()) {
+            cout << i->version << " Size: " << i->current_size << endl;
+            i++;
+          }
+          auto start = (VSkipListHeader *) raw_neighbourhood_version(v, min_version);
+          auto actual_size = 0;
+          for (auto i = start; i != nullptr; i = i->next_levels[0]) {
+            auto eb = EdgeBlock::from_vskip_list_header(i, block_size, property_size);
+            actual_size += eb.count_edges(current_version, true);
+          }
+        }
       }
     }
   }

@@ -296,3 +296,24 @@ vector<version_t> EdgeVersionRecord::get_versions() {
   return versions;
 }
 
+void EdgeVersionRecord::print_versions() {
+  switch (state) {
+    case SINGLE_VERSION: {
+      return;
+    }
+    case TWO_VERSIONS: {
+      cout << timestamp(*v) << endl;
+      return;
+    }
+    case MULTIPLE_VERSIONS: {
+      auto chain = get_chain(*v);
+      for (auto & i : *chain) {
+        cout << i.v << ": " << i.operation << ", ";
+      }
+      cout << endl;
+      return;
+    }
+  }
+
+}
+
