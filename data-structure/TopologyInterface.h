@@ -1,8 +1,8 @@
 #ifndef LIVE_GRAPH_TWO_TOPLOGYINTERFACE_H
 #define LIVE_GRAPH_TWO_TOPLOGYINTERFACE_H
 
-#include "internal-driver/data-src/DataSource.h"
-#include "internal-driver/data-src/SortedCSRDataSource.h"
+#include "../internal-driver/data-src/DataSource.h"
+#include "../internal-driver/data-src/SortedCSRDataSource.h"
 #include "data_types.h"
 #include "../utils/NotImplemented.h"
 

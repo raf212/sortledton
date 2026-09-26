@@ -16,8 +16,8 @@
 #include <unordered_set>
 
 #include "Options.h"
-#include "data-structure/data_types.h"
-#include "internal-driver/data-src/SortedCSRDataSource.h"
+#include "../../../data-structure/data_types.h"
+#include "../SortedCSRDataSource.h"
 
 using namespace std;
 

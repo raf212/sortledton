@@ -6,9 +6,9 @@
 #define LIVE_GRAPH_TWO_LCC_H
 
 
-#include "data-structure/data_types.h"
-#include "data-structure/TopologyInterface.h"
-#include "internal-driver/Driver.h"
+#include "../data-structure/data_types.h"
+#include "../data-structure/TopologyInterface.h"
+#include "../internal-driver/Driver.h"
 
 class LCC {
 public:

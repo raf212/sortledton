@@ -12,8 +12,8 @@
 #include <unordered_set>
 
 #include "DatasetConverter.h"
-#include "data-structure/data_types.h"
-#include "internal-driver/data-src/SortedCSRDataSource.h"
+#include "../../../data-structure/data_types.h"
+#include "../SortedCSRDataSource.h"
 #include "Options.h"
 
 DatasetConverter::DatasetConverter(int argc, char **argv) {

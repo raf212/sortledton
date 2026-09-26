@@ -8,9 +8,9 @@
 #include <algorithm>
 #include <queue>
 
-#include "data-structure/data_types.h"
+#include "../data-structure/data_types.h"
 #include "GAPBSAlgorithms.h"
-#include "internal-driver/Driver.h"
+#include "../internal-driver/Driver.h"
 #include "WCC.h"
 #include "CDLP.h"
 #include "SSSP.h"
