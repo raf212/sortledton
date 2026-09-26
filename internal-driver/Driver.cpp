@@ -231,14 +231,15 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
     cout << endl;
   }
 
-  if (data_structure != nullptr && typeid(*data_structure) != typeid(SnapshotTransaction)) {
-    delete data_structure;
-    data_structure = nullptr;
+  if (versioned_data_structure != nullptr) {
+      delete versioned_data_structure;
+      versioned_data_structure = nullptr;
   }
   if (versioned_data_structure != nullptr) {
     delete versioned_data_structure;
     versioned_data_structure = nullptr;
   }
+  data_structure = nullptr;
 }
 
 
