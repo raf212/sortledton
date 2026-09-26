@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <cassert>
 
-#include <utils/NotImplemented.h>
+#include "../utils/NotImplemented.h"
 #include "Reporter.h"
 
 void Reporter::add_repetition(Experiments experiment, int repetition,

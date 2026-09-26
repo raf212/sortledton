@@ -7,9 +7,9 @@
 
 #include <cassert>
 #include <cstring>
-#include <utils/utils.h>
+#include "../utils/utils.h"
 #include <iostream>
-#include <utils/NotImplemented.h>
+#include "../utils/NotImplemented.h"
 #include "AdjacencySetTypes.h"
 #include "EdgeVersionRecord.h"
 #include <functional>

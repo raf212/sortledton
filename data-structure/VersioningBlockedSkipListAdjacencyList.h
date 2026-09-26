@@ -10,9 +10,9 @@
 #include <random>
 #include <atomic>
 #include <forward_list>
-#include <utils/NotImplemented.h>
-#include <data-structure/TransactionManager.h>
-#include <data-structure/SizeVersionChainEntry.h>
+#include "../utils/NotImplemented.h"
+#include "TransactionManager.h"
+#include "SizeVersionChainEntry.h"
 #include "VersionedTopologyInterface.h"
 #include "memory_allocation/BlockProvider.h"
 

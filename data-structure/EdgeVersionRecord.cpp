@@ -7,7 +7,7 @@
 #include <cstring>
 #include "EdgeVersionRecord.h"
 #include <utils/pointerTagging.h>
-#include <utils/NotImplemented.h>
+#include "../utils/NotImplemented.h"
 
 
 struct VersionChainRecord {

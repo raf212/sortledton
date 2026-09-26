@@ -7,7 +7,7 @@
 
 #include <optional>
 
-#include <data-structure/data_types.h>
+#include "data_types.h"
 #include "AdjacencySetTypes.h"
 #include "TransactionManager.h"
 

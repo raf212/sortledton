@@ -11,7 +11,7 @@
 #include <fstream>
 #include <omp.h>
 #include <random>
-#include <utils/NotImplemented.h>
+#include "../../utils/NotImplemented.h"
 #include "../../data-structure/data_types.h"
 #include "DataSource.h"
 
