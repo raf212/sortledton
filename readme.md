@@ -24,7 +24,7 @@ cmake \
   -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
   ..
 
-make -j$(nproc) sortledton
+make -j$(nproc)
 ```
 
 ## Repository Structure

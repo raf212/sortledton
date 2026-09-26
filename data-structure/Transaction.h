@@ -6,7 +6,7 @@
 #define LIVE_GRAPH_TWO_TRANSACTION_H
 
 #include "data_types.h"
-#include "utils/NotImplemented.h"
+#include "../utils/NotImplemented.h"
 #include "TopologyInterface.h"
 #include "Precondition.h"
 
