@@ -66,7 +66,7 @@ Driver::run_data_structure(SortedCSRDataSource &base, EdgeList<weighted_edge_t> 
                            vector<vector<vertex_id_t>> &neighbourhood_2_sources) {
   reporter.set_data_structure(ds, ds_parameters);
 
-  TopologyInterface *data_structure;
+  TopologyInterface* data_structure = nullptr;
   string ds_name;
 
   TransactionManager tm(config.insert_threads + 1);
