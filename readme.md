@@ -13,9 +13,18 @@ To be used with the [GFE experiment driver](https://github.com/PerFuchs/gfe_driv
 To build the static Sortledton library:
 
 ```bash
-mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-make sortledton
+rm -rf build
+mkdir build
+cd build
+
+cmake \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_C_FLAGS_RELEASE="-O3 -DNDEBUG -march=native -mtune=native -flto=auto" \
+  -DCMAKE_CXX_FLAGS_RELEASE="-O3 -DNDEBUG -march=native -mtune=native -flto=auto" \
+  -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+  ..
+
+make -j$(nproc) sortledton
 ```
 
 ## Repository Structure

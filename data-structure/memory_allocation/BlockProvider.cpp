@@ -26,7 +26,7 @@ BlockProvider::~BlockProvider() {
 #endif
   for (auto p : pages) {
     if (munmap(p, LENGTH)) {
-      perror("munmap");
+      std::perror("munmap");
       exit(1);
     }
   }
@@ -49,7 +49,7 @@ void BlockProvider::free_block(void* block, size_t size) {
 void BlockProvider::add_page() {
   char* r = (char*) mmap(nullptr, LENGTH, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB | MAP_HUGE_1GB, -1, 0);
   if (r == MAP_FAILED) {
-    perror("mmap");
+    std::perror("mmap");
     exit(1);
   }
 

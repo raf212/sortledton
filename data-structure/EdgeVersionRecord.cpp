@@ -82,7 +82,7 @@ bool EdgeVersionRecord::exists_in_version(version_t version) const {
   }
 }
 
-void EdgeVersionRecord::gc(version_t min_version, const vector<version_t>& sorted_active_versions) {
+void EdgeVersionRecord::gc(version_t min_version, const std::vector<version_t>& sorted_active_versions) {
   if (state == MULTIPLE_VERSIONS) {
     // Get the chain and the element read by min_version.
     auto  chain = get_chain(*v);
@@ -309,7 +309,7 @@ void EdgeVersionRecord::assert_version_list(version_t min_version) {
   assert(last_timestamp == FIRST_VERSION);
 }
 
-vector<version_t> EdgeVersionRecord::get_versions() {
+std::vector<version_t> EdgeVersionRecord::get_versions() {
   vector<version_t> versions;
   switch (state) {
     case MULTIPLE_VERSIONS: {

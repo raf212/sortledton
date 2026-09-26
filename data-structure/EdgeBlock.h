@@ -12,7 +12,7 @@
 #include <utils/NotImplemented.h>
 #include "AdjacencySetTypes.h"
 #include "EdgeVersionRecord.h"
-
+#include <functional>
 inline version_t inline_version(bool deletion, bool more_versions, version_t version) {
   if (more_versions) {
     version |= MORE_VERSION_MASK;
@@ -429,7 +429,7 @@ public:
    */
     dst_t *start;
 
-    void print_block(function<dst_t(dst_t)> physical_to_logical) {
+    void print_block(std::function<dst_t(dst_t)> physical_to_logical) {
       cout << "Physical Edges: " << endl;
       for (auto i = start; i < start + edges_and_versions; i++) {
         auto e = make_unversioned(*i);
